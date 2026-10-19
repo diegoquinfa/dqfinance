@@ -3,8 +3,10 @@ import { useNavigate } from '@tanstack/react-router'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/shared/ui/card'
-import { Field, FormError } from '#/shared/ui/field'
+import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
+import { Separator } from '#/shared/ui/separator'
+import { Spinner } from '#/shared/ui/spinner'
 import { authClient, isOAuthFlow } from './auth-client'
 import { LocaleSwitch } from './locale-switch'
 
@@ -52,45 +54,50 @@ export function SignInForm() {
         {isOAuthFlow() && <CardDescription>{m.auth_oauth_notice()}</CardDescription>}
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="grid gap-4">
-          {isSignUp && (
-            <Field id="name" label={m.label_name()}>
-              <Input id="name" name="name" autoComplete="name" required />
+        <form onSubmit={onSubmit}>
+          <FieldGroup>
+            {isSignUp && (
+              <Field>
+                <FieldLabel htmlFor="name">{m.label_name()}</FieldLabel>
+                <Input id="name" name="name" autoComplete="name" required />
+              </Field>
+            )}
+            <Field>
+              <FieldLabel htmlFor="email">{m.label_email()}</FieldLabel>
+              <Input id="email" name="email" type="email" autoComplete="email" required />
             </Field>
-          )}
-          <Field id="email" label={m.label_email()}>
-            <Input id="email" name="email" type="email" autoComplete="email" required />
-          </Field>
-          <Field id="password" label={m.label_password()}>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              minLength={8}
-              autoComplete={isSignUp ? 'new-password' : 'current-password'}
-              required
-            />
-          </Field>
-          <FormError message={error} />
-          <Button type="submit" disabled={pending}>
-            {pending
-              ? isSignUp
-                ? m.auth_pending_sign_up()
-                : m.auth_pending_sign_in()
-              : isSignUp
-                ? m.auth_submit_sign_up()
-                : m.auth_submit_sign_in()}
-          </Button>
-          <button
-            type="button"
-            className="label-mono link-draw justify-self-start text-muted-foreground hover:text-ink"
-            onClick={() => setMode(isSignUp ? 'sign-in' : 'sign-up')}
-          >
-            {isSignUp ? m.auth_switch_to_sign_in() : m.auth_switch_to_sign_up()}
-          </button>
-          <div className="border-t border-line pt-5">
+            <Field>
+              <FieldLabel htmlFor="password">{m.label_password()}</FieldLabel>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                minLength={8}
+                autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                required
+              />
+            </Field>
+            <FieldError>{error}</FieldError>
+            <Button type="submit" disabled={pending}>
+              {pending && <Spinner data-icon="inline-start" />}
+              {pending
+                ? isSignUp
+                  ? m.auth_pending_sign_up()
+                  : m.auth_pending_sign_in()
+                : isSignUp
+                  ? m.auth_submit_sign_up()
+                  : m.auth_submit_sign_in()}
+            </Button>
+            <button
+              type="button"
+              className="label-mono link-draw self-start text-muted-foreground hover:text-ink"
+              onClick={() => setMode(isSignUp ? 'sign-in' : 'sign-up')}
+            >
+              {isSignUp ? m.auth_switch_to_sign_in() : m.auth_switch_to_sign_up()}
+            </button>
+            <Separator />
             <LocaleSwitch id="sign-in-language" />
-          </div>
+          </FieldGroup>
         </form>
       </CardContent>
     </Card>

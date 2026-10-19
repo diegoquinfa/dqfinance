@@ -2,7 +2,8 @@ import { Link } from '@tanstack/react-router'
 import type * as React from 'react'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
-import { EmptyState, ListSkeleton } from '#/shared/ui/field'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
+import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { useBalances } from '../balances/balances-api'
 import {
@@ -100,7 +101,12 @@ export function AccountsPage() {
       />
 
       {tree.banks.length === 0 && tree.cashWallets.length === 0 && (
-        <EmptyState title={m.accounts_empty()} description={m.accounts_empty_description()} />
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{m.accounts_empty()}</EmptyTitle>
+            <EmptyDescription>{m.accounts_empty_description()}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
 
       {tree.banks.map((bank, position) => (

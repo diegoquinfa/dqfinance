@@ -8,9 +8,12 @@ import { formatDay } from '#/shared/dates'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
 import { Button } from '#/shared/ui/button'
-import { EmptyState, ListSkeleton } from '#/shared/ui/field'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
 import { Input } from '#/shared/ui/input'
+import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { Eyebrow, Section, rowsClass } from '#/shared/ui/page'
+import { Separator } from '#/shared/ui/separator'
+import { Skeleton } from '#/shared/ui/skeleton'
 import { useBalances } from './balances-api'
 import { CalendarPeriod } from './period-totals'
 import { netWorth } from './totals'
@@ -76,7 +79,7 @@ export function OverviewPage() {
   if (balances.isPending || settings.isPending) {
     return (
       <div className="grid gap-10 py-10" aria-busy="true">
-        <div className="h-16 w-2/3 animate-pulse bg-surface md:h-20" />
+        <Skeleton className="h-16 w-2/3 md:h-20" />
         <ListSkeleton rows={5} />
       </div>
     )
@@ -131,7 +134,8 @@ export function OverviewPage() {
           {worth.map((entry) => (
             <li key={entry.currency} className="grid gap-4">
               <p className="type-heading font-medium text-ink tabular-nums">{formatMoney(entry.net, entry.currency)}</p>
-              <dl className="grid grid-cols-2 border-t border-line pt-4">
+              <dl className="grid grid-cols-2 gap-y-4">
+                <Separator className="col-span-2" />
                 <div>
                   <dt className="label-mono text-muted-foreground">{m.overview_assets()}</dt>
                   <dd className="mt-1 text-soft tabular-nums">{formatMoney(entry.assets, entry.currency)}</dd>
@@ -148,7 +152,12 @@ export function OverviewPage() {
 
       <Section index="03" label={m.overview_accounts()} action={<ViewAll to="/accounts" />}>
         {accounts.length === 0 ? (
-          <EmptyState title={m.accounts_empty()} description={m.overview_no_accounts()} />
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>{m.accounts_empty()}</EmptyTitle>
+              <EmptyDescription>{m.overview_no_accounts()}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <ul className={rowsClass}>
             {accounts.map((account) => (
@@ -239,7 +248,12 @@ export function OverviewPage() {
         {recent.isPending ? (
           <ListSkeleton rows={4} />
         ) : (recent.data ?? []).length === 0 ? (
-          <EmptyState title={m.transactions_empty()} description={m.transactions_empty_description()} />
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>{m.transactions_empty()}</EmptyTitle>
+              <EmptyDescription>{m.transactions_empty_description()}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <ul className={rowsClass}>
             {(recent.data ?? []).map((transaction) => (
