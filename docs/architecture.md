@@ -15,9 +15,9 @@ Folders whose name says what they own are not listed below.
 ### API (`apps/api/src/features/`)
 
 - `onboarding/`: the wizard's single write (settings, currencies, categories, cash wallet).
-- `accounts/`: banks, bank accounts, products, cash wallets, and cards. `source.ts` is the one place for where money is: ownership checks, currency, and the three-nullable-FK shape.
+- `accounts/`: banks, bank accounts, products, cash wallets, and cards. `source.ts` is the one place for where money is: ownership checks, currency, and the three-nullable-FK shape. `product-yield.ts` (pure) estimates what a product's balance earns from its annual rate.
 - `transfers/`: also fees, the in-transit state, and FX settlement.
-- `balances/`: `compute-balances.ts` (pure) is the one place for every balance, debt, cost basis, and in-transit rule. Also owns the list tools (`list_accounts`).
+- `balances/`: `compute-balances.ts` (pure) is the one place for every balance, debt, cost basis, in-transit rule, and the as-of-date history. Also owns the list tools (`list_accounts`, `get_balance_history`).
 - `mcp/`: the MCP server; collects every feature's tools and guards `/mcp`.
 
 Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rules.
