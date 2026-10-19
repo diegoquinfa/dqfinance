@@ -13,8 +13,6 @@ Always use the skill ponytail
 
 # DQFinance — agent rules
 
-Personal finance tracker whose data is also reachable by AI agents through an OAuth-protected MCP server.
-
 The domain model, its invariants, and the implementation order are in [docs/plans/2026-10-18-finance-domain-design.md](./docs/plans/2026-10-18-finance-domain-design.md). Every domain noun used in code is defined in [GLOSSARY.md](./GLOSSARY.md). UI rules live in [DESIGN.md](./DESIGN.md).
 
 ## Map
@@ -37,8 +35,6 @@ Each feature folder owns everything it needs. Nothing about a feature lives outs
 apps/api/src/
   index.ts                 composition root: middleware, mounts every feature's routes
   db.ts                    composition root: registers every feature's *.schema.ts
-  app-env.ts               Hono env type (bindings + per-request vars)
-  shared/                  http.ts, money.ts, locale.ts, dates.ts, schema-columns.ts
   features/
     auth/                  Better Auth config, generated schema, session guard, ownerId column
     settings/              user settings (country, language, timezone, currencies)
@@ -58,7 +54,6 @@ apps/api/src/
 
 ```
 apps/web/src/
-  routes/                  thin file-based routes; they compose one feature page each
   features/
     auth/                  auth client, sign-in form, consent card, language switch
     settings/              settings page (language, currencies, categories)
@@ -72,8 +67,6 @@ apps/web/src/
     recurring-expenses/    recurring page and inbox actions
   shared/
     api.ts                 the single Hono RPC client and unwrap()
-    i18n.ts, money.ts, dates.ts, currencies.ts, config.ts
-    ui/                    shadcn primitives plus field.tsx, segmented.tsx, native-select.tsx, dialog-panel.tsx
 ```
 
 ### Dependency order
@@ -109,13 +102,13 @@ Two modules exist specifically so the rules live in one place: `accounts/source.
 - Zod input schemas are named `<useCase>Input` (`createTransactionInput`). Inferred types use PascalCase (`CreateTransactionInput`).
 - React components: `PascalCase` exports in `kebab-case` files (`transaction-form.tsx` → `TransactionForm`).
 - Database: tables singular `snake_case` (`transaction`), columns `snake_case`, Drizzle fields `camelCase`.
-- MCP tools: `snake_case` verbs (`create_transaction`). OAuth scopes: `finance:read`, `finance:write`.
+- MCP tools: `snake_case` verbs (`create_transaction`).
 
 ## TypeScript and quality
 
-- `strict`, `noUncheckedIndexedAccess`, and `verbatimModuleSyntax` stay on. No `any` except in the documented shim `apps/web/src/shared/api-globals.d.ts`.
+- No `any` except in the documented shim `apps/web/src/shared/api-globals.d.ts`.
 - Validate every external input with zod at the boundary: HTTP bodies and query strings, MCP tool arguments, and env-dependent config.
-- **Money:** amounts are stored as integer cents (`amount_cents`), always positive; `type` carries the sign. Never store floats. Use `toCents` and `fromCents` from `apps/api/src/shared/money.ts` (web: `shared/money.ts` for display). ISO minor units are not used, because ICU reports 0 digits for COP.
+- **Money:** amounts are stored as integer cents (`amount_cents`), always positive; `type` carries the sign. Use `toCents` and `fromCents` from `apps/api/src/shared/money.ts` (web: `shared/money.ts` for display). ISO minor units are not used, because ICU reports 0 digits for COP.
 - **Ownership:** every query on user data filters by `userId`. The `userId` comes from the session (`requireSession`) or from the token's `sub` claim (MCP). It never comes from client input. Tables take their owner column from `features/auth/owner.ts`.
 - **Balances are computed, never stored** (design D1). "Editing" a balance inserts a `balance_adjustment` (D2). Transfers and adjustments are not income or expense (D3).
 - New non-trivial logic (money, FX, dates, ownership, branching) ships with a small `node:test` test next to it (`*.test.ts`, run with `pnpm test`). Pure rules are separate files from the database work so they are testable without D1.
@@ -131,9 +124,8 @@ Two modules exist specifically so the rules live in one place: `accounts/source.
 
 - It measures the **staged blob**, not the working tree, so a partially staged file is judged on what will actually be committed.
 - It skips what no agent authors: lockfiles, codegen (`routeTree.gen.ts`, `worker-configuration.d.ts`, `auth.schema.ts`, `migrations/`, `paraglide/`), installed skills under `.agents/skills/`, build output, binaries and media. The list is `IGNORED` in `scripts/check-file-size.mjs`; add a pattern there when a new generator appears.
-- The failure message explains how to split: at a concept seam, never mid-function and never by line count. One use case per file, schemas in `<entity>.schema.ts`, constants in `constants.ts`, tests and fixtures next to the code. A justified one-off can bypass with `git commit --no-verify`.
 
-Hooks are committed and reach git through `core.hooksPath`, set by `pnpm install` (`scripts/install-hooks.mjs`). After cloning without installing: `git config core.hooksPath .githooks`. On Linux and macOS the hook needs its exec bit, so add it with `git add --chmod=+x .githooks/pre-commit`.
+After cloning without installing: `git config core.hooksPath .githooks`. On Linux and macOS the hook needs its exec bit, so add it with `git add --chmod=+x .githooks/pre-commit`.
 
 ## Internationalization
 
@@ -165,10 +157,9 @@ apps/api  /mcp
 ```
 
 - **Better Auth** (`@better-auth/mcp`) is the OAuth 2.1 authorization server. It serves discovery, DCR, authorize, token, and JWKS, and verifies tokens. **TanStack AI** (`@tanstack/ai-mcp/server`) is only the MCP protocol layer. It never sees raw tokens.
-- Tools read the user from `ctx.context.userId` (type `McpContext`). A tool never accepts a user id as input.
+- Tools read the user from `ctx.context.userId` (type `McpContext`).
 - `/mcp` requires every scope in `MCP_SCOPES` (`finance:read`, `finance:write`).
-- Tools: `list_accounts`, `list_categories`, `list_contacts`, `create_contact`, `create_transaction`, `list_transactions`, `create_transfer`, `list_transfers`, `mark_transfer_received`, `adjust_balance`, `list_pending_recurring`, `confirm_recurring`, `skip_recurring`. Account setup stays in the web app.
+- Account setup stays in the web app.
 - Read-only tools carry `metadata.annotations.readOnlyHint`. Tools that return a list wrap it in an object, so the response is a JSON object with `structuredContent`.
 - **Workers gotcha:** `createAuth` runs per request. Do not cache the auth instance at module scope. Better Auth starts D1 I/O on init, and a Worker hangs when a request awaits I/O that belongs to another request.
 - **Shortcut:** DCR is enabled because `@better-auth/cimd` ships only a Node transport. Switch to `cimd()` once there is a Workers-safe `fetchClientMetadataResource`.
-- Try it locally with `npx @modelcontextprotocol/inspector`, pointed at `http://localhost:8787/mcp`.
