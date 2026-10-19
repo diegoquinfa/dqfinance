@@ -23,6 +23,7 @@
   "error_transfer_not_found": "That transfer doesn't exist.",
   "error_transfer_already_received": "That transfer was already received.",
   "error_recurring_not_found": "That recurring expense doesn't exist.",
+  "error_push_not_configured": "Push notifications aren't set up on this server.",
   "error_network": "Can't reach the server at {url}. Check that the API is running and try again.",
   "error_generic": "Something went wrong. Try again.",
   "error_load": "Could not load this. Try again.",
@@ -236,6 +237,14 @@
   "settings_categories_empty": "No categories yet",
   "settings_saved": "Saved",
   "settings_save_currencies": "Save currencies",
+  "settings_notifications": "Notifications",
+  "push_enable": "Enable notifications",
+  "push_disable": "Turn off notifications",
+  "push_denied": "Notifications are blocked. Allow them in your browser's site settings.",
+  "push_unsupported": "This browser cannot show notifications.",
   "settings_session": "Session",
-  "settings_account": "Account"
+  "settings_account": "Account",
+  "push_income_title": "New income recorded",
+  "push_expense_title": "New expense recorded",
+  "push_expense_body": "Open the app to see your updated balances."
 }

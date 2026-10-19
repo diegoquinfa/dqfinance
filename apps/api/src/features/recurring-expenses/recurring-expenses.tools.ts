@@ -1,6 +1,7 @@
 import { toolDefinition } from '@tanstack/ai'
 import { z } from 'zod'
 import type { McpContext } from '../mcp/mcp-context'
+import { sendExpensePush } from '../push/send-expense-push'
 import {
   confirmRecurringExpense,
   confirmRecurringExpenseInput,
@@ -23,7 +24,11 @@ export const recurringExpenseTools = [
     name: 'confirm_recurring',
     description: 'Record a due recurring expense as a real expense (optionally with the real amount) and move it to its next due date.',
     inputSchema: confirmRecurringExpenseInput,
-  }).server<McpContext>((input, ctx) => confirmRecurringExpense(ctx.context.db, ctx.context.userId, input)),
+  }).server<McpContext>(async (input, ctx) => {
+    const confirmed = await confirmRecurringExpense(ctx.context.db, ctx.context.userId, input)
+    await sendExpensePush(ctx.context.db, ctx.context.userId, ctx.context.locale, ctx.context.push)
+    return confirmed
+  }),
 
   toolDefinition({
     name: 'skip_recurring',

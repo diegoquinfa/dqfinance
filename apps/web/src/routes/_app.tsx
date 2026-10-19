@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import type { Locale } from '#/shared/i18n'
 import { authClient } from '#/features/auth/auth-client'
 import { useSettings } from '#/features/settings/settings-api'
+import { usePushUpdates } from '#/features/settings/push-api'
 import { ApiError } from '#/shared/api'
 import { currentLocale, m, switchLocale } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
@@ -26,6 +27,7 @@ const links = [
 function AppLayout() {
   const { data: session, isPending } = authClient.useSession()
   const settings = useSettings({ enabled: Boolean(session) })
+  usePushUpdates(Boolean(session))
 
   // The user's saved language wins over the browser's, once per change.
   useEffect(() => {
