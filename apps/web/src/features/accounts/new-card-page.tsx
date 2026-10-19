@@ -144,7 +144,15 @@ export function NewCardPage({ productId }: { productId?: string }) {
         color={face.color}
       />
 
-      <form id={FORM_ID} className="grid max-w-2xl gap-6" action={(form) => submit(form)}>
+      {/* onSubmit, not action: React clears an action form after it runs, losing a failed create's fields. */}
+      <form
+        id={FORM_ID}
+        className="grid max-w-2xl gap-6"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void submit(new FormData(event.currentTarget))
+        }}
+      >
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="new-card-kind">{m.label_kind()}</FieldLabel>

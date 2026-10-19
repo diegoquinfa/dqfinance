@@ -21,6 +21,16 @@ export class ApiError extends Error {
 }
 
 type JsonResponse<T> = { ok: boolean; status: number; json(): Promise<T> }
+type BlobResponse = { ok: boolean; status: number; blob(): Promise<Blob> }
+
+/** The API's `{ code, message }` failure, or the generic message when the body is not one. */
+async function apiFailure(response: { status: number; json?(): Promise<unknown> }) {
+  const body = await response.json?.().catch(() => null)
+  const { code, message } = (body ?? {}) as { code?: string; message?: string }
+  return new ApiError(code ?? 'internal', message ?? m.error_generic(undefined, { locale: currentLocale() }), response.status)
+}
+
+const networkError = () => new ApiError('network', m.error_network({ url: API_URL }, { locale: currentLocale() }), 0)
 
 /**
  * Awaits an API call and returns its body, turning failures into ApiError with the API's
@@ -31,14 +41,20 @@ export async function unwrap<T>(call: Promise<JsonResponse<T>>): Promise<T> {
   try {
     response = await call
   } catch {
-    throw new ApiError('network', m.error_network({ url: API_URL }, { locale: currentLocale() }), 0)
+    throw networkError()
   }
-  if (response.ok) return response.json()
-  const body = await response.json().catch(() => null)
-  const { code, message } = (body ?? {}) as { code?: string; message?: string }
-  throw new ApiError(
-    code ?? 'internal',
-    message ?? m.error_generic(undefined, { locale: currentLocale() }),
-    response.status,
-  )
+  if (!response.ok) throw await apiFailure(response)
+  return response.json()
+}
+
+/** The file body of a download (`GET /api/documents/:id`), with the same failures as `unwrap`. */
+export async function unwrapBlob(call: Promise<BlobResponse>): Promise<Blob> {
+  let response: BlobResponse
+  try {
+    response = await call
+  } catch {
+    throw networkError()
+  }
+  if (!response.ok) throw await apiFailure(response)
+  return response.blob()
 }

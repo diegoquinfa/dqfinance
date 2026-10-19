@@ -143,7 +143,15 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
         </div>
       </header>
 
-      <form id={FORM_ID} className="grid max-w-2xl gap-6" action={(form) => submit(form)}>
+      {/* onSubmit, not action: React clears an action form after it runs, losing a failed create's fields. */}
+      <form
+        id={FORM_ID}
+        className="grid max-w-2xl gap-6"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void submit(new FormData(event.currentTarget))
+        }}
+      >
         {/* The amount comes first and large: the opening balance is the number that matters. */}
         <div className="grid gap-2 border-b border-line pb-3 transition-colors has-focus-visible:border-signal">
           <Label htmlFor="new-opening-balance">{m.accounts_new_opening()}</Label>

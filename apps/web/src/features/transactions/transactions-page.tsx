@@ -1,4 +1,4 @@
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { useSources } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { m } from '#/shared/i18n'
@@ -42,7 +42,14 @@ export function TransactionsPage() {
     <>
       <PageHeader
         title={m.transactions_title()}
-        actions={<NewTransactionDialog trigger={<Button variant="outline">{m.transactions_new()}</Button>} />}
+        actions={
+          <>
+            <Button variant="outline" asChild>
+              <Link to="/transactions/import">{m.transactions_import()}</Link>
+            </Button>
+            <NewTransactionDialog trigger={<Button variant="outline">{m.transactions_new()}</Button>} />
+          </>
+        }
       />
 
       <section aria-label={m.transactions_filters()} className="grid items-end gap-4 pb-8 sm:grid-cols-2 lg:grid-cols-4">

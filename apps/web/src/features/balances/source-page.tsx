@@ -6,6 +6,7 @@ import { CardFace } from '#/features/accounts/card-face'
 import { EditCardDialog, EditProductDialog } from '#/features/accounts/edit-dialogs'
 import { bpsToPercent } from '#/features/accounts/rates'
 import { sourceKey, type SourceRef } from '#/features/accounts/sources'
+import { SourceDocuments } from '#/features/documents/source-documents'
 import { SourceCosts } from '#/features/recurring-expenses/recurring-page'
 import { TransactionRow } from '#/features/transactions/transaction-row'
 import { useTransactions } from '#/features/transactions/transactions-api'
@@ -216,6 +217,8 @@ export function SourcePage({ type, id }: SourceRef) {
           </ul>
         )}
       </Section>
+
+      <SourceDocuments source={ref} index={estimate ? '05' : '04'} />
     </>
   )
 }
