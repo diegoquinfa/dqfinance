@@ -10,10 +10,12 @@ import { SourceDocuments } from '#/features/documents/source-documents'
 import { SourceCosts } from '#/features/recurring-expenses/recurring-page'
 import { TransactionRow } from '#/features/transactions/transaction-row'
 import { useTransactions } from '#/features/transactions/transactions-api'
+import { NewTransferDialog } from '#/features/transfers/new-transfer-dialog'
 import { m } from '#/shared/i18n'
 import { formatMoney, formatNumber } from '#/shared/money'
 import { lastMonths } from '#/shared/periods'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
+import { Button } from '#/shared/ui/button'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { Eyebrow, Section, rowsClass } from '#/shared/ui/page'
 import { Skeleton } from '#/shared/ui/skeleton'
@@ -82,6 +84,20 @@ export function SourcePage({ type, id }: SourceRef) {
   const cardRow = findCard(accounts.data, id)
   const rateBps = account?.annualRateBps ?? null
   const estimate = account?.estimatedYield ?? null
+  // A pocket holds money aside inside its parent: both ways of moving it open the transfer dialog.
+  const parent = product?.parentProductId ? findProduct(accounts.data, product.parentProductId) : undefined
+  const payout = account?.yieldPayout ?? null
+  const hasYield = rateBps !== null && Boolean(estimate)
+  // The section numbers follow the order they appear: stats, move money, yield, costs, movements, documents.
+  const sectionKeys = [
+    'stats',
+    parent ? 'move' : null,
+    hasYield ? 'yield' : null,
+    'costs',
+    'movements',
+    'documents',
+  ].filter((key): key is string => key !== null)
+  const sectionIndex = (key: string) => String(sectionKeys.indexOf(key) + 1).padStart(2, '0')
 
   return (
     <>
@@ -133,6 +149,8 @@ export function SourcePage({ type, id }: SourceRef) {
               name={product.name}
               type={product.type}
               annualRateBps={product.annualRateBps}
+              yieldPayout={product.yieldPayout}
+              currency={product.currency}
             />
           )}
           {cardRow && <EditCardDialog card={cardRow} />}
@@ -140,7 +158,7 @@ export function SourcePage({ type, id }: SourceRef) {
       </header>
 
       <Section
-        index="01"
+        index={sectionIndex('stats')}
         label={m.source_stats()}
         action={
           <ToggleGroup
@@ -163,36 +181,75 @@ export function SourcePage({ type, id }: SourceRef) {
         <BalanceChart className="mt-10" currency={source.currency} source={ref} />
       </Section>
 
+      {parent && (
+        <Section index={sectionIndex('move')} label={m.source_move_money()}>
+          <div className="flex flex-wrap gap-3">
+            <NewTransferDialog
+              trigger={<Button variant="outline">{m.source_pocket_more()}</Button>}
+              defaultFrom={{ type: 'product', id: parent.id }}
+              defaultTo={{ type: 'product', id: id }}
+            />
+            <NewTransferDialog
+              trigger={<Button variant="outline">{m.source_pocket_return({ product: parent.name })}</Button>}
+              defaultFrom={{ type: 'product', id: id }}
+              defaultTo={{ type: 'product', id: parent.id }}
+            />
+          </div>
+        </Section>
+      )}
+
       {rateBps !== null && estimate && (
-        <Section index="02" label={m.source_yield()}>
-          <dl className={`${rowsClass} sm:grid sm:grid-cols-3 sm:divide-x sm:divide-y-0`}>
+        <Section index={sectionIndex('yield')} label={m.source_yield()}>
+          <dl
+            className={`${rowsClass} sm:grid ${payout ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} sm:divide-x sm:divide-y-0`}
+          >
             <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6 sm:first:pl-0">
               <dt className="label-mono text-muted-foreground">{m.source_yield_rate_label()}</dt>
               <dd className="font-medium text-ink tabular-nums sm:mt-3 sm:type-heading-sm">
                 {m.source_yield_rate({ rate: formatNumber(bpsToPercent(rateBps)) })}
               </dd>
             </div>
-            <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
-              <dt className="label-mono text-muted-foreground">{m.source_yield_monthly_label()}</dt>
-              <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
-                {m.source_yield_monthly({ amount: formatMoney(estimate.monthly, source.currency) })}
-              </dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
-              <dt className="label-mono text-muted-foreground">{m.source_yield_daily_label()}</dt>
-              <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
-                {m.source_yield_daily({ amount: formatMoney(estimate.daily, source.currency) })}
-              </dd>
-            </div>
+            {payout === 'daily' && (
+              <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
+                <dt className="label-mono text-muted-foreground">{m.yield_payout_label()}</dt>
+                <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
+                  {m.source_yield_daily_payout({ amount: formatMoney(estimate.daily, source.currency) })}
+                </dd>
+              </div>
+            )}
+            {payout === 'monthly' && (
+              <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
+                <dt className="label-mono text-muted-foreground">{m.yield_payout_label()}</dt>
+                <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
+                  {m.source_yield_monthly_payout({ amount: formatMoney(estimate.monthly, source.currency) })}
+                </dd>
+              </div>
+            )}
+            {!payout && (
+              <>
+                <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
+                  <dt className="label-mono text-muted-foreground">{m.source_yield_monthly_label()}</dt>
+                  <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
+                    {m.source_yield_monthly({ amount: formatMoney(estimate.monthly, source.currency) })}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
+                  <dt className="label-mono text-muted-foreground">{m.source_yield_daily_label()}</dt>
+                  <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
+                    {m.source_yield_daily({ amount: formatMoney(estimate.daily, source.currency) })}
+                  </dd>
+                </div>
+              </>
+            )}
           </dl>
           <p className="mt-4 text-sm text-muted-foreground">{m.source_yield_note()}</p>
         </Section>
       )}
 
-      <SourceCosts sourceRef={ref} index={estimate ? '03' : '02'} />
+      <SourceCosts sourceRef={ref} index={sectionIndex('costs')} />
 
       <Section
-        index={estimate ? '04' : '03'}
+        index={sectionIndex('movements')}
         label={m.overview_recent()}
         action={<ViewAll to="/transactions" search={{ source: sourceKey(ref) }} />}
       >
@@ -218,7 +275,7 @@ export function SourcePage({ type, id }: SourceRef) {
         )}
       </Section>
 
-      <SourceDocuments source={ref} index={estimate ? '05' : '04'} />
+      <SourceDocuments source={ref} index={sectionIndex('documents')} />
     </>
   )
 }

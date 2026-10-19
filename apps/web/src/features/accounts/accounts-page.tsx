@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router'
+import { ChevronDown } from 'lucide-react'
 import type * as React from 'react'
 import { m } from '#/shared/i18n'
-import { formatMoney } from '#/shared/money'
+import { formatMoney, formatNumber } from '#/shared/money'
 import { Button } from '#/shared/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/shared/ui/dropdown-menu'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
@@ -10,6 +12,7 @@ import { useBalances } from '../balances/balances-api'
 import { AddCashWalletDialog, TypeBadge, cardKinds, productTypes } from './add-dialogs'
 import { useAccounts } from './accounts-api'
 import { brandLabel } from './card-face'
+import { bpsToPercent } from './rates'
 import { sourceKey, type SourceRef } from './sources'
 
 const typeLabel = (type: string) => productTypes.find((item) => item.value === type)?.label() ?? type
@@ -44,6 +47,7 @@ function SourceLine({
   name,
   badges,
   amount,
+  sub,
   actions,
   nested = false,
 }: {
@@ -51,6 +55,8 @@ function SourceLine({
   name: React.ReactNode
   badges: React.ReactNode
   amount?: string
+  /** A mono line under the amount, like the total a product holds with its pockets. */
+  sub?: string
   actions?: React.ReactNode
   nested?: boolean
 }) {
@@ -67,7 +73,12 @@ function SourceLine({
         </span>
         {badges}
       </span>
-      {amount && <span className="shrink-0 font-medium text-ink tabular-nums">{amount}</span>}
+      {amount && (
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className="font-medium text-ink tabular-nums">{amount}</span>
+          {sub && <span className="label-mono text-muted-foreground tabular-nums">{sub}</span>}
+        </div>
+      )}
     </>
   )
   return (
@@ -171,6 +182,11 @@ export function AccountsPage() {
                 }
                 return account.products.flatMap((product) => {
                   const ref: SourceRef = { type: 'product', id: product.id }
+                  const pockets = product.pockets
+                  // What the person really holds there: the product and the money set aside inside it.
+                  const total =
+                    balanceOf(ref) +
+                    pockets.reduce((sum, pocket) => sum + balanceOf({ type: 'product', id: pocket.id }), 0)
                   return [
                     <SourceLine
                       key={product.id}
@@ -184,10 +200,64 @@ export function AccountsPage() {
                         </>
                       }
                       amount={formatMoney(balanceOf(ref), product.currency)}
+                      sub={
+                        pockets.length
+                          ? `${m.accounts_total_with_pockets()} ${formatMoney(total, product.currency)}`
+                          : undefined
+                      }
                       actions={
-                        <CreateLink to="/accounts/new-card" search={{ productId: product.id }} label={m.accounts_add_card()} />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="link">
+                              {m.accounts_add_menu()}
+                              <ChevronDown aria-hidden />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to="/accounts/new-card" search={{ productId: product.id }}>
+                                {m.accounts_add_card()}
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to="/accounts/new-pocket" search={{ productId: product.id }}>
+                                {m.accounts_add_pocket()}
+                              </Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       }
                     />,
+                    // A pocket hangs under the product it sets money aside from (design D14).
+                    ...pockets.map((pocket) => {
+                      const pocketRef: SourceRef = { type: 'product', id: pocket.id }
+                      return (
+                        <SourceLine
+                          key={pocket.id}
+                          nested
+                          to={pocketRef}
+                          name={pocket.name}
+                          badges={
+                            <>
+                              <TypeBadge>{m.product_pocket()}</TypeBadge>
+                              <TypeBadge>{pocket.currency}</TypeBadge>
+                              {pocket.annualRateBps !== null && (
+                                <span className="label-mono text-muted-foreground">
+                                  {formatNumber(bpsToPercent(pocket.annualRateBps))}% E.A.
+                                  {pocket.yieldPayout && (
+                                    <>
+                                      {' · '}
+                                      {pocket.yieldPayout === 'daily' ? m.yield_payout_daily() : m.yield_payout_monthly()}
+                                    </>
+                                  )}
+                                </span>
+                              )}
+                            </>
+                          }
+                          amount={formatMoney(balanceOf(pocketRef), pocket.currency)}
+                        />
+                      )
+                    }),
                     ...product.cards.map((card) => {
                       const debt = cardDebt(card.id)
                       const credit = card.kind === 'credit'

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { cashAndProducts, findSource, transferDestinations, useSources } from '#/features/accounts/sources'
+import { cashAndProducts, findSource, sourceKey, transferDestinations, useSources, type SourceRef } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { useSettings } from '#/features/settings/settings-api'
 import { dayToIso, today } from '#/shared/dates'
@@ -13,12 +13,12 @@ import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
 import { useCreateTransfer } from './transfers-api'
 
-function NewTransferForm({ close }: { close: () => void }) {
+function NewTransferForm({ close, defaultFrom, defaultTo }: { close: () => void; defaultFrom?: SourceRef; defaultTo?: SourceRef }) {
   const { sources } = useSources()
   const settings = useSettings()
   const create = useCreateTransfer()
-  const [fromKey, setFromKey] = useState('')
-  const [toKey, setToKey] = useState('')
+  const [fromKey, setFromKey] = useState(defaultFrom ? sourceKey(defaultFrom) : '')
+  const [toKey, setToKey] = useState(defaultTo ? sourceKey(defaultTo) : '')
   const [debtCurrency, setDebtCurrency] = useState('')
 
   const from = findSource(sources, fromKey)
@@ -177,10 +177,19 @@ function NewTransferForm({ close }: { close: () => void }) {
   )
 }
 
-export function NewTransferDialog({ trigger }: { trigger: React.ReactNode }) {
+export function NewTransferDialog({
+  trigger,
+  defaultFrom,
+  defaultTo,
+}: {
+  trigger: React.ReactNode
+  /** Prefills the origin and the destination, like a pocket moving money in and out. */
+  defaultFrom?: SourceRef
+  defaultTo?: SourceRef
+}) {
   return (
     <DialogPanel trigger={trigger} title={m.transfers_new()}>
-      {(close) => <NewTransferForm close={close} />}
+      {(close) => <NewTransferForm close={close} defaultFrom={defaultFrom} defaultTo={defaultTo} />}
     </DialogPanel>
   )
 }
