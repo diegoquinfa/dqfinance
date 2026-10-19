@@ -5,7 +5,7 @@ Personal finance tracker with an OAuth-protected MCP server, so AI agents can re
 - `apps/api` — Cloudflare Worker: Hono REST API, Better Auth (OAuth 2.1 authorization server), MCP server at `/mcp`, D1 + Drizzle.
 - `apps/web` — TanStack Start app: sign-in, consent, transactions.
 
-Architecture and conventions: [AGENTS.md](./AGENTS.md). UI rules: [DESIGN.md](./DESIGN.md).
+Agent rules: [AGENTS.md](./AGENTS.md). Architecture: [docs/architecture.md](./docs/architecture.md). Conventions: [CODING_STANDARDS.md](./CODING_STANDARDS.md). UI rules: [DESIGN.md](./DESIGN.md).
 
 ## Run locally
 
