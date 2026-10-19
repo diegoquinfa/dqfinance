@@ -12,7 +12,7 @@ The mark is a **dq ligature**: `d` and `q` are mirror images (a bowl on the left
 
 | File (`apps/web/public/`) | Use |
 | --- | --- |
-| `logo.svg` | Lockup, tight bounds, transparent. Top bar and the signed-out layout (`h-7`). |
+| `logo.svg` | Lockup, tight bounds, transparent. Top bar and the signed-out layout (`h-7`); on `/sign-in` it sits inline in the panel title instead ("Sign in to [logo]"). |
 | `logo-mark.svg` | The ligature alone on `canvas`, 512 px. Avatars, social, store icons. |
 | `favicon.svg` | The mark at 32 px with a heavier stroke so the counter survives at 16 px. |
 | `apple-touch-icon.png`, `icon-512.png` | Raster exports of `logo-mark.svg`. |

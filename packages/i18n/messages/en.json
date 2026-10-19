@@ -159,7 +159,7 @@
   "transfer_type_deposit": "Cash deposit",
   "transfer_type_cash_exchange": "Cash exchange",
   "transfer_type_card_payment": "Card payment",
-  "auth_sign_in_title": "Sign in to {app}",
+  "auth_sign_in_title": "Sign in to",
   "auth_sign_up_title": "Create your account",
   "auth_oauth_notice": "An app is asking to connect to your account.",
   "auth_submit_sign_in": "Sign in",

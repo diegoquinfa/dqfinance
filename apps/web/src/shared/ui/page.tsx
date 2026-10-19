@@ -77,10 +77,10 @@ export function Section({
 export const rowsClass = 'divide-y divide-line border-y border-line'
 
 /** Signed-out and first-run screens: the brand, a two-tone statement, and one raised panel. */
-export function FocusLayout({ children }: { children: React.ReactNode }) {
+export function FocusLayout({ children, logo = true }: { children: React.ReactNode; logo?: boolean }) {
   return (
-    <main className="container-page grid min-h-dvh grid-rows-[auto_1fr] py-6">
-      <img src="/logo.svg" alt={m.app_name()} className="h-7 w-auto" />
+    <main className={cn('container-page grid min-h-dvh py-6', logo && 'grid-rows-[auto_1fr]')}>
+      {logo && <img src="/logo.svg" alt={m.app_name()} className="h-7 w-auto" />}
       <div className="grid content-center gap-10 py-10 lg:grid-cols-12 lg:items-center lg:gap-x-12">
         <p className="type-heading font-medium lg:type-title lg:col-span-6">
           <span className="text-ink">{m.auth_tagline_lead()}</span>{' '}

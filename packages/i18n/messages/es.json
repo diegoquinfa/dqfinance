@@ -159,7 +159,7 @@
   "transfer_type_deposit": "Depósito",
   "transfer_type_cash_exchange": "Cambio de efectivo",
   "transfer_type_card_payment": "Pago de tarjeta",
-  "auth_sign_in_title": "Inicia sesión en {app}",
+  "auth_sign_in_title": "Inicia sesión en",
   "auth_sign_up_title": "Crea tu cuenta",
   "auth_oauth_notice": "Una aplicación pide conectarse a tu cuenta.",
   "auth_submit_sign_in": "Iniciar sesión",
