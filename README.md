@@ -3,7 +3,7 @@
 Personal finance tracker with an OAuth-protected MCP server, so AI agents can read and record your transactions.
 
 - `apps/api` — Cloudflare Worker: Hono REST API, Better Auth (OAuth 2.1 authorization server), MCP server at `/mcp`, D1 + Drizzle.
-- `apps/web` — TanStack Start app: sign-in, consent, transactions.
+- `apps/web` — TanStack Start app: sign-in and consent, onboarding, overview, accounts with a source detail page, movements (with CSV import), transfers, recurring, contacts, settings, and per-account documents.
 
 Agent rules: [AGENTS.md](./AGENTS.md). Architecture: [docs/architecture.md](./docs/architecture.md). Conventions: [CODING_STANDARDS.md](./CODING_STANDARDS.md). UI rules: [DESIGN.md](./DESIGN.md).
 
@@ -24,14 +24,17 @@ Point any MCP client that supports remote servers with OAuth at `http://localhos
 
 | Tool | What it does |
 | --- | --- |
-| `list_accounts` | Every source with its id, balance or card debt |
+| `list_accounts`, `get_balance_history` | Every source with its id, balance or card debt; month-end assets and debt |
 | `list_categories`, `list_contacts`, `create_contact` | Lookups needed to record something |
-| `create_transaction`, `list_transactions` | Income and expenses |
+| `create_transaction`, `list_transactions`, `summarize_transactions` | Income and expenses, and totals for a period |
 | `create_transfer`, `list_transfers`, `mark_transfer_received` | Moving your own money; card payments and in-transit transfers |
 | `adjust_balance` | Set the real balance of an account, cash wallet or card |
 | `list_pending_recurring`, `confirm_recurring`, `skip_recurring` | The "to confirm" inbox |
+| `create_product`, `update_product`, `create_card`, `update_card` | Bank products and cards, including annual rate, brand and color |
+| `import_transactions` | A whole statement at once, with a dry-run preview and duplicate detection |
+| `list_documents` | The files attached to a source |
 
-Inspect it with `npx @modelcontextprotocol/inspector`. Setting up banks and cards stays in the web app.
+Inspect it with `npx @modelcontextprotocol/inspector`. Banks, bank accounts and cash wallets stay in the web app; products and cards are also reachable through the tools above.
 
 ## Common tasks
 

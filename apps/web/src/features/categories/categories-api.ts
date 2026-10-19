@@ -5,14 +5,16 @@ import { api, unwrap } from '#/shared/api'
 export type Category = InferResponseType<typeof api.api.categories.$get, 200>[number]
 export type NewCategory = InferRequestType<typeof api.api.categories.$post>['json']
 
-export const categoriesQuery = (kind?: 'expense' | 'income') =>
+/** System categories are booked automatically, so pickers hide them unless asked for. */
+export const categoriesQuery = (kind?: 'expense' | 'income', includeSystem = false) =>
   queryOptions({
-    queryKey: ['categories', kind ?? 'all'],
-    queryFn: async () => unwrap(api.api.categories.$get({ query: kind ? { kind } : {} })),
+    queryKey: ['categories', kind ?? 'all', includeSystem],
+    queryFn: async () =>
+      unwrap(api.api.categories.$get({ query: { ...(kind ? { kind } : {}), ...(includeSystem ? { includeSystem: true } : {}) } })),
   })
 
-export function useCategories(kind?: 'expense' | 'income') {
-  return useQuery(categoriesQuery(kind))
+export function useCategories(kind?: 'expense' | 'income', includeSystem = false) {
+  return useQuery(categoriesQuery(kind, includeSystem))
 }
 
 export function useCreateCategory() {

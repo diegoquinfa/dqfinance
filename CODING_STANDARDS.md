@@ -55,5 +55,6 @@ Change a generated file by rerunning its generator: `features/auth/auth.schema.t
 
 - It measures the **staged blob**, so a partially staged file is judged on what will be committed.
 - It skips what no agent authors: lockfiles, codegen, installed skills under `.agents/skills/`, build output, binaries, and media. The list is `IGNORED` in `scripts/check-file-size.mjs`; add a pattern there when a new generator appears.
+- `packages/i18n/messages/*.json` is exempt: Paraglide keeps one catalog per locale, so a catalog grows with every feature and is not a file to split.
 
 After cloning without installing: `git config core.hooksPath .githooks`. On Linux and macOS, give the hook its exec bit with `git add --chmod=+x .githooks/pre-commit`.

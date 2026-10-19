@@ -42,6 +42,7 @@ Rules:
 
 - Contrast lives in a few points: the primary button, the big numbers, small lilac marks. Never lilac backgrounds, icons, or resting buttons.
 - Every text pair passes WCAG AA. `faint` is never used for text a person must read.
+- **Card faces are the only exception**, and the only non-token colors in the app. The API stores a color name (`ink`, `signal`, `sand`, `moss`, `clay`, `ocean`) and `features/accounts/card-face.tsx` maps it once to a fixed dark palette. Nothing else takes a raw color.
 
 ## Typography
 
@@ -72,24 +73,44 @@ The scale is `@utility type-*`, not `--text-*` theme sizes: `cn` (tailwind-merge
 
 ## Shell
 
-- **Top bar** (64px, `canvas` + hairline, sticky): `DQFINANCE` in mono on the left. From `xl`, the seven mono links with a drawn underline (`link-draw`) and `ink` for the current page. From `lg`, the primary "New movement" button. Below `xl`, "Menu" opens a full-screen menu with large numbered links (`01`... in `faint`, the current one in `signal`), the email, and "Sign out".
+- **Top bar** (64px, `canvas` + hairline, sticky): `DQFINANCE` in mono on the left. From `xl`, the seven mono links with a drawn underline (`link-draw`) and `ink` for the current page. From `lg`, the primary "New movement" button. From `xl`, the account is a square avatar (the user's initials) opening a dropdown with the name and email (mono), Settings and Sign out. Below `xl`, "Menu" opens a full-screen menu with large numbered links (`01`... in `faint`, the current one in `signal`), the name, the email, and "Sign out".
 - **Bottom bar** (below `lg`): Overview, Movements, Accounts, Recurring as icons (accessible names in `sr-only`), the current one in `ink` with a 1px lilac mark on top, and a square `ink` "+" that opens New movement.
 
 ## Components
 
-`shared/ui` holds shadcn/ui primitives restyled with the tokens. Add more with `pnpm dlx shadcn@latest add <name>` from `apps/web`, then strip radius, shadows and `outline-none`.
+`shared/ui` holds shadcn/ui primitives restyled with the tokens. Add more with `pnpm dlx shadcn@latest add <name>` from `apps/web`, then run the checklist below.
+
+Checklist for every added component:
+
+- No `rounded-*`; `rounded-full` only for dots.
+- No `shadow-*`.
+- No `ring-*` focus styles and no `outline-none`: focus is the global 1px `signal` outline with a 4px offset (`styles.css`) plus the amount field's bottom line.
+- Colors only by token: `ink`, `soft`, `muted-foreground`, `faint`, `canvas`, `raised`, `surface`, `line`, `line-strong`, `signal`, `income`, `destructive`.
+- Labels use `label-mono`; weights stay 400 or 500.
+- Lists stay hairline rows (`rowsClass`), not a box per item.
+- Every string comes from `packages/i18n`, both catalogs; hyphens, never em or en dashes.
 
 | Component | Notes |
 | --- | --- |
 | `Button` | `default`: `ink` on `canvas`, hover `signal`, one per view at most (the top bar or the "+" holds it). `outline`: page actions ("New contact", "Adjust balance", Confirm). `ghost`: icon buttons, Cancel, Skip. `link`: inline text with a drawn underline, for actions inside a section rail; it takes no box size. |
 | `Input`, `NativeSelect` | Filled `surface`, square, 44px, 16px text (no iOS zoom). Border appears on hover/focus. |
-| `Label`, `Field` | Mono label above, control, hint or error below. |
-| `Segmented` | Square mono chips with a hairline frame; the chosen one is inverted (`bg-ink text-canvas`). Expense/income, periods, filters. |
+| `Label`, `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldGroup` | Forms are `FieldGroup` + `Field`: mono label above, control, description or error below. Validation sets `data-invalid` on the field and `aria-invalid` on the control; errors are `role="alert"`. |
+| `ToggleGroup` | Square mono chips with a hairline frame; the chosen one is inverted (`bg-ink text-canvas`). Expense/income, periods, filters. A single-select group never empties: the empty value of a second click is dropped. |
 | `Badge` | Mono tag with a hairline border: product type, currency, in transit. |
 | `Card` | Only for raised surfaces: the auth and consent panels. |
-| `DialogPanel` | Bottom sheet on mobile, centered square panel from `sm`. Overlay `canvas` at 90 %, no blur. |
+| `Dialog`, `DialogPanel`, `AlertDialog` | Bottom sheet on mobile, centered square panel from `sm`. Overlay `canvas` at 90 %, no blur. `AlertDialog` confirms what runs immediately, like deleting a recurring expense. |
+| `Empty` | Empty states, left aligned, hairlines above and below, with an optional action. |
+| `Avatar`, `DropdownMenu` | The account: a square avatar with initials (mono), its dropdown names the user and offers Settings and Sign out. |
+| `Skeleton`, `ListSkeleton` | Loading states shaped like what they replace: `Skeleton` is a bare `surface` block, `ListSkeleton` is hairline rows. |
+| `Spinner` | Only inside a pending button, next to its text; the button also gets `disabled`. |
+| `Separator` | A lone divider line, where a `border-t` used to be. List rows keep `divide-y` through `rowsClass`. |
+| `Toaster` (sonner) | Mounted once in the root route. A successful create confirms with `toast.success(...)`; never for reads. |
 | `PageHeader`, `Section`, `Eyebrow`, `FocusLayout` | `shared/ui/page.tsx`: the page h1, the rail sections, the `// 0X` label, and the signed-out layout (two-tone statement + panel). |
 | `TransactionRow` | `features/transactions`: description in `ink`, mono metadata (`date / source / category`), the signed amount on the right. Every movement list uses it. |
+| `Chart` | `shared/ui/chart.tsx` wraps Recharts (the only chart dependency). Lines only, `ink` for assets and `muted-foreground` for liabilities, a `line` grid, mono ticks, no area fills, no lilac, no animation. The tooltip is a square hairline panel with `formatMoney`; the region carries an `aria-label` and the same points sit in an `sr-only` table beside it. |
+| `Table` | Data with more than two columns, like the statement import preview: mono headers, hairline rows, no box, no zebra. |
+| `Textarea` | Pasted statement rows: filled `surface`, mono, grows with what it holds. |
+| `CardFace` | `features/accounts/card-face.tsx`: the 1.586 square-cornered face on a product's card page, with its color, brand (`label-mono`) and masked last 4. |
 
 States: hover changes tone or moves a row title 4px right, never size. Focus is a 1px `signal` outline with a 4px offset (global); the amount field shows focus on its bottom line. Disabled is `opacity-50`.
 
@@ -100,10 +121,13 @@ States: hover changes tone or moves a row title 4px right, never size. Focus is 
 | `/sign-in` | Two-tone statement and the sign-in panel. Also the OAuth login page for MCP clients. Language picker inside the panel. |
 | `/consent` | OAuth consent: the agent's name, then each permission as a row. Deny is `outline`, Allow is primary. |
 | `/onboarding` | Two steps (country / language / timezone, then currencies) in the same layout as sign-in. |
-| `/overview` | 01 total balance (display size, primary currency) beside the period block: Week / Month / Year with previous and next, then Spent and Received (summed by `GET /api/transactions/summary`). 02 net worth per currency (assets, card debt, net). 03 accounts, 04 credit cards (rows open the source), 05 to confirm, 06 recent movements, 07 in transit. |
-| `/accounts` | One section per bank: bank accounts, products as rows that open their detail, cards nested with `↳`; then cash. Add actions as `link` buttons. |
-| `/accounts/$type/$id` | A product, cash wallet or credit card: back link, bank, name, balance (or debt and available credit), "Adjust balance", income / expenses / net for the last 6 or 12 months, and its recent movements. |
-| `/transactions` | Filters (type, source, date range) and the movement list. |
+| `/overview` | 01 total balance (display size, primary currency) beside the period block: Week / Month / Year with previous and next, then Spent and Received (summed by `GET /api/transactions/summary`). 02 net worth per currency (assets, card debt, net), then the month-end assets and liabilities chart with 3M / 12M. 03 accounts, 04 credit cards (rows open the source), 05 to confirm, 06 recent movements, 07 in transit. |
+| `/accounts` | One section per bank: bank accounts, products as rows that open their detail, cards nested with `↳`; then cash. Add actions as `link` buttons. On mobile the add actions open the pages below; from `lg` the dialogs stay next to them. |
+| `/accounts/new` | The full-page create form: back link, title, and Create at the top and at the end. The opening balance is the large first field with the currency beside it, then bank (existing or new), bank account (existing or new, last 4 optional), product name, type and annual rate. The opening balance is recorded as an adjustment dated today (D2), then the new product's detail opens. |
+| `/accounts/new-card` | The card as a page: the live card face at the top, then kind, product, name, last 4, brand, interest rate with MV / EA, color and the credit details. A credit card opens its own detail, a debit card its product. |
+| `/accounts/$type/$id` | A product, cash wallet or credit card: back link, bank, name, balance (or debt and available credit), a credit card's face, "Adjust balance", edit, income / expenses / net for the last 6 or 12 months with the same chart for that source, a product's yield (rate, "≈ per month" and "≈ per day"), its costs (the recurring expenses paid with it, with "Add cost"), its recent movements with "View all", and its documents (contract, terms, fee table) with upload, download and delete. |
+| `/transactions` | Filters (type, source, date range) and the movement list. The filters live in the URL, so a link can preselect a source. "Import" opens the statement import. |
+| `/transactions/import` | A CSV statement: source, the pasted rows or a chosen .csv file, the column map, then the dry-run preview as a table, duplicates marked and left out, and "Import N movements". PDFs and screenshots are imported by asking the AI assistant. |
 | `/transfers` | Transfers with a derived type tag, fee and FX notes, an "in transit" tag, and "Mark received". |
 | `/recurring` | "Due now" with an editable amount, Confirm and Skip, then the full schedule. |
 | `/contacts` | Search, then people and businesses as sections. |

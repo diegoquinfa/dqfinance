@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react'
-import { useSources, findSource } from '#/features/accounts/sources'
+import { useState } from 'react'
+import { useSources, findSource, sourceKey, type SourceRef } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { useCategories } from '#/features/categories/categories-api'
 import { useCounterparties } from '#/features/counterparties/counterparties-api'
@@ -7,13 +7,28 @@ import { useSettings } from '#/features/settings/settings-api'
 import { formatDay, today } from '#/shared/dates'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '#/shared/ui/alert-dialog'
 import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
-import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
-import { EmptyState, Field, FormError, ListSkeleton } from '#/shared/ui/field'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
+import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
+import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { NativeSelect } from '#/shared/ui/native-select'
+import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
+import { Spinner } from '#/shared/ui/spinner'
+import { toast } from 'sonner'
 import {
   useConfirmRecurring,
   useCreateRecurringExpense,
@@ -29,20 +44,29 @@ const frequencies = [
   { value: 'yearly', label: m.frequency_yearly },
 ] as const satisfies readonly { value: NewRecurringExpense['frequency']; label: () => string }[]
 
-function NewRecurringForm({ close }: { close: () => void }) {
+function NewRecurringForm({
+  close,
+  defaultSourceKey = '',
+  defaultCategoryId,
+}: {
+  close: () => void
+  defaultSourceKey?: string
+  defaultCategoryId?: string
+}) {
   const { sources } = useSources()
   const settings = useSettings()
-  const categories = useCategories('expense')
+  // A prefilled cost needs its system category, which the picker hides by default.
+  const categories = useCategories('expense', Boolean(defaultCategoryId))
   const counterparties = useCounterparties()
   const create = useCreateRecurringExpense()
-  const [sourceKey, setSourceKey] = useState('')
+  const [sourceKey, setSourceKey] = useState(defaultSourceKey)
   const [currency, setCurrency] = useState('')
 
   const source = findSource(sources, sourceKey)
   const isCreditCard = source?.cardKind === 'credit'
   const chargeCurrency = currency || source?.currency || ''
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!source) return
     const form = new FormData(event.currentTarget)
@@ -57,90 +81,107 @@ function NewRecurringForm({ close }: { close: () => void }) {
         frequency: String(form.get('frequency')) as NewRecurringExpense['frequency'],
         startsOn: String(form.get('startsOn')),
       },
-      { onSuccess: close },
+      {
+        onSuccess: () => {
+          close()
+          toast.success(m.toast_recurring_created())
+        },
+      },
     )
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4">
-      <Field id="recurring-name" label={m.label_name()}>
-        <Input id="recurring-name" name="name" required maxLength={80} autoFocus />
-      </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field id="recurring-amount" label={m.label_amount()}>
-          <Input
-            id="recurring-amount"
-            name="amount"
-            type="number"
-            step="0.01"
-            min="0.01"
-            inputMode="decimal"
-            required
-            className="tabular-nums"
-          />
+    <form onSubmit={submit}>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="recurring-name">{m.label_name()}</FieldLabel>
+          <Input id="recurring-name" name="name" required maxLength={80} autoFocus />
         </Field>
-        <Field id="recurring-frequency" label={m.label_frequency()}>
-          <NativeSelect id="recurring-frequency" name="frequency" defaultValue="monthly">
-            {frequencies.map((frequency) => (
-              <option key={frequency.value} value={frequency.value}>
-                {frequency.label()}
+        <div className="grid grid-cols-2 gap-3">
+          <Field>
+            <FieldLabel htmlFor="recurring-amount">{m.label_amount()}</FieldLabel>
+            <Input
+              id="recurring-amount"
+              name="amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              inputMode="decimal"
+              required
+              className="tabular-nums"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="recurring-frequency">{m.label_frequency()}</FieldLabel>
+            <NativeSelect id="recurring-frequency" name="frequency" defaultValue="monthly">
+              {frequencies.map((frequency) => (
+                <option key={frequency.value} value={frequency.value}>
+                  {frequency.label()}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        </div>
+        <SourceSelect
+          id="recurring-source"
+          label={m.label_source()}
+          options={sources}
+          value={sourceKey}
+          onChange={(key) => {
+            setSourceKey(key)
+            setCurrency('')
+          }}
+        />
+        {isCreditCard && (
+          <Field>
+            <FieldLabel htmlFor="recurring-currency">{m.label_currency()}</FieldLabel>
+            <NativeSelect id="recurring-currency" value={chargeCurrency} onChange={(event) => setCurrency(event.target.value)}>
+              {(settings.data?.currencies ?? [source!.currency]).map((code) => (
+                <option key={code} value={code}>
+                  {code}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        )}
+        <Field>
+          <FieldLabel htmlFor="recurring-category">{m.label_category()}</FieldLabel>
+          <NativeSelect id="recurring-category" name="categoryId" defaultValue={defaultCategoryId} required>
+            {(categories.data ?? [])
+              .filter((category) => !category.system || category.id === defaultCategoryId)
+              .map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+          </NativeSelect>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="recurring-counterparty">{`${m.label_contact()} (${m.label_optional()})`}</FieldLabel>
+          <NativeSelect id="recurring-counterparty" name="counterpartyId" defaultValue="">
+            <option value="" />
+            {(counterparties.data ?? []).map((contact) => (
+              <option key={contact.id} value={contact.id}>
+                {contact.name}
               </option>
             ))}
           </NativeSelect>
         </Field>
-      </div>
-      <SourceSelect
-        id="recurring-source"
-        label={m.label_source()}
-        options={sources}
-        value={sourceKey}
-        onChange={(key) => {
-          setSourceKey(key)
-          setCurrency('')
-        }}
-      />
-      {isCreditCard && (
-        <Field id="recurring-currency" label={m.label_currency()}>
-          <NativeSelect id="recurring-currency" value={chargeCurrency} onChange={(event) => setCurrency(event.target.value)}>
-            {(settings.data?.currencies ?? [source!.currency]).map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </NativeSelect>
+        <Field>
+          <FieldLabel htmlFor="recurring-starts-on">{m.label_date()}</FieldLabel>
+          <Input id="recurring-starts-on" name="startsOn" type="date" defaultValue={today()} required />
         </Field>
-      )}
-      <Field id="recurring-category" label={m.label_category()}>
-        <NativeSelect id="recurring-category" name="categoryId" required>
-          {(categories.data ?? []).map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </NativeSelect>
-      </Field>
-      <Field id="recurring-counterparty" label={`${m.label_contact()} (${m.label_optional()})`}>
-        <NativeSelect id="recurring-counterparty" name="counterpartyId" defaultValue="">
-          <option value="" />
-          {(counterparties.data ?? []).map((contact) => (
-            <option key={contact.id} value={contact.id}>
-              {contact.name}
-            </option>
-          ))}
-        </NativeSelect>
-      </Field>
-      <Field id="recurring-starts-on" label={m.label_date()}>
-        <Input id="recurring-starts-on" name="startsOn" type="date" defaultValue={today()} required />
-      </Field>
-      <FormError message={create.error?.message} />
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={close}>
-          {m.action_cancel()}
-        </Button>
-        <Button type="submit" disabled={create.isPending || !sourceKey}>
-          {m.action_create()}
-        </Button>
-      </div>
+        <FieldError>{create.error?.message}</FieldError>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={close}>
+            {m.action_cancel()}
+          </Button>
+          <Button type="submit" disabled={create.isPending || !sourceKey}>
+            {create.isPending && <Spinner data-icon="inline-start" />}
+            {m.action_create()}
+          </Button>
+        </div>
+      </FieldGroup>
     </form>
   )
 }
@@ -162,7 +203,8 @@ function PendingItem({ id, name, amount, currency, nextDueOn }: { id: string; na
         </p>
       </div>
       <div className="flex items-end gap-2">
-        <Field id={`confirm-amount-${id}`} label={m.label_amount()} className="w-36">
+        <Field className="w-36">
+          <FieldLabel htmlFor={`confirm-amount-${id}`}>{m.label_amount()}</FieldLabel>
           <Input
             id={`confirm-amount-${id}`}
             type="number"
@@ -178,9 +220,13 @@ function PendingItem({ id, name, amount, currency, nextDueOn }: { id: string; na
           disabled={confirm.isPending}
           onClick={() => {
             const input = document.getElementById(`confirm-amount-${id}`) as HTMLInputElement | null
-            confirm.mutate({ id, amount: input ? Number(input.value) : amount })
+            confirm.mutate(
+              { id, amount: input ? Number(input.value) : amount },
+              { onSuccess: () => toast.success(m.toast_recurring_confirmed()) },
+            )
           }}
         >
+          {confirm.isPending && <Spinner data-icon="inline-start" />}
           {m.action_confirm()}
         </Button>
         <Button variant="ghost" disabled={skip.isPending} onClick={() => skip.mutate(id)}>
@@ -237,7 +283,12 @@ export function RecurringPage() {
             {all.error.message}
           </p>
         ) : all.data.length === 0 ? (
-          <EmptyState title={m.recurring_empty()} description={m.recurring_empty_description()} />
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>{m.recurring_empty()}</EmptyTitle>
+              <EmptyDescription>{m.recurring_empty_description()}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <ul className={rowsClass}>
             {all.data.map((item) => (
@@ -258,9 +309,25 @@ export function RecurringPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-medium text-ink tabular-nums">{formatMoney(item.amount, item.currency)}</span>
-                  <Button variant="ghost" size="sm" disabled={remove.isPending} onClick={() => remove.mutate(item.id)}>
-                    {m.action_delete()}
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" disabled={remove.isPending}>
+                        {m.action_delete()}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{m.recurring_delete_title()}</AlertDialogTitle>
+                        <AlertDialogDescription>{m.recurring_delete_description()}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{m.action_cancel()}</AlertDialogCancel>
+                        <AlertDialogAction variant="destructive" onClick={() => remove.mutate(item.id)}>
+                          {m.action_delete()}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </li>
             ))}
@@ -278,5 +345,64 @@ function confirmOrSkipError(...errors: (Error | null)[]) {
     <p role="alert" className="text-sm text-destructive">
       {error.message}
     </p>
+  )
+}
+
+/**
+ * The costs of one source, for its detail page: the recurring expenses paid with it, and the same
+ * new-recurring form prefilled with the source and the system bank-fees category.
+ */
+export function SourceCosts({ sourceRef, index }: { sourceRef: SourceRef; index: string }) {
+  const all = useRecurringExpenses(false)
+  const categories = useCategories('expense', true)
+  // shortcut: the categories API hides the system key, so bank fees are matched by their
+  // localized name; upgrade when list_categories returns systemKey.
+  const bankFees = (categories.data ?? []).find((category) => category.name === m.category_bank_fees())
+  const costs = (all.data ?? []).filter(
+    (item) => item.source.type === sourceRef.type && item.source.id === sourceRef.id,
+  )
+
+  return (
+    <Section
+      index={index}
+      label={m.source_costs()}
+      action={
+        <DialogPanel trigger={<Button variant="link">{m.source_cost_add()}</Button>} title={m.source_cost_add()}>
+          {(close) => (
+            <NewRecurringForm close={close} defaultSourceKey={sourceKey(sourceRef)} defaultCategoryId={bankFees?.id} />
+          )}
+        </DialogPanel>
+      }
+    >
+      {all.isPending ? (
+        <ListSkeleton rows={2} />
+      ) : all.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {all.error.message}
+        </p>
+      ) : costs.length === 0 ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{m.source_costs_empty()}</EmptyTitle>
+            <EmptyDescription>{m.source_costs_empty_description()}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <ul className={rowsClass}>
+          {costs.map((cost) => (
+            <li key={cost.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
+              <p className="flex flex-wrap items-center gap-2 text-ink">
+                {cost.name}
+                <Badge variant="secondary">
+                  {frequencies.find((frequency) => frequency.value === cost.frequency)?.label() ?? cost.frequency}
+                </Badge>
+                {!cost.active && <Badge variant="outline">{m.label_inactive()}</Badge>}
+              </p>
+              <span className="font-medium text-ink tabular-nums">{formatMoney(cost.amount, cost.currency)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
   )
 }
