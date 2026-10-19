@@ -15,6 +15,8 @@ Always use the skill ponytail
 
 The domain model, its invariants, and the implementation order are in [docs/plans/2026-10-18-finance-domain-design.md](./docs/plans/2026-10-18-finance-domain-design.md). Every domain noun used in code is defined in [GLOSSARY.md](./GLOSSARY.md). UI rules live in [DESIGN.md](./DESIGN.md).
 
+Writing code, adding a feature, adding a user-facing string, or a commit refused by the size hook: read [CODING_STANDARDS.md](./CODING_STANDARDS.md).
+
 ## Map
 
 | Path | What | Stack |
@@ -82,61 +84,11 @@ Anything two features need that is not a domain noun moves to `shared/`. `shared
 
 Two modules exist specifically so the rules live in one place: `accounts/source.ts` (where money is, ownership checks, currency, the three-nullable-FK shape) and `balances/compute-balances.ts` (every balance, debt, cost basis and in-transit rule). Add a feature on top of them instead of re-deriving the rules.
 
-### Adding a feature (API)
+## Invariants
 
-1. Create `src/features/<feature>/` with `<entity>.schema.ts`, one file per use case, `<feature>.routes.ts`, and `<feature>.tools.ts`.
-2. Register the schema in `src/db.ts`, the routes in `src/index.ts` (`.route('/api/<feature>', ...)`), and the tools in `src/features/mcp/mcp.routes.ts`.
-3. Run `pnpm --filter @dqfinance/api db:generate`, then `db:migrate:local`. Commit the generated SQL in `migrations/`.
-4. Add message keys for new error codes to both catalogs and to `ERROR_CODES` in `shared/http.ts`.
-
-### Adding a feature (web)
-
-1. Create `src/features/<feature>/` with `<feature>-api.ts` (TanStack Query options and hooks over `shared/api`) and its components.
-2. Add a route file under `src/routes/_app/` that only composes the feature page component.
-3. Shared primitives come from `#/shared/ui`. Add new ones with `pnpm dlx shadcn@latest add <name>`, run from `apps/web`.
-
-## Naming
-
-- Files and folders: `kebab-case`. Suffixes state the role: `.schema.ts`, `.routes.ts`, `.tools.ts`, `.test.ts`, `-api.ts`, `-page.tsx`, `-dialog.tsx`.
-- Use case files and functions are verb-first: `create-transaction.ts` → `createTransaction`.
-- Zod input schemas are named `<useCase>Input` (`createTransactionInput`). Inferred types use PascalCase (`CreateTransactionInput`).
-- React components: `PascalCase` exports in `kebab-case` files (`transaction-form.tsx` → `TransactionForm`).
-- Database: tables singular `snake_case` (`transaction`), columns `snake_case`, Drizzle fields `camelCase`.
-- MCP tools: `snake_case` verbs (`create_transaction`).
-
-## TypeScript and quality
-
-- No `any` except in the documented shim `apps/web/src/shared/api-globals.d.ts`.
-- Validate every external input with zod at the boundary: HTTP bodies and query strings, MCP tool arguments, and env-dependent config.
 - **Money:** amounts are stored as integer cents (`amount_cents`), always positive; `type` carries the sign. Use `toCents` and `fromCents` from `apps/api/src/shared/money.ts` (web: `shared/money.ts` for display). ISO minor units are not used, because ICU reports 0 digits for COP.
 - **Ownership:** every query on user data filters by `userId`. The `userId` comes from the session (`requireSession`) or from the token's `sub` claim (MCP). It never comes from client input. Tables take their owner column from `features/auth/owner.ts`.
 - **Balances are computed, never stored** (design D1). "Editing" a balance inserts a `balance_adjustment` (D2). Transfers and adjustments are not income or expense (D3).
-- New non-trivial logic (money, FX, dates, ownership, branching) ships with a small `node:test` test next to it (`*.test.ts`, run with `pnpm test`). Pure rules are separate files from the database work so they are testable without D1.
-- Errors: use cases throw `AppError(code, status)`; `onError` renders `{ code, message }` with the message translated. Never build an error response by hand.
-- Before you finish: `pnpm check-types && pnpm test && pnpm build` from the root must pass.
-- Keep `"ui": "stream"` in `turbo.json`. Under the TUI on Windows (ConPTY), `wrangler dev` starts but its worker stops answering every request.
-- Do not disable caching by hand: `packages/i18n` generates `src/paraglide/` during `build`, and `check-types`/`dev`/`test` depend on `^build` so it always exists first.
-- Generated files are not edited by hand: `features/auth/auth.schema.ts` (`pnpm --filter @dqfinance/api auth:schema`), `migrations/` (`db:generate`), `worker-configuration.d.ts` (`cf-typegen`), `routeTree.gen.ts`, `packages/i18n/src/paraglide/`.
-
-## Pre-commit: file size
-
-`.githooks/pre-commit` refuses a commit when a staged file exceeds **5,000 tokens** (1 token = 4 bytes, so 20,000 bytes). Two things to know:
-
-- It measures the **staged blob**, not the working tree, so a partially staged file is judged on what will actually be committed.
-- It skips what no agent authors: lockfiles, codegen (`routeTree.gen.ts`, `worker-configuration.d.ts`, `auth.schema.ts`, `migrations/`, `paraglide/`), installed skills under `.agents/skills/`, build output, binaries and media. The list is `IGNORED` in `scripts/check-file-size.mjs`; add a pattern there when a new generator appears.
-
-After cloning without installing: `git config core.hooksPath .githooks`. On Linux and macOS the hook needs its exec bit, so add it with `git add --chmod=+x .githooks/pre-commit`.
-
-## Internationalization
-
-- One catalog for both apps: `packages/i18n/messages/{en,es}.json`. Add every user-facing string to **both** files. Never write UI or error text as a literal.
-- Server code passes the locale explicitly: `m.key({}, { locale })`. There is no per-request global state.
-- API locale per request: `Accept-Language` (the web client always sends its current locale) from `shared/locale.ts`; MCP uses the user's saved `locale`.
-- API errors are `{ code, message }`: `code` is stable and safe to branch on, `message` is already translated.
-- Categories: user categories store their name; system categories (`fx_loss`, `fx_gain`, `bank_fees`) store only a key and are translated on every read. Default categories are created in the language the user picked at onboarding.
-- MCP tool descriptions are English (models handle it best); the data they return is the user's own.
-- Money and dates are formatted with `Intl` in the current locale, and only through `shared/money.ts` / `shared/dates.ts`.
-- Switching language: `LocaleSwitch` in `features/auth`. Signed-in users persist the choice through `PATCH /api/settings`, because the signed-in shell applies the saved preference on load.
 
 ## How the MCP server is wired
 
@@ -163,3 +115,12 @@ apps/api  /mcp
 - Read-only tools carry `metadata.annotations.readOnlyHint`. Tools that return a list wrap it in an object, so the response is a JSON object with `structuredContent`.
 - **Workers gotcha:** `createAuth` runs per request. Do not cache the auth instance at module scope. Better Auth starts D1 I/O on init, and a Worker hangs when a request awaits I/O that belongs to another request.
 - **Shortcut:** DCR is enabled because `@better-auth/cimd` ships only a Node transport. Switch to `cimd()` once there is a Workers-safe `fetchClientMetadataResource`.
+
+## Turborepo
+
+- Keep `"ui": "stream"` in `turbo.json`. Under the TUI on Windows (ConPTY), `wrangler dev` starts but its worker stops answering every request.
+- Leave task caching as configured: `packages/i18n` generates `src/paraglide/` during `build`, and `check-types`/`dev`/`test` depend on `^build` so it always exists first.
+
+## Before you finish
+
+`pnpm check-types && pnpm test && pnpm build` from the root must pass.
