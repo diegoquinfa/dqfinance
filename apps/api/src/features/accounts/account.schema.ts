@@ -4,6 +4,11 @@ import { cents, createdAt, id } from '../../shared/schema-columns'
 
 export const PRODUCT_TYPES = ['savings', 'checking', 'payroll', 'investment', 'other'] as const
 export const CARD_KINDS = ['debit', 'credit'] as const
+export const CARD_BRANDS = ['visa', 'mastercard', 'amex', 'diners', 'other'] as const
+/** How a card states its interest: `monthly` (MV) or `annual` (EA). */
+export const INTEREST_RATE_PERIODS = ['monthly', 'annual'] as const
+/** Presentation only: the UI maps a name to a token. */
+export const CARD_COLORS = ['ink', 'signal', 'sand', 'moss', 'clay', 'ocean'] as const
 
 export const bank = sqliteTable('bank', {
   id: id(),
@@ -38,6 +43,8 @@ export const product = sqliteTable(
     type: text('type', { enum: PRODUCT_TYPES }).notNull(),
     name: text('name').notNull(),
     currency: text('currency').notNull(),
+    // Effective annual rate (E.A.) in basis points. Feeds an estimate only: it never changes a balance.
+    annualRateBps: integer('annual_rate_bps'),
     createdAt: createdAt(),
   },
   (table) => [index('product_bank_account_idx').on(table.bankAccountId)],
@@ -66,6 +73,11 @@ export const card = sqliteTable(
     creditLimitCents: cents('credit_limit_cents'),
     statementDay: integer('statement_day'),
     dueDay: integer('due_day'),
+    brand: text('brand', { enum: CARD_BRANDS }),
+    // The rate the issuer charges, with the period it is stated in (MV / EA). Presentation only.
+    interestRateBps: integer('interest_rate_bps'),
+    interestRatePeriod: text('interest_rate_period', { enum: INTEREST_RATE_PERIODS }),
+    color: text('color', { enum: CARD_COLORS }),
     createdAt: createdAt(),
   },
   (table) => [index('card_product_idx').on(table.productId)],
