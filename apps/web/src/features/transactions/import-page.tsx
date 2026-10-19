@@ -236,23 +236,25 @@ export function ImportPage() {
                 <TableRow>
                   <TableHead>{m.label_date()}</TableHead>
                   <TableHead>{m.label_description()}</TableHead>
-                  <TableHead>{m.label_category()}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{m.label_category()}</TableHead>
                   <TableHead className="text-right">{m.label_amount()}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {previewRows.map((row, index) => (
                   <TableRow key={index} className={row.duplicate ? 'text-muted-foreground' : undefined}>
-                    <TableCell className="label-mono tabular-nums">
+                    <TableCell className="label-mono whitespace-nowrap tabular-nums">
                       <time dateTime={row.occurredAt}>{formatDay(row.occurredAt.slice(0, 10))}</time>
                     </TableCell>
                     <TableCell className="text-ink">
                       <span className="flex flex-wrap items-center gap-2">
                         {row.description || row.categoryName}
                         {row.duplicate && <Badge variant="outline">{m.import_duplicate()}</Badge>}
+                        {/* The category column drops below sm so four columns fit a phone. */}
+                        <span className="label-mono text-muted-foreground sm:hidden">{row.categoryName}</span>
                       </span>
                     </TableCell>
-                    <TableCell className="label-mono text-muted-foreground">{row.categoryName}</TableCell>
+                    <TableCell className="hidden label-mono text-muted-foreground sm:table-cell">{row.categoryName}</TableCell>
                     <TableCell
                       className={
                         row.type === 'income'

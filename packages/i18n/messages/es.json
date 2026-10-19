@@ -332,7 +332,7 @@
   "source_cost_add": "Agregar costo",
   "source_costs_empty": "Aún no hay costos",
   "source_costs_empty_description": "Un costo es un cobro recurrente de esta cuenta: una cuota de manejo, una comisión o un cobro de la tarjeta. Agrégalo aquí para que la app te avise cuando toca pagarlo.",
-  "source_recent_empty": "Aún no hay movimientos. Registra uno o pídeselo a tu asistente de IA.",
+  "source_recent_empty": "Registra uno o pídeselo a tu asistente de IA.",
   "source_open": "Abrir {name}",
   "source_yield": "Rendimiento",
   "source_yield_rate_label": "Tasa anual (E.A.)",
