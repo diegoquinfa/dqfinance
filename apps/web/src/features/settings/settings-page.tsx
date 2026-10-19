@@ -23,9 +23,7 @@ function NewCategoryForm({ close }: { close: () => void }) {
   const create = useCreateCategory()
   return (
     <form
-      onSubmit={(event) => {
-        event.preventDefault()
-        const form = new FormData(event.currentTarget)
+      action={(form) => {
         create.mutate(
           { name: String(form.get('name')), kind },
           {

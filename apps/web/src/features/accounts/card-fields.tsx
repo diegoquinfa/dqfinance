@@ -38,11 +38,15 @@ export function CardDetailsFields({
   idPrefix,
   kind,
   card = empty,
+  onPreview,
 }: {
   idPrefix: string
   kind: 'debit' | 'credit'
   card?: CardDetails
+  /** The page around it draws a live card face, so the brand and color it holds are reported up. */
+  onPreview?: (details: { brand: CardBrand | null; color: CardColor }) => void
 }) {
+  const [brand, setBrand] = useState<CardBrand | ''>(card.brand ?? '')
   const [period, setPeriod] = useState<Period>(card.interestRatePeriod ?? 'monthly')
   const [color, setColor] = useState<CardColor>(card.color ?? 'ink')
   const isCredit = kind === 'credit'
@@ -51,7 +55,16 @@ export function CardDetailsFields({
     <>
       <Field>
         <FieldLabel htmlFor={`${idPrefix}-brand`}>{m.card_brand()}</FieldLabel>
-        <NativeSelect id={`${idPrefix}-brand`} name="brand" defaultValue={card.brand ?? ''}>
+        <NativeSelect
+          id={`${idPrefix}-brand`}
+          name="brand"
+          value={brand}
+          onChange={(event) => {
+            const next = event.target.value as CardBrand | ''
+            setBrand(next)
+            onPreview?.({ brand: next || null, color })
+          }}
+        >
           <option value="">{m.label_none()}</option>
           {cardBrands.map((brand) => (
             <option key={brand} value={brand}>
@@ -99,7 +112,11 @@ export function CardDetailsFields({
           className="w-fit border-0"
           aria-labelledby={`${idPrefix}-color`}
           value={color}
-          onValueChange={(value) => setColor(value as CardColor)}
+          onValueChange={(value) => {
+            const next = value as CardColor
+            setColor(next)
+            onPreview?.({ brand: brand || null, color: next })
+          }}
         >
           {cardColors.map((name) => (
             <ToggleGroupItem
