@@ -2,6 +2,7 @@ import { toolDefinition } from '@tanstack/ai'
 import type { McpContext } from '../mcp/mcp-context'
 import { sendPush } from '../push/send-push'
 import { createTransaction, createTransactionInput } from './create-transaction'
+import { importTransactions, importTransactionsInput } from './import-transactions'
 import { listTransactions, listTransactionsInput } from './list-transactions'
 import { summarizeTransactions, summarizeTransactionsInput } from './summarize-transactions'
 
@@ -16,6 +17,19 @@ export const transactionTools = [
     const created = await createTransaction(ctx.context.db, ctx.context.userId, input)
     await sendPush(ctx.context.db, ctx.context.userId, ctx.context.locale, ctx.context.push, created.type)
     return created
+  }),
+
+  toolDefinition({
+    name: 'import_transactions',
+    description:
+      "Record many movements of one source from a bank statement or card statement. Parse the PDF, screenshot or video yourself and send one row per movement with its type, amount, date (YYYY-MM-DD) and description; leave categoryId out when you cannot tell the category. Rows that look like a movement already recorded there (same source, type, amount, calendar day and description) are skipped. Call it with dryRun true first, show the user the preview of what would be created and skipped, and call it again with dryRun false only after they agree.",
+    inputSchema: importTransactionsInput,
+  }).server<McpContext>(async (input, ctx) => {
+    const imported = await importTransactions(ctx.context.db, ctx.context.userId, ctx.context.locale, input)
+    if (imported.created > 0) {
+      await sendPush(ctx.context.db, ctx.context.userId, ctx.context.locale, ctx.context.push, 'import')
+    }
+    return imported
   }),
 
   toolDefinition({

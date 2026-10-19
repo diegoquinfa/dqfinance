@@ -12,7 +12,7 @@ test('income and expense notifications name the movement', () => {
 })
 
 test('every write kind has its own localized title and the shared body', () => {
-  const kinds: PushKind[] = ['income', 'expense', 'transfer', 'transfer_received', 'balance_adjustment']
+  const kinds: PushKind[] = ['income', 'expense', 'transfer', 'transfer_received', 'balance_adjustment', 'import']
   for (const locale of ['en', 'es'] as const) {
     const copies = kinds.map((kind) => pushCopy(kind, locale))
     assert.equal(new Set(copies.map((copy) => copy.title)).size, kinds.length, `${locale} titles differ`)
@@ -21,4 +21,6 @@ test('every write kind has its own localized title and the shared body', () => {
   assert.match(pushCopy('transfer', 'es').title, /transferencia/)
   assert.match(pushCopy('transfer_received', 'en').title, /received/i)
   assert.match(pushCopy('balance_adjustment', 'en').title, /balance/i)
+  assert.match(pushCopy('import', 'en').title, /import/i)
+  assert.match(pushCopy('import', 'es').title, /importa/i)
 })

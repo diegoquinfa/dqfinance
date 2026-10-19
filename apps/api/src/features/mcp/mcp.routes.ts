@@ -8,6 +8,7 @@ import { balanceAdjustmentTools } from '../balance-adjustments/balance-adjustmen
 import { balanceTools } from '../balances/balances.tools'
 import { categoryTools } from '../categories/categories.tools'
 import { counterpartyTools } from '../counterparties/counterparties.tools'
+import { documentTools } from '../documents/documents.tools'
 import { recurringExpenseTools } from '../recurring-expenses/recurring-expenses.tools'
 import { pushConfigFrom } from '../push/push-config'
 import { getSettings } from '../settings/get-settings'
@@ -27,6 +28,7 @@ const mcpServer = createMCPServer({
     ...transferTools,
     ...balanceAdjustmentTools,
     ...recurringExpenseTools,
+    ...documentTools,
   ],
 })
 
