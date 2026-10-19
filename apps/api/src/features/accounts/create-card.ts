@@ -1,9 +1,10 @@
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
-import { found } from '../../shared/http'
+import { AppError, found } from '../../shared/http'
 import { moneyAmount, toCents } from '../../shared/money'
 import { CARD_BRANDS, CARD_COLORS, CARD_KINDS, INTEREST_RATE_PERIODS, card, product } from './account.schema'
+import { cardProductError } from './pocket-rules'
 import { rateBps } from './rate-bps'
 
 const dayOfMonth = z.number().int().min(1).max(31)
@@ -34,14 +35,16 @@ export const createCardInput = z.object({
 })
 
 export async function createCard(db: Db, userId: string, input: z.infer<typeof createCardInput>) {
-  found(
+  const owner = found(
     await db
-      .select({ id: product.id })
+      .select({ id: product.id, type: product.type })
       .from(product)
       .where(and(eq(product.id, input.productId), eq(product.userId, userId)))
       .get(),
     'product_not_found',
   )
+  const error = cardProductError(owner.type)
+  if (error) throw new AppError(error, 400)
   const isCredit = input.kind === 'credit'
   const [row] = await db
     .insert(card)
