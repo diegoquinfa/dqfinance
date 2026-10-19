@@ -6,7 +6,7 @@ import { formatMoney } from '#/shared/money'
 import { periodRange, type Period } from '#/shared/periods'
 import { Button } from '#/shared/ui/button'
 import { rowsClass } from '#/shared/ui/page'
-import { Segmented } from '#/shared/ui/segmented'
+import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { totalsIn } from './totals'
 
 /** Spent and received (and net) in one currency for the given filters. Totals come from the API. */
@@ -84,19 +84,19 @@ export function CalendarPeriod({ currency }: { currency: string }) {
   return (
     <div className="grid gap-5">
       <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-6">
-        <Segmented
-          name={m.period_label()}
+        <ToggleGroup
+          type="single"
+          aria-label={m.period_label()}
           value={period}
-          onChange={(value) => {
-            setPeriod(value)
+          onValueChange={(value) => {
+            setPeriod(value as Period)
             setOffset(0)
           }}
-          options={[
-            { value: 'week', label: m.period_week() },
-            { value: 'month', label: m.period_month() },
-            { value: 'year', label: m.period_year() },
-          ]}
-        />
+        >
+          <ToggleGroupItem value="week">{m.period_week()}</ToggleGroupItem>
+          <ToggleGroupItem value="month">{m.period_month()}</ToggleGroupItem>
+          <ToggleGroupItem value="year">{m.period_year()}</ToggleGroupItem>
+        </ToggleGroup>
         <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" size="icon-sm" aria-label={m.period_previous()} onClick={() => setOffset(offset - 1)}>
             <ChevronLeft aria-hidden />

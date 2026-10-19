@@ -77,17 +77,32 @@ The scale is `@utility type-*`, not `--text-*` theme sizes: `cn` (tailwind-merge
 
 ## Components
 
-`shared/ui` holds shadcn/ui primitives restyled with the tokens. Add more with `pnpm dlx shadcn@latest add <name>` from `apps/web`, then strip radius, shadows and `outline-none`.
+`shared/ui` holds shadcn/ui primitives restyled with the tokens. Add more with `pnpm dlx shadcn@latest add <name>` from `apps/web`, then run the checklist below.
+
+Checklist for every added component:
+
+- No `rounded-*`; `rounded-full` only for dots.
+- No `shadow-*`.
+- No `ring-*` focus styles and no `outline-none`: focus is the global 1px `signal` outline with a 4px offset (`styles.css`) plus the amount field's bottom line.
+- Colors only by token: `ink`, `soft`, `muted-foreground`, `faint`, `canvas`, `raised`, `surface`, `line`, `line-strong`, `signal`, `income`, `destructive`.
+- Labels use `label-mono`; weights stay 400 or 500.
+- Lists stay hairline rows (`rowsClass`), not a box per item.
+- Every string comes from `packages/i18n`, both catalogs; hyphens, never em or en dashes.
 
 | Component | Notes |
 | --- | --- |
 | `Button` | `default`: `ink` on `canvas`, hover `signal`, one per view at most (the top bar or the "+" holds it). `outline`: page actions ("New contact", "Adjust balance", Confirm). `ghost`: icon buttons, Cancel, Skip. `link`: inline text with a drawn underline, for actions inside a section rail; it takes no box size. |
 | `Input`, `NativeSelect` | Filled `surface`, square, 44px, 16px text (no iOS zoom). Border appears on hover/focus. |
-| `Label`, `Field` | Mono label above, control, hint or error below. |
-| `Segmented` | Square mono chips with a hairline frame; the chosen one is inverted (`bg-ink text-canvas`). Expense/income, periods, filters. |
+| `Label`, `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldGroup` | Forms are `FieldGroup` + `Field`: mono label above, control, description or error below. Validation sets `data-invalid` on the field and `aria-invalid` on the control; errors are `role="alert"`. |
+| `ToggleGroup` | Square mono chips with a hairline frame; the chosen one is inverted (`bg-ink text-canvas`). Expense/income, periods, filters. A single-select group never empties: the empty value of a second click is dropped. |
 | `Badge` | Mono tag with a hairline border: product type, currency, in transit. |
 | `Card` | Only for raised surfaces: the auth and consent panels. |
-| `DialogPanel` | Bottom sheet on mobile, centered square panel from `sm`. Overlay `canvas` at 90 %, no blur. |
+| `Dialog`, `DialogPanel`, `AlertDialog` | Bottom sheet on mobile, centered square panel from `sm`. Overlay `canvas` at 90 %, no blur. `AlertDialog` confirms what runs immediately, like deleting a recurring expense. |
+| `Empty` | Empty states, left aligned, hairlines above and below, with an optional action. |
+| `Skeleton`, `ListSkeleton` | Loading states shaped like what they replace: `Skeleton` is a bare `surface` block, `ListSkeleton` is hairline rows. |
+| `Spinner` | Only inside a pending button, next to its text; the button also gets `disabled`. |
+| `Separator` | A lone divider line, where a `border-t` used to be. List rows keep `divide-y` through `rowsClass`. |
+| `Toaster` (sonner) | Mounted once in the root route. A successful create confirms with `toast.success(...)`; never for reads. |
 | `PageHeader`, `Section`, `Eyebrow`, `FocusLayout` | `shared/ui/page.tsx`: the page h1, the rail sections, the `// 0X` label, and the signed-out layout (two-tone statement + panel). |
 | `TransactionRow` | `features/transactions`: description in `ink`, mono metadata (`date / source / category`), the signed amount on the right. Every movement list uses it. |
 
