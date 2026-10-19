@@ -6,13 +6,13 @@ import { currenciesByLabel, currencyLabel } from '#/shared/currencies'
 import { m } from '#/shared/i18n'
 import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '#/shared/ui/card'
+import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FormError, ListSkeleton } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { NativeSelect } from '#/shared/ui/native-select'
 import { Segmented } from '#/shared/ui/segmented'
-import { PushCard } from './push-card'
+import { PushSection } from './push-section'
 import { useSettings, useUpdateSettings } from './settings-api'
 
 function NewCategoryForm({ close }: { close: () => void }) {
@@ -67,33 +67,24 @@ export function SettingsPage() {
   const others = currencies.filter((code) => code !== primary)
 
   return (
-    <div className="grid gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{m.settings_title()}</h1>
+    <>
+      <PageHeader title={m.settings_title()} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{m.settings_language()}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3">
+      <Section index="01" label={m.settings_language()}>
+        <div className="max-w-md">
           <LocaleSwitch id="settings-language" persist={(locale) => update.mutateAsync({ locale })} />
-        </CardContent>
-      </Card>
+        </div>
+      </Section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{m.settings_currencies()}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="font-normal">
-              {m.label_primary_currency()}
-            </Badge>
-            <span>{currencyLabel(primary)}</span>
-          </div>
-
-          <ul className="grid gap-2">
+      <Section index="02" label={m.settings_currencies()}>
+        <div className="grid max-w-2xl gap-6">
+          <ul className={rowsClass}>
+            <li className="flex items-center justify-between gap-3 py-3">
+              <span className="text-ink">{currencyLabel(primary)}</span>
+              <Badge variant="secondary">{m.label_primary_currency()}</Badge>
+            </li>
             {others.map((code) => (
-              <li key={code} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+              <li key={code} className="flex items-center justify-between gap-3 py-3 text-ink">
                 {currencyLabel(code)}
                 <Button
                   variant="ghost"
@@ -132,62 +123,60 @@ export function SettingsPage() {
           <FormError message={update.error?.message} />
           <div className="flex items-center gap-3">
             <Button
+              variant="outline"
               disabled={draft === null || update.isPending}
               onClick={() => update.mutate({ currencies }, { onSuccess: () => setDraft(null) })}
             >
               {m.settings_save_currencies()}
             </Button>
-            {update.isSuccess && draft === null && <span className="text-sm text-muted-foreground">{m.settings_saved()}</span>}
+            {update.isSuccess && draft === null && <span className="label-mono text-muted-foreground">{m.settings_saved()}</span>}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Section>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-lg">{m.settings_categories()}</CardTitle>
+      <Section
+        index="03"
+        label={m.settings_categories()}
+        action={
           <DialogPanel
-            trigger={<Button variant="outline" size="sm">{m.settings_new_category()}</Button>}
+            trigger={<Button variant="link">{m.settings_new_category()}</Button>}
             title={m.settings_new_category()}
           >
             {(close) => <NewCategoryForm close={close} />}
           </DialogPanel>
-        </CardHeader>
-        <CardContent>
-          {categories.isPending ? (
-            <ListSkeleton rows={3} />
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {(['expense', 'income'] as const).map((kind) => (
-                <div key={kind}>
-                  <p className="mb-2 text-sm font-medium">
-                    {kind === 'expense' ? m.label_expense() : m.label_income()}
-                  </p>
-                  <ul className="grid gap-1 text-sm">
-                    {(categories.data ?? [])
-                      .filter((category) => category.kind === kind)
-                      .map((category) => (
-                        <li key={category.id}>{category.name}</li>
-                      ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        }
+      >
+        {categories.isPending ? (
+          <ListSkeleton rows={3} />
+        ) : (
+          <div className="grid gap-8 sm:grid-cols-2 sm:gap-12">
+            {(['expense', 'income'] as const).map((kind) => (
+              <div key={kind} className="grid content-start gap-3">
+                <p className="label-mono text-muted-foreground">
+                  {kind === 'expense' ? m.label_expense() : m.label_income()}
+                </p>
+                <ul className={rowsClass}>
+                  {(categories.data ?? [])
+                    .filter((category) => category.kind === kind)
+                    .map((category) => (
+                      <li key={category.id} className="py-3 text-ink">
+                        {category.name}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
 
-      <PushCard />
+      <PushSection />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{m.settings_session()}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3">
-          <Button variant="outline" className="w-fit" onClick={() => void authClient.signOut()}>
-            {m.action_sign_out()}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
+      <Section index="05" label={m.settings_session()}>
+        <Button variant="outline" onClick={() => void authClient.signOut()}>
+          {m.action_sign_out()}
+        </Button>
+      </Section>
+    </>
   )
 }

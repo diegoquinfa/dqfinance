@@ -1,57 +1,63 @@
 @import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* Theme follows the OS setting (see DESIGN.md → Dark mode). */
-@custom-variant dark (@media (prefers-color-scheme: dark));
-
-/* Tokens: DESIGN.md is the source of truth. Neutrals are zinc; cobalt is the only accent. */
+/*
+ * Tokens: DESIGN.md is the source of truth. Dark only, near-monochrome, one lilac signal.
+ * shadcn names (background, card, muted...) keep the primitives working; the editorial names
+ * (ink, soft, faint, raised, surface, line, signal) cover what shadcn has no slot for.
+ */
 :root {
-  --background: oklch(0.985 0.002 286);
-  --foreground: oklch(0.21 0.006 286);
-  --card: oklch(1 0 0);
-  --card-foreground: var(--foreground);
-  --popover: oklch(1 0 0);
-  --popover-foreground: var(--foreground);
-  --primary: oklch(0.5 0.17 262);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.955 0.003 286);
-  --secondary-foreground: var(--foreground);
-  --muted: oklch(0.955 0.003 286);
-  --muted-foreground: oklch(0.5 0.014 286);
-  --accent: oklch(0.955 0.003 286);
-  --accent-foreground: var(--foreground);
-  --destructive: oklch(0.55 0.2 27);
-  --border: oklch(0.91 0.004 286);
-  --input: oklch(0.87 0.005 286);
-  --ring: oklch(0.5 0.17 262);
-  --income: oklch(0.52 0.12 158);
-  --expense: var(--foreground);
-  --radius: 0.5rem;
-}
+  --canvas: #0a0a0a;
+  --raised: #111111;
+  --surface: #181818;
+  --ink: #f0f0ec;
+  --soft: #c6c6c0;
+  --muted-ink: #9d9d98;
+  --faint: #5c5c58;
+  --line: #272727;
+  --line-strong: #3a3a3a;
+  --signal: #a78bfa;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.16 0.004 286);
-    --foreground: oklch(0.96 0.002 286);
-    --card: oklch(0.2 0.005 286);
-    --popover: oklch(0.2 0.005 286);
-    --primary: oklch(0.68 0.15 262);
-    --primary-foreground: oklch(0.16 0.004 286);
-    --secondary: oklch(0.26 0.006 286);
-    --muted: oklch(0.26 0.006 286);
-    --muted-foreground: oklch(0.71 0.012 286);
-    --accent: oklch(0.26 0.006 286);
-    --destructive: oklch(0.68 0.19 25);
-    --border: oklch(0.28 0.006 286);
-    --input: oklch(0.34 0.007 286);
-    --ring: oklch(0.68 0.15 262);
-    --income: oklch(0.74 0.14 158);
-  }
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--raised);
+  --card-foreground: var(--ink);
+  --popover: var(--raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--canvas);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface);
+  --muted-foreground: var(--muted-ink);
+  --accent: var(--surface);
+  --accent-foreground: var(--ink);
+  --destructive: #f2726b;
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--signal);
+  --income: #6fd09c;
+  --expense: var(--ink);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @theme inline {
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+
+  --color-canvas: var(--canvas);
+  --color-raised: var(--raised);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-soft: var(--soft);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-signal: var(--signal);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -72,28 +78,104 @@
   --color-ring: var(--ring);
   --color-income: var(--income);
   --color-expense: var(--expense);
-  --radius-sm: calc(var(--radius) - 2px);
-  --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 2px);
-  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Square corners everywhere; rounded-full stays for the status dot. */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+}
+
+/*
+ * Type scale. Scale and tone build the hierarchy; two weights only (400, 500).
+ * Utilities, not --text-* theme sizes: tailwind-merge (`cn`) would read `text-display` as a color
+ * and drop it next to `text-ink`.
+ */
+@utility type-display {
+  font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.75rem);
+  line-height: 0.98;
+  letter-spacing: -0.038em;
+}
+@utility type-title {
+  font-size: clamp(2rem, 1.4rem + 2.6vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.032em;
+}
+@utility type-heading {
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+@utility type-heading-sm {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+/* All the technical voice: labels, eyebrows, dates, metadata. Do not invent other mono sizes. */
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 1360px;
+  margin-inline: auto;
+  padding-inline: 20px;
+  @media (width >= 48rem) {
+    padding-inline: 48px;
+  }
+  @media (width >= 80rem) {
+    padding-inline: 80px;
+  }
+}
+
+/* Underline drawn left to right on hover, kept on the current page. */
+@utility link-draw {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size 600ms var(--ease-out-expo), color 300ms;
+  &:hover,
+  &[aria-current='page'] {
+    background-size: 100% 1px;
+  }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-signal;
   }
-  /* Form controls, scrollbars and selection follow the app theme, not the system one. */
   html {
-    color-scheme: light;
-  }
-  @media (prefers-color-scheme: dark) {
-    html {
-      color-scheme: dark;
-    }
+    color-scheme: dark;
   }
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
+  }
+  :focus-visible {
+    outline: 1px solid var(--signal);
+    outline-offset: 4px;
+  }
+  /* Film grain, 3.5 %. Fixed and inert. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   /*
    * The browser paints the native dropdown list itself, and on Windows it uses the system theme,
@@ -101,7 +183,20 @@
    */
   option,
   optgroup {
-    background-color: var(--card);
-    color: var(--card-foreground);
+    background-color: var(--raised);
+    color: var(--ink);
+  }
+  /* Date pickers: the calendar icon follows the dark scheme but is too bright next to muted text. */
+  ::-webkit-calendar-picker-indicator {
+    opacity: 0.6;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
