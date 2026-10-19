@@ -67,6 +67,8 @@
   "action_allow": "Permitir",
   "action_deny": "Denegar",
   "action_clear": "Limpiar",
+  "action_show_options": "Mostrar opciones",
+  "label_no_results": "Sin resultados",
   "action_adjust": "Ajustar",
   "action_edit": "Editar",
   "label_optional": "opcional",

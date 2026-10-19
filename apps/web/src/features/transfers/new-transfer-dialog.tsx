@@ -8,7 +8,7 @@ import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
 import { useCreateTransfer } from './transfers-api'
@@ -111,17 +111,18 @@ function NewTransferForm({ close }: { close: () => void }) {
         {to?.cardKind === 'credit' && (
           <Field>
             <FieldLabel htmlFor="transfer-debt-currency">{m.label_debt_currency()}</FieldLabel>
-            <NativeSelect
-              id="transfer-debt-currency"
-              value={receivedCurrency}
-              onChange={(event) => setDebtCurrency(event.target.value)}
-            >
-              {(settings.data?.currencies ?? [to.currency]).map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                </option>
-              ))}
-            </NativeSelect>
+            <Select value={receivedCurrency} onValueChange={setDebtCurrency}>
+              <SelectTrigger id="transfer-debt-currency">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(settings.data?.currencies ?? [to.currency]).map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FieldDescription>{m.transfers_debt_currency_hint()}</FieldDescription>
           </Field>
         )}

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { m } from '#/shared/i18n'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { CARD_FACE_COLORS, brandLabel, cardBrands, cardColors, colorLabel, type CardBrand, type CardColor } from './card-face'
 
@@ -55,23 +55,28 @@ export function CardDetailsFields({
     <>
       <Field>
         <FieldLabel htmlFor={`${idPrefix}-brand`}>{m.card_brand()}</FieldLabel>
-        <NativeSelect
-          id={`${idPrefix}-brand`}
+        <Select
           name="brand"
           value={brand}
-          onChange={(event) => {
-            const next = event.target.value as CardBrand | ''
+          onValueChange={(value) => {
+            const next = value as CardBrand | ''
             setBrand(next)
             onPreview?.({ brand: next || null, color })
           }}
         >
-          <option value="">{m.label_none()}</option>
-          {cardBrands.map((brand) => (
-            <option key={brand} value={brand}>
-              {brandLabel(brand)}
-            </option>
-          ))}
-        </NativeSelect>
+          <SelectTrigger id={`${idPrefix}-brand`}>
+            {/* The value "" shows the placeholder, so "None" reads the same chosen or not. */}
+            <SelectValue placeholder={m.label_none()} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">{m.label_none()}</SelectItem>
+            {cardBrands.map((brand) => (
+              <SelectItem key={brand} value={brand}>
+                {brandLabel(brand)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </Field>
 
       {isCredit && (
