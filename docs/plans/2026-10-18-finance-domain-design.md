@@ -148,8 +148,8 @@ A file attached to a source: contract, terms, or fee table. PDF or a common imag
 | `get_balance_history` | Month-end assets and card debt per currency, optionally for one source |
 | `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, brand, interest rate, and color |
 | `list_categories`, `list_contacts`, `create_contact` | Lookups needed to record movements |
-| `create_transaction`, `list_transactions` | Record and query income and expenses |
-| `create_transfer`, `mark_transfer_received` | Move money between the user's own sources |
+| `create_transaction`, `list_transactions`, `summarize_transactions` | Record, query and total income and expenses |
+| `create_transfer`, `list_transfers`, `mark_transfer_received` | Move money between the user's own sources |
 | `adjust_balance` | Set the real balance of a source |
 | `list_pending_recurring`, `confirm_recurring`, `skip_recurring` | Work the "to confirm" inbox |
 | `import_transactions` | Record a whole statement at once, with a dry-run preview and duplicate detection |
