@@ -30,7 +30,7 @@ Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rule
 - `accounts/`: also the adjust-balance dialog and the source picker other forms reuse.
 - `balances/`: the overview and the source detail page (`/accounts/$type/$id`).
 - `documents/`: the file section on the source detail page, which `balances/source-page.tsx` renders. No page of its own, and it imports only the `SourceRef` type from `accounts/`.
-- `counterparties/`: the contacts page.
+- `counterparties/`: the contacts list and the contact detail page (`/contacts/$id`).
 
 `shared/api.ts` is the single Hono RPC client, with `unwrap()`.
 
@@ -45,11 +45,12 @@ categories → settings → accounts → documents → counterparties → transa
 
 `auth/` is a foundation in both apps (the API's `mcp/` and `push/` too), outside the order: any feature may import it.
 
-Three dependencies the order cannot express, the first two long-standing:
+Four dependencies the order cannot express, the first two long-standing:
 
 - **Table definitions point both ways.** A `*.schema.ts` declares foreign keys into another feature's tables, and the queries that read those tables import them the same way: `transactions/transaction.schema.ts` references `recurring-expenses` and `transfers`, and `balances/get-balances.ts` reads the `transfer` and `balance_adjustment` tables. Read these as data references; the order governs each feature's logic.
 - **The web `accounts/` and `balances/` slices reference each other.** `balances/` renders the account rows and the source detail page, and `accounts/sources.ts` reads balances through `balances-api`. Unwinding it means moving the source list and the balance query into `shared/`.
 - **The web `balances/`, `transfers/` and `accounts/` slices reference each other.** `balances/source-page.tsx` opens `transfers/new-transfer-dialog`, which pulls `accounts/sources`, and `accounts/new-pocket-page.tsx` creates a transfer through `transfers/transfers-api` to move money into a pocket, so `balances → transfers → accounts → balances` is a cycle the order cannot express. It is safe because no module runs anything at import time. Nothing else may add edges across the order.
+- **The web `counterparties/` and `transactions/` slices reference each other.** `counterparties/contact-page.tsx` renders the shared movement row and reads the contact list, and `transactions/new-transaction-dialog.tsx` reads the contact list to offer it, so `transactions → counterparties → transactions` is a cycle the order cannot express. It is safe because no module runs anything at import time. Unwinding it means moving `TransactionRow` into `shared/`.
 
 Anything two features need that is not a domain noun moves to `shared/`, and `shared/` imports nothing from `features/`.
 

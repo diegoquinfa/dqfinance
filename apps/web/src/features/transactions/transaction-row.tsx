@@ -4,13 +4,24 @@ import { formatMoney, formatSignedAmount } from '#/shared/money'
 import type { Transaction } from './transactions-api'
 
 /** One movement: what and when on the left, the amount on the right. Used by every movement list. */
-export function TransactionRow({ transaction, showSource = true }: { transaction: Transaction; showSource?: boolean }) {
+export function TransactionRow({
+  transaction,
+  showSource = true,
+  showCounterparty = true,
+}: {
+  transaction: Transaction
+  showSource?: boolean
+  /** Off on a contact's own page, where the name is already the title. */
+  showCounterparty?: boolean
+}) {
   const foreign = transaction.primaryAmount !== null && transaction.primaryCurrency !== null
   return (
     <li className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1 py-4">
       <p className="truncate text-ink">
         {transaction.description || transaction.category.name}
-        {transaction.counterparty && <span className="ml-2 text-sm text-muted-foreground">{transaction.counterparty.name}</span>}
+        {showCounterparty && transaction.counterparty && (
+          <span className="ml-2 text-sm text-muted-foreground">{transaction.counterparty.name}</span>
+        )}
       </p>
       <p
         className={

@@ -18,7 +18,7 @@ import { toast } from 'sonner'
 import { useCreateTransaction, type NewTransaction } from './transactions-api'
 
 /** Content is unmounted when the dialog closes, so this state resets on every open. */
-function NewTransactionForm({ close }: { close: () => void }) {
+function NewTransactionForm({ close, defaultCounterpartyId }: { close: () => void; defaultCounterpartyId?: string }) {
   const [type, setType] = useState<NewTransaction['type']>('expense')
   const [sourceKey, setSourceKey] = useState('')
   const [currency, setCurrency] = useState('')
@@ -179,7 +179,7 @@ function NewTransactionForm({ close }: { close: () => void }) {
 
         <Field>
           <FieldLabel htmlFor="transaction-counterparty">{`${m.label_contact()} (${m.label_optional()})`}</FieldLabel>
-          <Select name="counterpartyId" defaultValue="">
+          <Select name="counterpartyId" defaultValue={defaultCounterpartyId ?? ''}>
             <SelectTrigger id="transaction-counterparty">
               <SelectValue placeholder={m.label_none()} />
             </SelectTrigger>
@@ -214,10 +214,17 @@ function NewTransactionForm({ close }: { close: () => void }) {
   )
 }
 
-export function NewTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
+export function NewTransactionDialog({
+  trigger,
+  defaultCounterpartyId,
+}: {
+  trigger: React.ReactNode
+  /** Preselects the contact, so a movement with someone is one click away. */
+  defaultCounterpartyId?: string
+}) {
   return (
     <DialogPanel trigger={trigger} title={m.transactions_new()}>
-      {(close) => <NewTransactionForm close={close} />}
+      {(close) => <NewTransactionForm close={close} defaultCounterpartyId={defaultCounterpartyId} />}
     </DialogPanel>
   )
 }
