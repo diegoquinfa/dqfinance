@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from 'cn'
-import { CartesianGrid, Line, LineChart, XAxis } from 'recharts'
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { SourceRef } from '#/features/accounts/sources'
 import { currentLocale, m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
@@ -34,6 +34,26 @@ const monthLabel = (at: string) => {
   }
   return format.format(new Date(at))
 }
+
+// "150 mil", "1,2 M": the axis gives the scale, the tooltip gives the exact amount.
+const compactFormats = new Map<string, Intl.NumberFormat>()
+const compactAmount = (amount: number) => {
+  const locale = currentLocale()
+  let format = compactFormats.get(locale)
+  if (!format) {
+    format = new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 })
+    compactFormats.set(locale, format)
+  }
+  return format.format(amount)
+}
+
+const tick = { fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--muted-ink)' }
+
+/** Assets solid in ink, liabilities dashed in muted: the dash tells them apart without relying on tone. */
+const series = {
+  assets: { stroke: 'var(--ink)', dash: undefined },
+  liabilities: { stroke: 'var(--muted-ink)', dash: '4 4' },
+} as const
 
 /**
  * Month-end assets and liabilities (or one source's own balance), as a line chart. The table under it
@@ -71,11 +91,25 @@ export default function BalanceChartGraph({ currency, source, className }: Balan
     assets: { label: source ? m.label_balance() : m.overview_assets() },
     liabilities: { label: m.overview_liabilities() },
   } satisfies ChartConfig
+  const keys = source ? (['assets'] as const) : (['assets', 'liabilities'] as const)
 
   return (
     <div className={cn('grid gap-5', className)}>
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <p className="label-mono text-muted-foreground">{m.history_title()}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <p className="label-mono text-muted-foreground">{m.history_title()}</p>
+          {/* The sr-only table names the series, so the legend is visual only. */}
+          <ul className="flex gap-5" aria-hidden="true">
+            {keys.map((key) => (
+              <li key={key} className="flex items-center gap-2">
+                <svg width="16" height="2" className="shrink-0">
+                  <line x1="0" y1="1" x2="16" y2="1" stroke={series[key].stroke} strokeWidth="2" strokeDasharray={series[key].dash} />
+                </svg>
+                <span className="label-mono text-soft">{config[key].label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
         <ToggleGroup
           type="single"
           size="sm"
@@ -99,38 +133,44 @@ export default function BalanceChartGraph({ currency, source, className }: Balan
         <LineChart
           data={points}
           accessibilityLayer={false}
-          margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
+          margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
         >
           <CartesianGrid vertical={false} stroke="var(--line)" />
-          <XAxis
-            dataKey="label"
+          <YAxis
+            width={56}
+            tickCount={4}
             tickLine={false}
             axisLine={false}
             tickMargin={8}
-            tick={{ fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--muted-ink)' }}
+            tick={tick}
+            tickFormatter={compactAmount}
+          />
+          <XAxis
+            dataKey="label"
+            interval="preserveStartEnd"
+            padding={{ left: 12, right: 12 }}
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            tick={tick}
           />
           <ChartTooltip
-            cursor={false}
-            content={<ChartTooltipContent indicator="line" formatter={(value) => formatMoney(Number(value), currency)} />}
+            cursor={{ stroke: 'var(--line-strong)' }}
+            content={<ChartTooltipContent formatter={(value) => formatMoney(Number(value), currency)} />}
           />
-          <Line
-            dataKey="assets"
-            type="monotone"
-            stroke="var(--ink)"
-            strokeWidth={1.5}
-            dot={false}
-            isAnimationActive={false}
-          />
-          {!source && (
+          {keys.map((key) => (
             <Line
-              dataKey="liabilities"
+              key={key}
+              dataKey={key}
               type="monotone"
-              stroke="var(--muted-ink)"
+              stroke={series[key].stroke}
+              strokeDasharray={series[key].dash}
               strokeWidth={1.5}
               dot={false}
+              activeDot={{ r: 3, fill: series[key].stroke, strokeWidth: 0 }}
               isAnimationActive={false}
             />
-          )}
+          ))}
         </LineChart>
       </ChartContainer>
 
