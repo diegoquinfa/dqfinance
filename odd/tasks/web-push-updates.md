@@ -57,7 +57,7 @@ PRs are not opened until asked. Child 1 targets the tracker; later children targ
 
 - [x] `push-1` Subscription table, session routes, error catalog, env secret names. Route: delegated (multi-file write).
 - [x] `push-2` Send one notification after expense creation, including confirm-recurring once. Route: delegated. Income creates do not notify.
-- [ ] `push-3` Service worker, settings opt-in, query invalidation on `postMessage`. Route: delegated.
+- [x] `push-3` Service worker, settings opt-in, query invalidation on `postMessage`. Route: delegated. Permission is requested only from the settings button.
 
 ## Acceptance
 
@@ -71,8 +71,10 @@ PRs are not opened until asked. Child 1 targets the tracker; later children targ
 
 Tracker `feat/web-push-updates` stays at `main`. Slice 1 is `feat/web-push-updates-01-subscriptions`.
 
-`push-1` commit: `dc3e97af6c4cc9f37cd540be532535f34d8ea24c` `feat(push): store browser push subscriptions`. Checks: writer i18n build, api check-types, api test passed. Parent re-ran api test: 18 pass, 0 fail. `gentle-ai-verify` failed twice before any tool call. Native assess unassessable (untracked files).
+`push-1` commit: `dc3e97af6c4cc9f37cd540be532535f34d8ea24c`.
+
+`push-2` commit: `ba514920dd9b0c6beb56d0266aeb230a2c0b05c9` `feat(push): notify the browser when an expense is recorded`. api test 20 pass. Independent verify passed, with a gap: non-404/410 error responses were silent. Parent logged those in `send-expense-push.ts` and re-ran api test: 20 pass.
 
 ## Next
 
-`push-2` on `feat/web-push-updates-02-send`.
+`push-3` on `feat/web-push-updates-03-web`.
