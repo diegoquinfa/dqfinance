@@ -246,7 +246,7 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
                   <SelectItem value={NEW}>{m.accounts_new_existing_none()}</SelectItem>
                   {bankAccounts.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
-                      {item.last4 ? `${item.name} ···· ${item.last4}` : item.name}
+                      {item.last4 ? `${item.name} •••• ${item.last4}` : item.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
