@@ -1,8 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="DQFinance">
-  <rect width="32" height="32" rx="7" fill="#285cc2" />
-  <g fill="#ffffff">
-    <rect x="8" y="16" width="4" height="9" rx="1" />
-    <rect x="14" y="11" width="4" height="14" rx="1" />
-    <rect x="20" y="7" width="4" height="18" rx="1" opacity="0.75" />
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="DQFinance"><rect width="32" height="32" fill="#0a0a0a"/><rect x="8.45" y="9.29" width="15.1" height="3.36" fill="#f0f0ec"/><rect x="8.45" y="19.35" width="15.1" height="3.36" fill="#f0f0ec"/><rect x="8.45" y="9.29" width="3.36" height="13.42" fill="#f0f0ec"/><rect x="20.19" y="4.8" width="3.36" height="17.91" fill="#f0f0ec"/><rect x="20.19" y="22.71" width="3.36" height="4.49" fill="#a78bfa"/></svg>

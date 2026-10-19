@@ -69,8 +69,8 @@ function AppLayout() {
     <div className="min-h-dvh">
       <header className="sticky top-0 z-40 border-b border-line bg-canvas">
         <div className="container-page flex h-16 items-center justify-between gap-6">
-          <Link to="/overview" className="label-mono text-ink">
-            {m.app_name()}
+          <Link to="/overview" className="shrink-0">
+            <img src="/logo.svg" alt={m.app_name()} className="h-7 w-auto" />
           </Link>
           <nav aria-label={m.nav_main()} className="hidden xl:block">
             <ul className="flex gap-6">
