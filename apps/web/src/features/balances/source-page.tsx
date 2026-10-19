@@ -108,7 +108,7 @@ export function SourcePage({ type, id }: SourceRef) {
       <header className="grid gap-8 pt-6 pb-8 md:pb-12 lg:grid-cols-12 lg:items-end lg:gap-x-12">
         <div className="grid gap-4 lg:col-span-8">
           <Eyebrow>{account ? (account.bankName ?? m.label_cash()) : `${m.label_card()} / ${m.card_credit()}`}</Eyebrow>
-          <h1 className="type-heading font-medium text-ink">{source.name}</h1>
+          <h1 className="type-title font-medium text-ink">{source.name}</h1>
           <div className="mt-4 grid gap-2">
             <p className="label-mono text-muted-foreground">{account ? m.label_balance() : m.label_debt()}</p>
             <p className="type-display font-medium break-words text-ink tabular-nums">{formatMoney(amount, source.currency)}</p>

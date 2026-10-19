@@ -2,28 +2,27 @@ import type * as React from 'react'
 import { cn } from 'cn'
 import { m } from '#/shared/i18n'
 
-/** `// 01 Label`: the lilac marker opens a block, the text stays muted. */
+/** `// 01`: the lilac marker opens a block; the text (when given) stays muted.
+ * A span, not a paragraph: it also lives inside the `h2` of a section heading. */
 export function Eyebrow({ index, children, className }: { index?: string; children?: React.ReactNode; className?: string }) {
   return (
-    <p className={cn('label-mono text-muted-foreground', className)}>
+    <span className={cn('label-mono block text-muted-foreground', className)}>
       {index && (
         <span aria-hidden className="mr-2 text-signal">
           // {index}
         </span>
       )}
       {children}
-    </p>
+    </span>
   )
 }
 
-/** The one h1 of a page, with an optional eyebrow above and actions beside (below on mobile). */
+/** The one h1 of a page, with actions beside (below on mobile). */
 export function PageHeader({
-  eyebrow,
   title,
   actions,
   children,
 }: {
-  eyebrow?: React.ReactNode
   title: string
   actions?: React.ReactNode
   children?: React.ReactNode
@@ -31,7 +30,6 @@ export function PageHeader({
   return (
     <header className="grid gap-6 pt-6 pb-8 md:pt-10 md:pb-12 lg:grid-cols-12 lg:items-end lg:gap-x-12">
       <div className="grid gap-4 lg:col-span-8">
-        {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
         <h1 className="type-title font-medium text-ink">{title}</h1>
         {children}
       </div>
@@ -41,52 +39,34 @@ export function PageHeader({
 }
 
 /**
- * A block of a page. `rail` puts the label in columns 1-3 and the content in 4-12 on desktop;
- * `stack` keeps the label on top at full width. Space separates sections, never lines.
- * `prominent` makes the label a heading under its `// 0X` index, for sections named after a thing
- * (a bank) rather than a topic.
+ * A block of a page. The rail layout puts the label in columns 1-3 and the content in 4-12 on
+ * desktop. Space separates sections, never lines.
+ * The label is always a two-line heading: the `// 0X` index above it, the label in `type-heading`.
  */
 export function Section({
   index,
   label,
   action,
-  layout = 'rail',
-  prominent = false,
   className,
   children,
 }: {
-  index?: string
+  index: string
   label: string
   action?: React.ReactNode
-  layout?: 'rail' | 'stack'
-  prominent?: boolean
   className?: string
   children: React.ReactNode
 }) {
-  const rail = layout === 'rail'
   return (
-    <section className={cn('grid gap-5 py-8 md:py-12', rail && 'lg:grid-cols-12 lg:gap-x-12', className)}>
-      {/* A prominent heading is two lines: on mobile the action sits beside the name, not the index. */}
-      <div
-        className={cn(
-          'flex justify-between gap-4',
-          prominent ? 'items-end' : 'items-baseline',
-          rail && 'lg:col-span-3 lg:flex-col lg:items-start lg:justify-start',
-        )}
-      >
-        {prominent ? (
-          <h2 className="grid min-w-0 gap-2">
-            <Eyebrow index={index} />
-            <span className="type-heading font-medium break-words text-ink">{label}</span>
-          </h2>
-        ) : (
-          <h2>
-            <Eyebrow index={index}>{label}</Eyebrow>
-          </h2>
-        )}
+    <section className={cn('grid gap-5 py-8 md:py-12 lg:grid-cols-12 lg:gap-x-12', className)}>
+      {/* The heading is two lines: on mobile the action sits beside the name, not the index. */}
+      <div className="flex items-end justify-between gap-4 lg:col-span-3 lg:flex-col lg:items-start lg:justify-start">
+        <h2 className="grid min-w-0 gap-2">
+          <Eyebrow index={index} />
+          <span className="type-heading font-medium break-words text-ink">{label}</span>
+        </h2>
         {action}
       </div>
-      <div className={cn('min-w-0', rail && 'lg:col-span-9')}>{children}</div>
+      <div className="min-w-0 lg:col-span-9">{children}</div>
     </section>
   )
 }

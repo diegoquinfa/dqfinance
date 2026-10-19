@@ -59,15 +59,15 @@ Rules:
 
 ## Typography
 
-**Geist Sans** for everything a person reads; **Geist Mono** (`label-mono`: 11px, uppercase, 0.16em tracking) for the technical voice: navigation, section labels, form labels, dates, metadata, tags. Do not invent other mono sizes.
+**Geist Sans** for everything a person reads; **Geist Mono** (`label-mono`: 11px, uppercase, 0.16em tracking) for the technical voice: navigation, section indexes, form labels, dates, metadata, tags. Do not invent other mono sizes.
 
 Two weights only: 400 and 500. Never bold; emphasize by raising the tone (`muted-foreground` → `ink`).
 
 | Utility | Size | Use |
 | --- | --- | --- |
 | `type-display` | clamp 40 → 76px | The hero balance, a source's balance |
-| `type-title` | clamp 32 → 56px | Page h1, the amount field, the auth statement |
-| `type-heading` | clamp 24 → 36px | Net worth, period totals, menu links, a source's name |
+| `type-title` | clamp 32 → 56px | Page h1 (a source's name), the amount field, the auth statement |
+| `type-heading` | clamp 24 → 36px | Section labels, net worth, period totals, menu links |
 | `type-heading-sm` | 20px | Dialog and panel titles, row names from `sm` up |
 | `text-base` / `text-sm` | 16 / 14px | Rows and prose / hints and errors |
 | `label-mono` | 11px mono | All metadata |
@@ -78,7 +78,8 @@ The scale is `@utility type-*`, not `--text-*` theme sizes: `cn` (tailwind-merge
 
 - One container: `container-page` (max 1360px, gutters 20 / 48 / 80px).
 - 12 columns with `gap-x-12` from `lg`. **Controlled asymmetry:** labels left, content right.
-- `Section` (`shared/ui/page.tsx`) has two layouts. `rail` (default): the `// 0X Label` eyebrow in columns 1-3, content in 4-12, and its action ("View all →", "Add account") under the label. `stack`: label on top, content at full width. Below `lg` both collapse to one column with the action beside the label.
+- `Section` (`shared/ui/page.tsx`) has one layout, `rail`: the heading in columns 1-3, content in 4-12, and its action ("View all →", "Add account") under the heading. Below `lg` it collapses to one column with the action beside the heading.
+- Every `Section` is the same block, on every page, including the signed-in detail pages: the heading is two lines, `// 0X` with the number in `signal` above the label in `type-heading` (`ink`), and the action sits under the label in the rail. The number is sequential per page, starting at 01, and skips nothing; a section without a number is a defect. A section that renders only sometimes (like the import columns step) takes the next free number, so the visible sequence never skips a number. The page h1 stays `type-title` and is never numbered. The one documented exception is the overview's `01` total balance: it is the page's lede, a bare mono eyebrow above the display amount, not a `Section`, and the only number on that page that is not a section heading.
 - Sections are separated by space (`py-8 md:py-12`), never by lines or alternating backgrounds.
 - Lists are hairline rows (`rowsClass`: a line above every row and one closing the list). Never one box per item.
 - Corners are square everywhere (every `--radius-*` is 0). `rounded-full` remains only for dots.
@@ -99,7 +100,7 @@ Checklist for every added component:
 - No `shadow-*`.
 - No `ring-*` focus styles and no `outline-none`: focus is the global 1px `signal` outline with a 4px offset (`styles.css`) plus the amount field's bottom line.
 - Colors only by token: `ink`, `soft`, `muted-foreground`, `faint`, `canvas`, `raised`, `surface`, `line`, `line-strong`, `signal`, `income`, `destructive`.
-- Labels use `label-mono`; weights stay 400 or 500.
+- Form labels, metadata and the `// 0X` markers are `label-mono`; a section's label is `type-heading` in `ink`; weights stay 400 or 500.
 - Lists stay hairline rows (`rowsClass`), not a box per item.
 - Every string comes from `packages/i18n`, both catalogs; hyphens, never em or en dashes.
 
@@ -119,7 +120,7 @@ Checklist for every added component:
 | `Spinner` | Only inside a pending button, next to its text; the button also gets `disabled`. |
 | `Separator` | A lone divider line, where a `border-t` used to be. List rows keep `divide-y` through `rowsClass`. |
 | `Toaster` (sonner) | Mounted once in the root route. A successful create confirms with `toast.success(...)`; never for reads. |
-| `PageHeader`, `Section`, `Eyebrow`, `FocusLayout` | `shared/ui/page.tsx`: the page h1, the rail sections, the `// 0X` label, and the signed-out layout (two-tone statement + panel). A `Section` can be `prominent`: the eyebrow shows only the `// 0X` and the label renders in `type-heading`. |
+| `PageHeader`, `Section`, `Eyebrow`, `FocusLayout` | `shared/ui/page.tsx`: the page h1, the rail sections, the `// 0X` marker, and the signed-out layout (two-tone statement + panel). A section heading is two lines: the `// 0X` index above the label in `type-heading`. |
 | `TransactionRow` | `features/transactions`: description in `ink`, mono metadata (`date / source / category`), the signed amount on the right. Every movement list uses it. |
 | `Chart` | `shared/ui/chart.tsx` wraps Recharts (the only chart dependency). Lines only: assets solid in `ink`, liabilities dashed in `muted-foreground`, so the dash tells them apart without relying on tone. A mono legend beside the title, a `line` grid, mono ticks with compact amounts on the Y axis (`150 mil`), a `line-strong` cursor, no area fills, no lilac, no animation. The tooltip is a square hairline panel with the month, then each series label beside its `formatMoney` value; the region carries an `aria-label` and the same points sit in an `sr-only` table beside it. |
 | `Table` | Data with more than two columns, like the statement import preview: mono headers, hairline rows, no box, no zebra. |
@@ -136,7 +137,7 @@ States: hover changes tone or moves a row title 4px right, never size. Focus is 
 | `/consent` | OAuth consent: the agent's name, then each permission as a row. Deny is `outline`, Allow is primary. |
 | `/onboarding` | Two steps (country / language / timezone, then currencies) in the same layout as sign-in. |
 | `/overview` | 01 total balance (display size, primary currency) beside the period block: Week / Month / Year with previous and next, then Spent and Received (summed by `GET /api/transactions/summary`). 02 net worth per currency (assets, card debt, net), then the month-end assets and liabilities chart with 3M / 12M. 03 accounts, 04 credit cards (rows open the source), 05 to confirm, 06 recent movements, 07 in transit. |
-| `/accounts` | One prominent section per bank: the bank name, one "Add account →" link, and its products as rows that open their detail, with the bank account's last 4 as mono metadata; cards and pockets nested with `↳`, a pocket tagged "Pocket" with its rate and payout, and a product with pockets showing "Total with pockets" in mono; each product row has one "Add ▾" menu (Card, Pocket); a bank account with no products says "No products" and offers "Add product →"; then cash. Every create action is a link to a page, on every screen size. |
+| `/accounts` | One section per bank: the bank name as the heading, one "Add account →" link, and its products as rows that open their detail, with the bank account's last 4 as mono metadata; cards and pockets nested with `↳`, a pocket tagged "Pocket" with its rate and payout, and a product with pockets showing "Total with pockets" in mono; each product row has one "Add ▾" menu (Card, Pocket); a bank account with no products says "No products" and offers "Add product →"; then cash. Every create action is a link to a page, on every screen size. |
 | `/accounts/new` | The full-page create form: back link, title, and Create at the top and at the end. The opening balance is the large first field with the currency beside it, then one bank autocomplete (a name that matches one of the user's banks reuses it, any other name creates one), the bank account to use when that bank already has one, the type as chips, the optional name, last 4 for a new bank account, and the annual rate. The opening balance is recorded as an adjustment dated today (D2), then the new product's detail opens. |
 | `/accounts/new-card` | The card as a page: the live card face at the top, then kind, product, name, last 4, brand, interest rate with MV / EA, color and the credit details. A credit card opens its own detail, a debit card its product. |
 | `/accounts/new-pocket` | The pocket as a page: the account it lives in, read-only, then the amount set aside now (large, optional, in the parent's currency), the name, and the annual rate with Daily / Monthly chips that appear once a rate is typed. The amount is recorded as a transfer from the parent, then the pocket's detail opens. |

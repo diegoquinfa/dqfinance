@@ -147,7 +147,6 @@ export function AccountsPage() {
           key={bank.id}
           index={index(position)}
           label={bank.name}
-          prominent
           action={<CreateLink to="/accounts/new" search={{ bankId: bank.id }} label={m.accounts_add_bank_account()} />}
         >
           {bank.accounts.length === 0 ? (
@@ -305,7 +304,7 @@ export function AccountsPage() {
       ))}
 
       {tree.cashWallets.length > 0 && (
-        <Section index={index(tree.banks.length)} label={m.label_cash()} prominent>
+        <Section index={index(tree.banks.length)} label={m.label_cash()}>
           <ul className={rowsClass}>
             {tree.cashWallets.map((wallet) => {
               const ref: SourceRef = { type: 'cash_wallet', id: wallet.id }
