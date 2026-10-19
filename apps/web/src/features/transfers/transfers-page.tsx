@@ -4,6 +4,7 @@ import { formatMoney } from '#/shared/money'
 import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { EmptyState, ListSkeleton } from '#/shared/ui/field'
+import { PageHeader, rowsClass } from '#/shared/ui/page'
 import { NewTransferDialog } from './new-transfer-dialog'
 import { useMarkTransferReceived, useTransfers, type Transfer } from './transfers-api'
 
@@ -21,11 +22,8 @@ export function TransfersPage() {
   const markReceived = useMarkTransferReceived()
 
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{m.transfers_title()}</h1>
-        <NewTransferDialog trigger={<Button>{m.transfers_new()}</Button>} />
-      </div>
+    <>
+      <PageHeader title={m.transfers_title()} actions={<NewTransferDialog trigger={<Button variant="outline">{m.transfers_new()}</Button>} />} />
 
       {transfers.isPending ? (
         <ListSkeleton rows={5} />
@@ -36,34 +34,34 @@ export function TransfersPage() {
       ) : transfers.data.length === 0 ? (
         <EmptyState title={m.transfers_empty()} description={m.transfers_empty_description()} />
       ) : (
-        <ul className="divide-y">
+        <ul className={rowsClass}>
           {transfers.data.map((transfer) => (
-            <li key={transfer.id} className="flex flex-wrap items-baseline justify-between gap-3 py-3">
+            <li key={transfer.id} className="flex flex-wrap items-baseline justify-between gap-3 py-4">
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium">
-                    {transfer.from.name} → {transfer.to.name}
+                  <span className="text-ink">
+                    {transfer.from.name} <span aria-hidden className="text-faint">→</span> {transfer.to.name}
                   </span>
-                  <Badge variant="secondary" className="font-normal">
+                  <Badge variant="secondary">
                     {typeLabels[transfer.type]()}
                   </Badge>
-                  {!transfer.receivedAt && <Badge className="font-normal">{m.label_in_transit()}</Badge>}
+                  {!transfer.receivedAt && <Badge>{m.label_in_transit()}</Badge>}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="label-mono mt-1 text-muted-foreground">
                   <time dateTime={transfer.sentAt}>{formatDate(transfer.sentAt)}</time>
-                  {transfer.fee !== null && ` · ${m.transfers_fee_note({ amount: formatMoney(transfer.fee, transfer.sentCurrency) })}`}
+                  {transfer.fee !== null && ` / ${m.transfers_fee_note({ amount: formatMoney(transfer.fee, transfer.sentCurrency) })}`}
                   {transfer.fxDifference !== null &&
-                    ` · ${m.transfers_fx_note({ amount: formatMoney(transfer.fxDifference, transfer.sentCurrency) })}`}
-                  {transfer.note && ` · ${transfer.note}`}
+                    ` / ${m.transfers_fx_note({ amount: formatMoney(transfer.fxDifference, transfer.sentCurrency) })}`}
+                  {transfer.note && ` / ${transfer.note}`}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <p className="text-right tabular-nums">
-                  <span className="block font-medium">
+                  <span className="block font-medium text-ink">
                     {formatMoney(transfer.sentAmount, transfer.sentCurrency)}
                   </span>
                   {transfer.receivedCurrency !== transfer.sentCurrency && (
-                    <span className="block text-sm text-muted-foreground">
+                    <span className="label-mono block text-muted-foreground">
                       {formatMoney(transfer.receivedAmount, transfer.receivedCurrency)}
                     </span>
                   )}
@@ -83,6 +81,6 @@ export function TransfersPage() {
           ))}
         </ul>
       )}
-    </div>
+    </>
   )
 }

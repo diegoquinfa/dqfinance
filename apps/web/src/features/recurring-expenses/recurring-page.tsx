@@ -10,6 +10,7 @@ import { formatMoney } from '#/shared/money'
 import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
+import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { EmptyState, Field, FormError, ListSkeleton } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { NativeSelect } from '#/shared/ui/native-select'
@@ -149,15 +150,19 @@ function PendingItem({ id, name, amount, currency, nextDueOn }: { id: string; na
   const confirm = useConfirmRecurring()
   const skip = useSkipRecurring()
   return (
-    <li className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[1fr_auto] sm:items-end">
-      <div className="grid gap-2">
-        <p className="font-medium">
-          {name} · <span className="tabular-nums">{formatMoney(amount, currency)}</span>
+    <li className="grid gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+      <div className="grid gap-1">
+        <p className="text-ink sm:type-heading-sm">{name}</p>
+        <p className="label-mono text-muted-foreground">
+          {formatDay(nextDueOn)}
+          <span aria-hidden className="mx-2 text-faint">
+            /
+          </span>
+          <span className="tabular-nums">{formatMoney(amount, currency)}</span>
         </p>
-        <p className="text-sm text-muted-foreground">{formatDay(nextDueOn)}</p>
       </div>
       <div className="flex items-end gap-2">
-        <Field id={`confirm-amount-${id}`} label={m.label_amount()}>
+        <Field id={`confirm-amount-${id}`} label={m.label_amount()} className="w-36">
           <Input
             id={`confirm-amount-${id}`}
             type="number"
@@ -169,6 +174,7 @@ function PendingItem({ id, name, amount, currency, nextDueOn }: { id: string; na
           />
         </Field>
         <Button
+          variant="outline"
           disabled={confirm.isPending}
           onClick={() => {
             const input = document.getElementById(`confirm-amount-${id}`) as HTMLInputElement | null
@@ -177,7 +183,7 @@ function PendingItem({ id, name, amount, currency, nextDueOn }: { id: string; na
         >
           {m.action_confirm()}
         </Button>
-        <Button variant="outline" disabled={skip.isPending} onClick={() => skip.mutate(id)}>
+        <Button variant="ghost" disabled={skip.isPending} onClick={() => skip.mutate(id)}>
           {m.action_skip()}
         </Button>
       </div>
@@ -191,22 +197,23 @@ export function RecurringPage() {
   const remove = useDeleteRecurring()
 
   return (
-    <div className="grid gap-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{m.recurring_title()}</h1>
-        <DialogPanel trigger={<Button>{m.recurring_new()}</Button>} title={m.recurring_new()}>
-          {(close) => <NewRecurringForm close={close} />}
-        </DialogPanel>
-      </div>
+    <>
+      <PageHeader
+        title={m.recurring_title()}
+        actions={
+          <DialogPanel trigger={<Button variant="outline">{m.recurring_new()}</Button>} title={m.recurring_new()}>
+            {(close) => <NewRecurringForm close={close} />}
+          </DialogPanel>
+        }
+      />
 
-      <section className="grid gap-3">
-        <h2 className="border-b pb-2 font-semibold">{m.recurring_pending_title()}</h2>
+      <Section index="01" label={m.recurring_pending_title()}>
         {pending.isPending ? (
           <ListSkeleton rows={2} />
         ) : (pending.data ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">{m.overview_pending_empty()}</p>
         ) : (
-          <ul className="grid gap-3">
+          <ul className={rowsClass}>
             {(pending.data ?? []).map((item) => (
               <PendingItem
                 key={item.id}
@@ -220,10 +227,9 @@ export function RecurringPage() {
           </ul>
         )}
         {confirmOrSkipError(pending.error, all.error)}
-      </section>
+      </Section>
 
-      <section className="grid gap-3">
-        <h2 className="border-b pb-2 font-semibold">{m.recurring_schedule()}</h2>
+      <Section index="02" label={m.recurring_schedule()}>
         {all.isPending ? (
           <ListSkeleton rows={4} />
         ) : all.error ? (
@@ -233,29 +239,25 @@ export function RecurringPage() {
         ) : all.data.length === 0 ? (
           <EmptyState title={m.recurring_empty()} description={m.recurring_empty_description()} />
         ) : (
-          <ul className="divide-y">
+          <ul className={rowsClass}>
             {all.data.map((item) => (
-              <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <div>
-                  <p className="flex items-center gap-2 font-medium">
+              <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                <div className="grid gap-1">
+                  <p className="flex flex-wrap items-center gap-2 text-ink">
                     {item.name}
-                    <Badge variant="secondary" className="font-normal">
+                    <Badge variant="secondary">
                       {frequencies.find((frequency) => frequency.value === item.frequency)?.label() ?? item.frequency}
                     </Badge>
                     {!item.active && (
-                      <Badge variant="outline" className="font-normal">
-                        —
-                      </Badge>
+                      <Badge variant="outline">{m.label_inactive()}</Badge>
                     )}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {item.source.name} · {item.category.name}
-                    {' · '}
-                    {m.recurring_next_due({ date: formatDay(item.nextDueOn) })}
+                  <p className="label-mono text-muted-foreground">
+                    {item.source.name} / {item.category.name} / {m.recurring_next_due({ date: formatDay(item.nextDueOn) })}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="tabular-nums">{formatMoney(item.amount, item.currency)}</span>
+                  <span className="font-medium text-ink tabular-nums">{formatMoney(item.amount, item.currency)}</span>
                   <Button variant="ghost" size="sm" disabled={remove.isPending} onClick={() => remove.mutate(item.id)}>
                     {m.action_delete()}
                   </Button>
@@ -264,8 +266,8 @@ export function RecurringPage() {
             ))}
           </ul>
         )}
-      </section>
-    </div>
+      </Section>
+    </>
   )
 }
 

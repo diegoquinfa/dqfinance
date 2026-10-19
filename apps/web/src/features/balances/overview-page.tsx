@@ -1,226 +1,266 @@
+import type * as React from 'react'
 import { Link } from '@tanstack/react-router'
 import { useRecurringExpenses, useSkipRecurring, useConfirmRecurring } from '#/features/recurring-expenses/recurring-expenses-api'
+import { useSettings } from '#/features/settings/settings-api'
+import { TransactionRow } from '#/features/transactions/transaction-row'
 import { useTransactions } from '#/features/transactions/transactions-api'
-import { formatDate, formatDay } from '#/shared/dates'
+import { formatDay } from '#/shared/dates'
 import { m } from '#/shared/i18n'
-import { formatMoney, formatSignedAmount } from '#/shared/money'
-import { Badge } from '#/shared/ui/badge'
+import { formatMoney } from '#/shared/money'
 import { Button } from '#/shared/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '#/shared/ui/card'
-import { EmptyState, Field, ListSkeleton } from '#/shared/ui/field'
+import { EmptyState, ListSkeleton } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
+import { Eyebrow, Section, rowsClass } from '#/shared/ui/page'
 import { useBalances } from './balances-api'
+import { CalendarPeriod } from './period-totals'
+import { netWorth } from './totals'
+
+/** "Ver todo →" beside a section label. */
+export function ViewAll({ to }: { to: '/accounts' | '/transactions' | '/recurring' }) {
+  return (
+    <Link to={to} className="label-mono group text-ink">
+      <span className="link-draw">{m.action_view_all()}</span>
+      <span aria-hidden className="ml-2 inline-block transition-transform duration-500 group-hover:translate-x-1">
+        →
+      </span>
+    </Link>
+  )
+}
+
+/** A row that opens a source: name and context on the left, the number on the right. */
+export function SourceRow({
+  to,
+  name,
+  meta,
+  amount,
+  detail,
+}: {
+  to: { type: 'product' | 'cash_wallet' | 'card'; id: string }
+  name: string
+  meta?: string | null
+  amount: string
+  detail?: React.ReactNode
+}) {
+  return (
+    <li>
+      <Link
+        to="/accounts/$type/$id"
+        params={to}
+        className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1 py-4"
+      >
+        <span className="truncate text-ink transition-transform duration-500 group-hover:translate-x-1 sm:type-heading-sm">
+          {name}
+        </span>
+        <span className="font-medium text-ink tabular-nums sm:type-heading-sm">{amount}</span>
+        <span className="label-mono truncate text-muted-foreground">{meta}</span>
+        <span className="label-mono text-right text-muted-foreground">
+          {detail ?? (
+            <span aria-hidden className="inline-block text-faint transition-all duration-500 group-hover:translate-x-1 group-hover:text-signal">
+              →
+            </span>
+          )}
+        </span>
+      </Link>
+    </li>
+  )
+}
 
 export function OverviewPage() {
   const balances = useBalances()
+  const settings = useSettings()
   const pending = useRecurringExpenses(true)
-  const recent = useTransactions({ limit: 10 })
+  const recent = useTransactions({ limit: 8 })
   const confirm = useConfirmRecurring()
   const skip = useSkipRecurring()
 
-  if (balances.isPending) return <ListSkeleton rows={6} />
+  if (balances.isPending || settings.isPending) {
+    return (
+      <div className="grid gap-10 py-10" aria-busy="true">
+        <div className="h-16 w-2/3 animate-pulse bg-surface md:h-20" />
+        <ListSkeleton rows={5} />
+      </div>
+    )
+  }
   if (balances.error) {
     return (
-      <p role="alert" className="text-sm text-destructive">
+      <p role="alert" className="py-10 text-sm text-destructive">
         {balances.error.message}
       </p>
     )
   }
 
   const { accounts, creditCards, inTransit } = balances.data
+  const primary = settings.data?.primaryCurrency ?? accounts[0]?.currency ?? 'USD'
+  // A card's debt counts in the card's currency, like its statement (foreign charges at cost).
+  const worth = netWorth(
+    accounts,
+    creditCards.map((card) => ({ currency: card.currency, amount: card.total })),
+    primary,
+  )
+  const otherBalances = worth.slice(1).filter((entry) => entry.assets !== 0)
 
   return (
-    <div className="grid gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{m.overview_title()}</h1>
+    <>
+      <h1 className="sr-only">{m.overview_title()}</h1>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-lg">{m.overview_accounts()}</CardTitle>
-          <Link to="/accounts" className="text-sm text-primary hover:underline">
-            {m.nav_accounts()}
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {accounts.length === 0 ? (
-            <EmptyState title={m.accounts_empty()} description={m.overview_no_accounts()} />
-          ) : (
-            <ul className="divide-y">
-              {accounts.map((account) => (
-                <li key={`${account.ref.type}:${account.ref.id}`} className="flex items-baseline justify-between gap-4 py-2">
-                  <span>
-                    {account.name}
-                    {account.bankName && <span className="ml-2 text-sm text-muted-foreground">{account.bankName}</span>}
-                  </span>
-                  <span className="tabular-nums">{formatMoney(account.balance, account.currency)}</span>
+      <section className="grid gap-10 pt-10 pb-8 md:pt-16 lg:grid-cols-12 lg:items-end lg:gap-x-12 lg:pb-12">
+        <div className="grid gap-5 lg:col-span-6">
+          <h2>
+            <Eyebrow index="01">{m.overview_total_balance()}</Eyebrow>
+          </h2>
+          <p className="type-display font-medium break-words text-ink tabular-nums">
+            {formatMoney(worth[0]!.assets, primary)}
+          </p>
+          {otherBalances.length > 0 && (
+            <ul aria-label={m.overview_other_currencies()} className="flex flex-wrap gap-x-6 gap-y-1">
+              {otherBalances.map((entry) => (
+                <li key={entry.currency} className="label-mono text-muted-foreground tabular-nums">
+                  {formatMoney(entry.assets, entry.currency)}
                 </li>
               ))}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </div>
+        <div className="lg:col-span-6">
+          <CalendarPeriod currency={primary} />
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{m.overview_cards()}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {creditCards.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{m.overview_no_cards()}</p>
-          ) : (
-            <ul className="divide-y">
-              {creditCards.map((card) => (
-                <li key={card.ref.id} className="grid gap-1 py-3">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <span className="font-medium">{card.name}</span>
-                    <span className="tabular-nums">
-                      {m.accounts_card_total({ amount: formatMoney(card.total, card.currency) })}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                    {card.debts.map((debt) => (
-                      <span key={debt.currency} className="tabular-nums">
-                        {m.accounts_card_debt_currency({
-                          amount: formatMoney(debt.amount, debt.currency),
-                          currency: debt.currency,
-                        })}
-                      </span>
-                    ))}
-                    {card.available !== null && (
-                      <span className="tabular-nums">
-                        {m.accounts_card_available({ amount: formatMoney(card.available, card.currency) })}
-                      </span>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <Section index="02" label={m.overview_net_worth()}>
+        <ul className="grid gap-8">
+          {worth.map((entry) => (
+            <li key={entry.currency} className="grid gap-4">
+              <p className="type-heading font-medium text-ink tabular-nums">{formatMoney(entry.net, entry.currency)}</p>
+              <dl className="grid grid-cols-2 border-t border-line pt-4">
+                <div>
+                  <dt className="label-mono text-muted-foreground">{m.overview_assets()}</dt>
+                  <dd className="mt-1 text-soft tabular-nums">{formatMoney(entry.assets, entry.currency)}</dd>
+                </div>
+                <div>
+                  <dt className="label-mono text-muted-foreground">{m.overview_liabilities()}</dt>
+                  <dd className="mt-1 text-soft tabular-nums">{formatMoney(entry.liabilities, entry.currency)}</dd>
+                </div>
+              </dl>
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section index="03" label={m.overview_accounts()} action={<ViewAll to="/accounts" />}>
+        {accounts.length === 0 ? (
+          <EmptyState title={m.accounts_empty()} description={m.overview_no_accounts()} />
+        ) : (
+          <ul className={rowsClass}>
+            {accounts.map((account) => (
+              <SourceRow
+                key={`${account.ref.type}:${account.ref.id}`}
+                to={account.ref}
+                name={account.name}
+                meta={account.bankName ?? m.label_cash()}
+                amount={formatMoney(account.balance, account.currency)}
+              />
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section index="04" label={m.overview_cards()}>
+        {creditCards.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{m.overview_no_cards()}</p>
+        ) : (
+          <ul className={rowsClass}>
+            {creditCards.map((card) => (
+              <SourceRow
+                key={card.ref.id}
+                to={card.ref}
+                name={card.name}
+                meta={card.debts
+                  .filter((debt) => debt.currency !== card.currency)
+                  .map((debt) => formatMoney(debt.amount, debt.currency))
+                  .join(' + ')}
+                amount={formatMoney(card.total, card.currency)}
+                detail={
+                  card.available !== null &&
+                  m.accounts_card_available({ amount: formatMoney(card.available, card.currency) })
+                }
+              />
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section index="05" label={m.overview_pending()} action={<ViewAll to="/recurring" />}>
+        {pending.isPending ? (
+          <ListSkeleton rows={2} />
+        ) : (pending.data ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">{m.overview_pending_empty()}</p>
+        ) : (
+          <ul className={rowsClass}>
+            {(pending.data ?? []).map((item) => (
+              <li key={item.id} className="grid gap-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
+                  <p className="truncate text-ink">{item.name}</p>
+                  <p className="label-mono text-muted-foreground">{formatDay(item.nextDueOn)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor={`pending-amount-${item.id}`} className="sr-only">
+                    {m.label_amount()} ({item.currency})
+                  </label>
+                  <Input
+                    id={`pending-amount-${item.id}`}
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    inputMode="decimal"
+                    defaultValue={item.amount}
+                    className="w-36 tabular-nums"
+                  />
+                  <Button
+                    variant="outline"
+                    disabled={confirm.isPending}
+                    onClick={() => {
+                      const input = document.getElementById(`pending-amount-${item.id}`) as HTMLInputElement | null
+                      confirm.mutate({ id: item.id, amount: input ? Number(input.value) : item.amount })
+                    }}
+                  >
+                    {m.action_confirm()}
+                  </Button>
+                  <Button variant="ghost" disabled={skip.isPending} onClick={() => skip.mutate(item.id)}>
+                    {m.action_skip()}
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section index="06" label={m.overview_recent()} action={<ViewAll to="/transactions" />}>
+        {recent.isPending ? (
+          <ListSkeleton rows={4} />
+        ) : (recent.data ?? []).length === 0 ? (
+          <EmptyState title={m.transactions_empty()} description={m.transactions_empty_description()} />
+        ) : (
+          <ul className={rowsClass}>
+            {(recent.data ?? []).map((transaction) => (
+              <TransactionRow key={transaction.id} transaction={transaction} />
+            ))}
+          </ul>
+        )}
+      </Section>
 
       {inTransit.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">{m.overview_in_transit()}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid gap-2">
-              {inTransit.map((transfer) => (
-                <li key={transfer.currency} className="flex justify-between">
-                  <span>{transfer.currency}</span>
-                  <span className="tabular-nums">{formatMoney(transfer.amount, transfer.currency)}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <Section index="07" label={m.overview_in_transit()}>
+          <ul className={rowsClass}>
+            {inTransit.map((transfer) => (
+              <li key={transfer.currency} className="flex items-baseline justify-between py-4">
+                <span className="label-mono text-muted-foreground">{transfer.currency}</span>
+                <span className="font-medium text-ink tabular-nums">{formatMoney(transfer.amount, transfer.currency)}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
       )}
-
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-lg">{m.overview_pending()}</CardTitle>
-          <Link to="/recurring" className="text-sm text-primary hover:underline">
-            {m.nav_recurring()}
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {pending.isPending ? (
-            <ListSkeleton rows={2} />
-          ) : (pending.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">{m.overview_pending_empty()}</p>
-          ) : (
-            <ul className="grid gap-3">
-              {(pending.data ?? []).map((item) => (
-                <li key={item.id} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[1fr_auto] sm:items-end">
-                  <div>
-                    <p className="font-medium">
-                      {item.name} · <span className="tabular-nums">{formatMoney(item.amount, item.currency)}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">{formatDay(item.nextDueOn)}</p>
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <Field id={`pending-amount-${item.id}`} label={m.label_amount()}>
-                      <Input
-                        id={`pending-amount-${item.id}`}
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        inputMode="decimal"
-                        defaultValue={item.amount}
-                        className="tabular-nums"
-                      />
-                    </Field>
-                    <Button
-                      disabled={confirm.isPending}
-                      onClick={() => {
-                        const input = document.getElementById(`pending-amount-${item.id}`) as HTMLInputElement | null
-                        confirm.mutate({ id: item.id, amount: input ? Number(input.value) : item.amount })
-                      }}
-                    >
-                      {m.action_confirm()}
-                    </Button>
-                    <Button variant="outline" disabled={skip.isPending} onClick={() => skip.mutate(item.id)}>
-                      {m.action_skip()}
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-lg">{m.overview_recent()}</CardTitle>
-          <Link to="/transactions" className="text-sm text-primary hover:underline">
-            {m.nav_transactions()}
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {recent.isPending ? (
-            <ListSkeleton rows={4} />
-          ) : (recent.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">{m.transactions_empty()}</p>
-          ) : (
-            <ul className="divide-y">
-              {(recent.data ?? []).map((transaction) => (
-                <li key={transaction.id} className="flex items-baseline justify-between gap-4 py-2">
-                  <div className="min-w-0">
-                    <p className="truncate">
-                      {transaction.description || transaction.category.name}
-                      {transaction.counterparty && (
-                        <span className="ml-2 text-sm text-muted-foreground">{transaction.counterparty.name}</span>
-                      )}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      <time dateTime={transaction.occurredAt}>{formatDate(transaction.occurredAt)}</time>
-                      {' · '}
-                      {transaction.source.name}
-                    </p>
-                  </div>
-                  <p className="flex items-baseline gap-2">
-                    {transaction.primaryAmount !== null && transaction.primaryCurrency !== null && (
-                      <Badge variant="secondary" className="font-normal tabular-nums">
-                        {formatMoney(transaction.amount, transaction.currency)}
-                      </Badge>
-                    )}
-                    <span
-                      className={
-                        transaction.type === 'income' ? 'font-medium text-income tabular-nums' : 'font-medium tabular-nums'
-                      }
-                    >
-                      {transaction.primaryAmount !== null && transaction.primaryCurrency !== null
-                        ? formatSignedAmount(transaction.type, transaction.primaryAmount, transaction.primaryCurrency)
-                        : formatSignedAmount(transaction.type, transaction.amount, transaction.currency)}
-                    </span>
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    </>
   )
 }

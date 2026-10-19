@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/sha
 import { Field, FormError } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { NativeSelect } from '#/shared/ui/native-select'
+import { FocusLayout } from '#/shared/ui/page'
 import { useCompleteOnboarding } from './onboarding-api'
 
 /** Wizard: country, language and timezone, then the currencies the user works with. */
@@ -49,10 +50,10 @@ export function OnboardingWizard() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center p-4">
-      <Card className="w-full max-w-lg">
+    <FocusLayout>
+      <Card>
         <CardHeader>
-          <CardTitle className="text-xl">{m.onboarding_title()}</CardTitle>
+          <CardTitle>{m.onboarding_title()}</CardTitle>
           <CardDescription>
             {step === 1 ? m.onboarding_step_country() : m.onboarding_step_money()}
           </CardDescription>
@@ -132,9 +133,9 @@ export function OnboardingWizard() {
               </Field>
 
               {extra.length > 0 && (
-                <ul className="grid gap-2 text-sm">
+                <ul className="divide-y divide-line border-y border-line text-sm">
                   {extra.map((code) => (
-                    <li key={code} className="flex items-center justify-between rounded-md border px-3 py-2">
+                    <li key={code} className="flex items-center justify-between py-2 text-ink">
                       {currencyLabel(code)}
                       <Button
                         type="button"
@@ -163,6 +164,6 @@ export function OnboardingWizard() {
 
         </CardContent>
       </Card>
-    </main>
+    </FocusLayout>
   )
 }

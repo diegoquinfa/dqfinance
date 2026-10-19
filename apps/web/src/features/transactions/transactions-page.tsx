@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useSources } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
-import { formatDate } from '#/shared/dates'
 import { m } from '#/shared/i18n'
-import { formatMoney, formatSignedAmount } from '#/shared/money'
 import { Button } from '#/shared/ui/button'
 import { EmptyState, Field, ListSkeleton } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
+import { PageHeader, rowsClass } from '#/shared/ui/page'
 import { Segmented } from '#/shared/ui/segmented'
 import { NewTransactionDialog } from './new-transaction-dialog'
+import { TransactionRow } from './transaction-row'
 import { useTransactions, type NewTransaction } from './transactions-api'
 
 type TypeFilter = NewTransaction['type'] | 'all'
@@ -31,13 +31,13 @@ export function TransactionsPage() {
   })
 
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{m.transactions_title()}</h1>
-        <NewTransactionDialog trigger={<Button>{m.transactions_new()}</Button>} />
-      </div>
+    <>
+      <PageHeader
+        title={m.transactions_title()}
+        actions={<NewTransactionDialog trigger={<Button variant="outline">{m.transactions_new()}</Button>} />}
+      />
 
-      <section aria-label={m.transactions_filters()} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label={m.transactions_filters()} className="grid items-end gap-4 pb-8 sm:grid-cols-2 lg:grid-cols-4">
         <Segmented
           name={m.label_kind()}
           className="sm:col-span-2 lg:col-span-1"
@@ -74,47 +74,12 @@ export function TransactionsPage() {
       ) : transactions.data.length === 0 ? (
         <EmptyState title={m.transactions_empty()} description={m.transactions_empty_description()} />
       ) : (
-        <ul className="divide-y">
+        <ul className={rowsClass}>
           {transactions.data.map((transaction) => (
-            <li key={transaction.id} className="flex items-baseline justify-between gap-4 py-3">
-              <div className="min-w-0">
-                <p className="truncate font-medium">
-                  {transaction.description || transaction.category.name}
-                  {transaction.counterparty && (
-                    <span className="ml-2 text-sm font-normal text-muted-foreground">
-                      {transaction.counterparty.name}
-                    </span>
-                  )}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  <time dateTime={transaction.occurredAt}>{formatDate(transaction.occurredAt)}</time>
-                  {' · '}
-                  {transaction.source.name}
-                  {' · '}
-                  {transaction.category.name}
-                </p>
-              </div>
-              <p
-                className={
-                  transaction.type === 'income'
-                    ? 'flex shrink-0 items-baseline gap-2 font-medium text-income tabular-nums'
-                    : 'flex shrink-0 items-baseline gap-2 font-medium tabular-nums'
-                }
-              >
-                <span className="sr-only">{transaction.type === 'income' ? m.label_income() : m.label_expense()}: </span>
-                {transaction.primaryAmount !== null && transaction.primaryCurrency !== null && (
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {formatMoney(transaction.amount, transaction.currency)}
-                  </span>
-                )}
-                {transaction.primaryAmount !== null && transaction.primaryCurrency !== null
-                  ? formatSignedAmount(transaction.type, transaction.primaryAmount, transaction.primaryCurrency)
-                  : formatSignedAmount(transaction.type, transaction.amount, transaction.currency)}
-              </p>
-            </li>
+            <TransactionRow key={transaction.id} transaction={transaction} />
           ))}
         </ul>
       )}
-    </div>
+    </>
   )
 }

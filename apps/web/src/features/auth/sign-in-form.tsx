@@ -44,9 +44,9 @@ export function SignInForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-xl">
+        <CardTitle>
           {isSignUp ? m.auth_sign_up_title() : m.auth_sign_in_title({ app: m.app_name() })}
         </CardTitle>
         {isOAuthFlow() && <CardDescription>{m.auth_oauth_notice()}</CardDescription>}
@@ -83,12 +83,12 @@ export function SignInForm() {
           </Button>
           <button
             type="button"
-            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+            className="label-mono link-draw justify-self-start text-muted-foreground hover:text-ink"
             onClick={() => setMode(isSignUp ? 'sign-in' : 'sign-up')}
           >
             {isSignUp ? m.auth_switch_to_sign_in() : m.auth_switch_to_sign_up()}
           </button>
-          <div className="border-t pt-3">
+          <div className="border-t border-line pt-5">
             <LocaleSwitch id="sign-in-language" />
           </div>
         </form>
