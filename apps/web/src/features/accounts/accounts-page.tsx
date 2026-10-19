@@ -74,12 +74,14 @@ function SourceLine({
   const body = (
     <>
       <span className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-        {nested && (
-          <span aria-hidden className="text-faint">
-            ↳
-          </span>
-        )}
-        <span className="text-ink transition-transform duration-500 group-hover:translate-x-1">{name}</span>
+        <span className="text-ink transition-transform duration-500 group-hover:translate-x-1">
+          {nested && (
+            <span aria-hidden className="mr-2 text-faint">
+              ↳
+            </span>
+          )}
+          {name}
+        </span>
         {badges}
       </span>
       {amount && <span className="shrink-0 font-medium text-ink tabular-nums">{amount}</span>}
@@ -159,7 +161,9 @@ export function AccountsPage() {
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="type-heading-sm font-medium text-ink">
                     {account.name}
-                    {account.last4 && <span className="label-mono ml-3 text-muted-foreground">•••• {account.last4}</span>}
+                    {account.last4 && (
+                      <span className="label-mono ml-3 whitespace-nowrap text-muted-foreground">•••• {account.last4}</span>
+                    )}
                   </h3>
                   <CreateActions
                     dialog={<AddProductDialog bankAccountId={account.id} accountName={account.name} />}
@@ -205,7 +209,11 @@ export function AccountsPage() {
                               name={
                                 <>
                                   {card.name}
-                                  {card.last4 && <span className="label-mono ml-3 text-muted-foreground">•••• {card.last4}</span>}
+                                  {card.last4 && (
+                                    <span className="label-mono ml-3 whitespace-nowrap text-muted-foreground">
+                                      •••• {card.last4}
+                                    </span>
+                                  )}
                                 </>
                               }
                               badges={
