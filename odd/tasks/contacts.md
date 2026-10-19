@@ -53,8 +53,8 @@ PRs are not opened until asked.
 
 - [x] `contact-1` API aggregates, PATCH, DELETE, MCP tools. Route: delegated.
 - [x] `contact-2` Web unified list, row with numbers, rename/delete, detail page. Route: delegated.
-- [ ] `contact-3` The six review findings fixed. Route: inline.
-- [ ] `contact-4` Detail page: categories, evolution, period, statistics. Route: inline.
+- [x] `contact-3` The six review findings fixed. Route: inline. Commit 6355887.
+- [x] `contact-4` Detail page: categories, evolution, period, statistics. Route: inline. `GET /api/counterparties/:id` returns `byCategory` and `monthly`; the page shows 01 Categories with a bar per category, 02 Evolution as a monthly line, 03 Movements. The header and the list are the whole history; the period shapes the two analysis sections.
 
 ## Acceptance
 
@@ -67,6 +67,12 @@ PRs are not opened until asked.
 ## Progress
 
 `contact-1` and `contact-2` were implemented by delegated workers and reviewed by an independent reviewer. The reviewer found no blockers and six findings, all in `contact-3`.
+
+`contact-3` commit: `6355887`. `contact-4` is uncommitted at the time of writing.
+
+The route inventory moved from DESIGN.md to `docs/screens.md`: the size hook refused the commit at 5,078 tokens and the screen table is a different concept from the design system.
+
+The currency rule of a movement ("a foreign card charge counts in the card's currency") lived in three places; it now lives in `apps/api/src/features/accounts/card-currency.ts` and the three callers import it.
 
 ## Next
 

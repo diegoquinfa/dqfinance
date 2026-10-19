@@ -21,6 +21,19 @@ export const formatSignedAmount = (type: 'income' | 'expense', amount: number, c
 export const currencyName = (code: string, locale: Locale = currentLocale()) =>
   new Intl.DisplayNames([locale], { type: 'currency' }).of(code) ?? code
 
+// Intl formatters are expensive to build and a chart builds one per tick.
+const compactFormats = new Map<string, Intl.NumberFormat>()
+
+/** "150 mil", "1,2 M": the axis of a chart gives the scale, the tooltip gives the exact amount. */
+export function formatCompact(amount: number, locale: Locale = currentLocale()) {
+  let format = compactFormats.get(locale)
+  if (!format) {
+    format = new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 })
+    compactFormats.set(locale, format)
+  }
+  return format.format(amount)
+}
+
 export function formatNumber(amount: number, locale: Locale = currentLocale()) {
   return new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2, trailingZeroDisplay: 'stripIfInteger' }).format(amount)
 }
