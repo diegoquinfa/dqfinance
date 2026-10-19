@@ -4,9 +4,11 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "test": "turbo run test && node --test scripts/",
+    "check-types": "turbo run check-types",
+    "db:migrate:local": "turbo run db:migrate:local",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "prepare": "node scripts/install-hooks.mjs"
   },
   "devDependencies": {
     "prettier": "3.9.6",

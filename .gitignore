@@ -18,6 +18,10 @@ coverage
 # Turbo
 .turbo
 
+# Cloudflare
+.wrangler
+.dev.vars
+
 # Vercel
 .vercel
 
@@ -36,3 +40,5 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+# Local Pi runtime state
+.atl/

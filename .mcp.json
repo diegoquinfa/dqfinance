@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "better-auth docs": {
+      "type": "http",
+      "url": "https://mcp.better-auth.com/mcp"
+    },
+    "local-mcp": {
+      "url": "http://localhost:8787/mcp"
+    }
+  }
+}
