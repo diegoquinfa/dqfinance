@@ -8,7 +8,7 @@ Tokens live in `apps/web/src/styles.css`. This file explains them. When the two 
 
 ## Logo
 
-The mark is a **dq ligature**: `d` and `q` are mirror images (a bowl on the left, a stem on the right), so they share one square bowl and one stem that rises (the `d`) and drops (the `q`), like money in and out of a ledger column. The descender is the one `signal` touch; the rest is `ink`. In the lockup the ligature stands in for "dq" and "finance" follows in Geist Medium, `muted-foreground`, so the word reads in two tones like the page titles.
+The mark is a **dq ligature**: `d` and `q` are mirror images (a bowl on the left, a stem on the right), so they share one square bowl and one stem that rises (the `d`) and drops (the `q`), like money in and out of a ledger column. The descender is the one `signal` touch; the rest is `ink`. In the lockup the ligature stands in for "dq" and "FINANCE" follows in Geist Mono Medium, uppercase, tracked 0.16em like `label-mono`, in `muted-foreground`, with its cap height on the bowl's x-height: the mark speaks in scale, the name in the app's technical voice.
 
 | File (`apps/web/public/`) | Use |
 | --- | --- |
@@ -17,7 +17,7 @@ The mark is a **dq ligature**: `d` and `q` are mirror images (a bowl on the left
 | `favicon.svg` | The mark at 32 px with a heavier stroke so the counter survives at 16 px. |
 | `apple-touch-icon.png`, `icon-512.png` | Raster exports of `logo-mark.svg`. |
 
-Rules: square corners, never rounded or outlined; only on `canvas` or `raised` (on `paper` use the mark with its own `canvas` square); never recolor the descender or tint the bowl; keep clear space of one bowl width around it. The wordmark is outlined paths from Geist Medium (no font dependency). The stem is symmetric: it rises above the x-height as far as it drops below the baseline.
+Rules: square corners, never rounded or outlined; only on `canvas` or `raised` (on `paper` use the mark with its own `canvas` square); never recolor the descender or tint the bowl; keep clear space of one bowl width around it. The wordmark is outlined paths from Geist Mono Medium (no font dependency); a sans "finance" read as generic next to the constructed mark. The stem is symmetric: it rises above the x-height as far as it drops below the baseline.
 
 ## Principles for financial tracking
 
