@@ -3,7 +3,7 @@ import { cn } from 'cn'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { SourceRef } from '#/features/accounts/sources'
 import { currentLocale, m } from '#/shared/i18n'
-import { formatMoney } from '#/shared/money'
+import { formatCompact, formatMoney } from '#/shared/money'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '#/shared/ui/chart'
 import { Skeleton } from '#/shared/ui/skeleton'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
@@ -33,18 +33,6 @@ const monthLabel = (at: string) => {
     monthFormats.set(locale, format)
   }
   return format.format(new Date(at))
-}
-
-// "150 mil", "1,2 M": the axis gives the scale, the tooltip gives the exact amount.
-const compactFormats = new Map<string, Intl.NumberFormat>()
-const compactAmount = (amount: number) => {
-  const locale = currentLocale()
-  let format = compactFormats.get(locale)
-  if (!format) {
-    format = new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 })
-    compactFormats.set(locale, format)
-  }
-  return format.format(amount)
 }
 
 const tick = { fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--muted-ink)' }
@@ -143,7 +131,7 @@ export default function BalanceChartGraph({ currency, source, className }: Balan
             axisLine={false}
             tickMargin={8}
             tick={tick}
-            tickFormatter={compactAmount}
+            tickFormatter={(value) => formatCompact(Number(value))}
           />
           <XAxis
             dataKey="label"

@@ -1,11 +1,11 @@
 import { and, desc, eq, gte, lt, or } from 'drizzle-orm'
-import { alias } from 'drizzle-orm/sqlite-core'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { isoDate } from '../../shared/dates'
 import type { Locale } from '../../shared/locale'
 import { fromCents } from '../../shared/money'
 import { card, cashWallet, product } from '../accounts/account.schema'
+import { cardProduct } from '../accounts/card-currency'
 import { SOURCE_TYPES, sourceRefOf } from '../accounts/source'
 import { category } from '../categories/category.schema'
 import { categoryName } from '../categories/system-categories'
@@ -24,7 +24,7 @@ export const listTransactionsInput = z.object({
 })
 
 // Currency of the card behind a charge: primaryAmount is expressed in it.
-export const cardProduct = alias(product, 'card_product')
+export { cardProduct } from '../accounts/card-currency'
 
 /** The WHERE of a movement query. The query must left-join `card` on `transaction.cardId`. */
 export function transactionFilters(userId: string, input: Omit<z.infer<typeof listTransactionsInput>, 'limit'>) {
