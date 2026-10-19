@@ -23,16 +23,13 @@ import { Input } from '#/shared/ui/input'
 import { Spinner } from '#/shared/ui/spinner'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { toast } from 'sonner'
+import { kindTag } from './contact-kind'
 import {
   useDeleteCounterparty,
   useUpdateCounterparty,
   type Counterparty,
   type CounterpartyKind,
 } from './counterparties-api'
-
-/** The kind is a tag, not a word: PERSONA or COMERCIO. */
-export const kindTag = (kind: CounterpartyKind) =>
-  kind === 'person' ? m.contacts_tag_person() : m.contacts_tag_business()
 
 /**
  * What moved with a contact, per currency. Money never mixes currencies, so the primary
