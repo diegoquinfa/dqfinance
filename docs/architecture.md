@@ -29,6 +29,7 @@ Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rule
 - `settings/`: also manages categories; `categories/` holds only the query hooks.
 - `accounts/`: also the adjust-balance dialog and the source picker other forms reuse.
 - `balances/`: the overview and the source detail page (`/accounts/$type/$id`).
+- `documents/`: the file section on the source detail page, which `balances/source-page.tsx` renders. No page of its own, and it imports only the `SourceRef` type from `accounts/`.
 - `counterparties/`: the contacts page.
 
 `shared/api.ts` is the single Hono RPC client, with `unwrap()`.
@@ -38,9 +39,16 @@ Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rule
 A feature imports only from features earlier in this order:
 
 ```
-settings → accounts → categories → counterparties → transactions → transfers
-         → balances → balance-adjustments → recurring-expenses → documents
+categories → settings → accounts → documents → counterparties → transactions
+           → recurring-expenses → balances → balance-adjustments → transfers
 ```
+
+`auth/` is a foundation in both apps (the API's `mcp/` and `push/` too), outside the order: any feature may import it.
+
+Two dependencies the order cannot express, both long-standing:
+
+- **Table definitions point both ways.** A `*.schema.ts` declares foreign keys into another feature's tables, and the queries that read those tables import them the same way: `transactions/transaction.schema.ts` references `recurring-expenses` and `transfers`, and `balances/get-balances.ts` reads the `transfer` and `balance_adjustment` tables. Read these as data references; the order governs each feature's logic.
+- **The web `accounts/` and `balances/` slices reference each other.** `balances/` renders the account rows and the source detail page, and `accounts/sources.ts` reads balances through `balances-api`. Unwinding it means moving the source list and the balance query into `shared/`.
 
 Anything two features need that is not a domain noun moves to `shared/`, and `shared/` imports nothing from `features/`.
 

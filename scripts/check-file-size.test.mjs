@@ -20,6 +20,8 @@ test('ignores what no agent authors: lockfiles, codegen, build output and binari
     'apps/web/src/routeTree.gen.ts',
     'packages/i18n/src/paraglide/messages/en.js',
     'packages/i18n/project.inlang/cache/plugins/x',
+    'packages/i18n/messages/en.json',
+    'packages/i18n/messages/es.json',
     'apps/web/public/logo.png',
     'apps/web/public/fonts/Geist.woff2',
     'internal/thing.lock',
@@ -41,6 +43,8 @@ test('checks authored files, including paths that look like the ignored ones', (
     'GLOSSARY.md',
     '.githooks/pre-commit',
     'apps/web/src/skills/thing.ts',
+    'packages/i18n/messages/en.json5',
+    'apps/web/messages/en.json',
   ]
   for (const file of checked) assert.equal(isIgnored(file), false, file)
 })

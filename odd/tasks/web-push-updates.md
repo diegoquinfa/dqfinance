@@ -79,6 +79,8 @@ Tracker `feat/web-push-updates` stays at `main`. Slice 1 is `feat/web-push-updat
 
 Closure on `feat/web-push-updates-03-web`: `pnpm check-types` exit 0, `pnpm test` exit 0 (api 20 pass, file-size 5 pass), `pnpm build` exit 0. No browser run.
 
+Later, on `feat/follow-ups`, the scope grew past expenses. `send-expense-push.ts` became `send-push.ts` with a `PushKind`, and these notify too: transfers, mark-received and balance adjustments (`f492e3b`), and batch statement import (`71f53d3`).
+
 ## Next
 
 None. PRs are not opened. To try it, set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` in `apps/api/.dev.vars`, restart the API, and enable notifications in Settings.
