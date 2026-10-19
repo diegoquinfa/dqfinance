@@ -33,6 +33,12 @@ export const ERROR_CODES = [
   'document_not_found',
   'document_type_not_allowed',
   'document_too_large',
+  'pocket_parent_required',
+  'pocket_type_required',
+  'pocket_parent_invalid',
+  'pocket_currency_mismatch',
+  'pocket_type_locked',
+  'card_on_pocket',
 ] as const
 
 export type ErrorCode = (typeof ERROR_CODES)[number]

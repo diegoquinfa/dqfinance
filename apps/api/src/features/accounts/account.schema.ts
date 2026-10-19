@@ -1,8 +1,11 @@
+import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { ownerId } from '../auth/owner'
 import { cents, createdAt, id } from '../../shared/schema-columns'
 
-export const PRODUCT_TYPES = ['savings', 'checking', 'payroll', 'investment', 'other'] as const
+export const PRODUCT_TYPES = ['savings', 'checking', 'payroll', 'investment', 'other', 'pocket'] as const
+/** How often a product's interest is paid. */
+export const YIELD_PAYOUTS = ['daily', 'monthly'] as const
 export const CARD_KINDS = ['debit', 'credit'] as const
 export const CARD_BRANDS = ['visa', 'mastercard', 'amex', 'diners', 'other'] as const
 /** How a card states its interest: `monthly` (MV) or `annual` (EA). */
@@ -45,6 +48,10 @@ export const product = sqliteTable(
     currency: text('currency').notNull(),
     // Effective annual rate (E.A.) in basis points. Feeds an estimate only: it never changes a balance.
     annualRateBps: integer('annual_rate_bps'),
+    // A pocket sets money aside inside this product: same bank account, same currency, one level.
+    parentProductId: text('parent_product_id').references((): AnySQLiteColumn => product.id, { onDelete: 'restrict' }),
+    // How often the interest is paid; the rate is the same either way.
+    yieldPayout: text('yield_payout', { enum: YIELD_PAYOUTS }),
     createdAt: createdAt(),
   },
   (table) => [index('product_bank_account_idx').on(table.bankAccountId)],

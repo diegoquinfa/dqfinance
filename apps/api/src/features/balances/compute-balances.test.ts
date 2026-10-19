@@ -18,8 +18,8 @@ const transferBase = {
 
 const ledger = (overrides: Partial<Ledger>): Ledger => ({
   products: [
-    { id: 'savings', name: 'Savings', bankName: 'Bank A', currency: 'COP', annualRateBps: 900 },
-    { id: 'other', name: 'Other', bankName: 'Bank B', currency: 'COP', annualRateBps: null },
+    { id: 'savings', name: 'Savings', bankName: 'Bank A', currency: 'COP', annualRateBps: 900, yieldPayout: 'monthly' },
+    { id: 'other', name: 'Other', bankName: 'Bank B', currency: 'COP', annualRateBps: null, yieldPayout: null },
   ],
   cashWallets: [{ id: 'wallet', name: 'Wallet', currency: 'COP' }],
   cards: [

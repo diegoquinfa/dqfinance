@@ -11,14 +11,14 @@ export const accountTools = [
   toolDefinition({
     name: 'create_product',
     description:
-      "Add a product (savings, checking, payroll, investment, other) to one of the user's bank accounts. annualRateBps is the effective annual rate in basis points (10000 = 100%).",
+      "Add a product (savings, checking, payroll, investment, other) to one of the user's bank accounts. annualRateBps is the effective annual rate in basis points (10000 = 100%). A product of type 'pocket' with parentProductId sets money aside inside that product.",
     inputSchema: createProductInput,
   }).server<McpContext>(async (input, ctx) => createProduct(ctx.context.db, ctx.context.userId, input)),
 
   toolDefinition({
     name: 'update_product',
     description:
-      'Change a product: its type, name, currency, or its effective annual rate in basis points (send null to clear the rate).',
+      "Change a product: its type, name, currency, its effective annual rate in basis points (send null to clear the rate), or yieldPayout ('daily' or 'monthly'), how often its interest is paid.",
     inputSchema: updateProductInput.extend({ id: z.string().min(1) }),
   }).server<McpContext>(async ({ id, ...input }, ctx) => updateProduct(ctx.context.db, ctx.context.userId, id, input)),
 

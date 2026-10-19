@@ -22,6 +22,7 @@ export async function getLedger(db: Db, userId: string): Promise<Ledger> {
         bankName: bank.name,
         currency: product.currency,
         annualRateBps: product.annualRateBps,
+        yieldPayout: product.yieldPayout,
       })
       .from(product)
       .innerJoin(bankAccount, eq(bankAccount.id, product.bankAccountId))

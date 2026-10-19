@@ -7,7 +7,15 @@ const sourceKey = (ref: SourceRef) => `${ref.type}:${ref.id}`
  * All amounts are integer cents.
  */
 export type Ledger = {
-  products: { id: string; name: string; bankName: string; currency: string; annualRateBps: number | null }[]
+  products: {
+    id: string
+    name: string
+    bankName: string
+    currency: string
+    annualRateBps: number | null
+    /** How often the interest is paid; null for cash wallets and products without a choice. */
+    yieldPayout: 'daily' | 'monthly' | null
+  }[]
   cashWallets: { id: string; name: string; currency: string }[]
   cards: { id: string; name: string; kind: 'debit' | 'credit'; productId: string; currency: string; creditLimitCents: number | null }[]
   transactions: {
@@ -63,6 +71,8 @@ export type Balances = {
     balanceCents: number
     /** Effective annual rate of a product; null for cash wallets and products without one. */
     annualRateBps: number | null
+    /** How often the interest is paid; null for cash wallets and products without a choice. */
+    yieldPayout: 'daily' | 'monthly' | null
   }[]
   creditCards: {
     ref: SourceRef
@@ -142,6 +152,7 @@ export function computeBalances(ledger: Ledger): Balances {
         bankName: p.bankName,
         currency: p.currency,
         annualRateBps: p.annualRateBps,
+        yieldPayout: p.yieldPayout,
       })),
       ...ledger.cashWallets.map((w) => ({
         ref: { type: 'cash_wallet' as const, id: w.id },
@@ -149,6 +160,7 @@ export function computeBalances(ledger: Ledger): Balances {
         bankName: null,
         currency: w.currency,
         annualRateBps: null,
+        yieldPayout: null,
       })),
     ].map((account) => ({ ...account, balanceCents: balance.get(sourceKey(account.ref)) ?? 0 })),
 
