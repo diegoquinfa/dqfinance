@@ -26,20 +26,19 @@ export function PushSection() {
       if (state === 'on') {
         await disablePush()
         setState('off')
-        return
+      } else {
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') {
+          setState(permission === 'denied' ? 'denied' : 'off')
+        } else {
+          await enablePush()
+          setState('on')
+        }
       }
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        setState(permission === 'denied' ? 'denied' : 'off')
-        return
-      }
-      await enablePush()
-      setState('on')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : m.error_generic())
-    } finally {
-      setPending(false)
     }
+    setPending(false)
   }
 
   return (

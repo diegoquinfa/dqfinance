@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSources, findSource } from '#/features/accounts/sources'
+import { useSources, findSource, sourceKey, type SourceRef } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { useCategories } from '#/features/categories/categories-api'
 import { useCounterparties } from '#/features/counterparties/counterparties-api'
@@ -44,13 +44,22 @@ const frequencies = [
   { value: 'yearly', label: m.frequency_yearly },
 ] as const satisfies readonly { value: NewRecurringExpense['frequency']; label: () => string }[]
 
-function NewRecurringForm({ close }: { close: () => void }) {
+function NewRecurringForm({
+  close,
+  defaultSourceKey = '',
+  defaultCategoryId,
+}: {
+  close: () => void
+  defaultSourceKey?: string
+  defaultCategoryId?: string
+}) {
   const { sources } = useSources()
   const settings = useSettings()
-  const categories = useCategories('expense')
+  // A prefilled cost needs its system category, which the picker hides by default.
+  const categories = useCategories('expense', Boolean(defaultCategoryId))
   const counterparties = useCounterparties()
   const create = useCreateRecurringExpense()
-  const [sourceKey, setSourceKey] = useState('')
+  const [sourceKey, setSourceKey] = useState(defaultSourceKey)
   const [currency, setCurrency] = useState('')
 
   const source = findSource(sources, sourceKey)
@@ -137,12 +146,14 @@ function NewRecurringForm({ close }: { close: () => void }) {
         )}
         <Field>
           <FieldLabel htmlFor="recurring-category">{m.label_category()}</FieldLabel>
-          <NativeSelect id="recurring-category" name="categoryId" required>
-            {(categories.data ?? []).map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
+          <NativeSelect id="recurring-category" name="categoryId" defaultValue={defaultCategoryId} required>
+            {(categories.data ?? [])
+              .filter((category) => !category.system || category.id === defaultCategoryId)
+              .map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
           </NativeSelect>
         </Field>
         <Field>
@@ -334,5 +345,64 @@ function confirmOrSkipError(...errors: (Error | null)[]) {
     <p role="alert" className="text-sm text-destructive">
       {error.message}
     </p>
+  )
+}
+
+/**
+ * The costs of one source, for its detail page: the recurring expenses paid with it, and the same
+ * new-recurring form prefilled with the source and the system bank-fees category.
+ */
+export function SourceCosts({ sourceRef, index }: { sourceRef: SourceRef; index: string }) {
+  const all = useRecurringExpenses(false)
+  const categories = useCategories('expense', true)
+  // shortcut: the categories API hides the system key, so bank fees are matched by their
+  // localized name; upgrade when list_categories returns systemKey.
+  const bankFees = (categories.data ?? []).find((category) => category.name === m.category_bank_fees())
+  const costs = (all.data ?? []).filter(
+    (item) => item.source.type === sourceRef.type && item.source.id === sourceRef.id,
+  )
+
+  return (
+    <Section
+      index={index}
+      label={m.source_costs()}
+      action={
+        <DialogPanel trigger={<Button variant="link">{m.source_cost_add()}</Button>} title={m.source_cost_add()}>
+          {(close) => (
+            <NewRecurringForm close={close} defaultSourceKey={sourceKey(sourceRef)} defaultCategoryId={bankFees?.id} />
+          )}
+        </DialogPanel>
+      }
+    >
+      {all.isPending ? (
+        <ListSkeleton rows={2} />
+      ) : all.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {all.error.message}
+        </p>
+      ) : costs.length === 0 ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{m.source_costs_empty()}</EmptyTitle>
+            <EmptyDescription>{m.source_costs_empty_description()}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <ul className={rowsClass}>
+          {costs.map((cost) => (
+            <li key={cost.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
+              <p className="flex flex-wrap items-center gap-2 text-ink">
+                {cost.name}
+                <Badge variant="secondary">
+                  {frequencies.find((frequency) => frequency.value === cost.frequency)?.label() ?? cost.frequency}
+                </Badge>
+                {!cost.active && <Badge variant="outline">{m.label_inactive()}</Badge>}
+              </p>
+              <span className="font-medium text-ink tabular-nums">{formatMoney(cost.amount, cost.currency)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
   )
 }

@@ -19,9 +19,15 @@ import { CalendarPeriod } from './period-totals'
 import { netWorth } from './totals'
 
 /** "Ver todo →" beside a section label. */
-export function ViewAll({ to }: { to: '/accounts' | '/transactions' | '/recurring' }) {
+export function ViewAll({
+  to,
+  search,
+}: {
+  to: '/accounts' | '/transactions' | '/recurring'
+  search?: { source?: string }
+}) {
   return (
-    <Link to={to} className="label-mono group text-ink">
+    <Link to={to} search={search} className="label-mono group text-ink">
       <span className="link-draw">{m.action_view_all()}</span>
       <span aria-hidden className="ml-2 inline-block transition-transform duration-500 group-hover:translate-x-1">
         →
@@ -58,7 +64,7 @@ export function SourceRow({
         <span className="label-mono truncate text-muted-foreground">{meta}</span>
         <span className="label-mono text-right text-muted-foreground">
           {detail ?? (
-            <span aria-hidden className="inline-block text-faint transition-all duration-500 group-hover:translate-x-1 group-hover:text-signal">
+            <span aria-hidden className="inline-block text-faint transition-[transform,color] duration-500 group-hover:translate-x-1 group-hover:text-signal">
               →
             </span>
           )}

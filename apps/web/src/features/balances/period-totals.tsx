@@ -61,6 +61,17 @@ export function PeriodTotals({
 
 const dayDate = (day: string) => new Date(`${day}T12:00`)
 
+// Intl formatters are expensive to build and the period label renders on every offset change.
+const formatters = new Map<string, Intl.DateTimeFormat>()
+const format = (locale: string, options: Intl.DateTimeFormatOptions, date: Date) => {
+  const key = `${locale}/${options.month}/${options.day ?? ''}`
+  const cached = formatters.get(key)
+  if (cached) return cached.format(date)
+  const formatter = new Intl.DateTimeFormat(locale, options)
+  formatters.set(key, formatter)
+  return formatter.format(date)
+}
+
 function periodLabel(period: Period, offset: number, range: { from: string; to: string }) {
   if (offset === 0) {
     return { week: m.period_this_week, month: m.period_this_month, year: m.period_this_year }[period]()
@@ -68,11 +79,11 @@ function periodLabel(period: Period, offset: number, range: { from: string; to: 
   const locale = currentLocale()
   const from = dayDate(range.from)
   if (period === 'year') return String(from.getFullYear())
-  if (period === 'month') return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(from)
+  if (period === 'month') return format(locale, { month: 'long', year: 'numeric' }, from)
   const last = dayDate(range.to)
   last.setDate(last.getDate() - 1)
-  const short = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' })
-  return `${short.format(from)} - ${short.format(last)}`
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+  return `${format(locale, options, from)} - ${format(locale, options, last)}`
 }
 
 /** Week / month / year with previous and next, then what was spent and received in it. */
