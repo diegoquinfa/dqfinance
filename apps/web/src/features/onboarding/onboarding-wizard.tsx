@@ -1,0 +1,168 @@
+import { useMemo, useState, type FormEvent } from 'react'
+import { Navigate, useNavigate } from '@tanstack/react-router'
+import { authClient } from '#/features/auth/auth-client'
+import { browserCountry, countriesByLabel, currenciesByLabel, currencyLabel } from '#/shared/currencies'
+import { currentLocale, localeNames, m, type Locale } from '#/shared/i18n'
+import { Button } from '#/shared/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/shared/ui/card'
+import { Field, FormError } from '#/shared/ui/field'
+import { Input } from '#/shared/ui/input'
+import { NativeSelect } from '#/shared/ui/native-select'
+import { useCompleteOnboarding } from './onboarding-api'
+
+/** Wizard: country, language and timezone, then the currencies the user works with. */
+export function OnboardingWizard() {
+  const navigate = useNavigate()
+  const { data: session, isPending } = authClient.useSession()
+  const complete = useCompleteOnboarding()
+  const [step, setStep] = useState<1 | 2>(1)
+  const [country, setCountry] = useState(() => (typeof navigator === 'undefined' ? '' : (browserCountry() ?? '')))
+  const [locale, setLocale] = useState<Locale>(currentLocale())
+  const [timezone] = useState(() =>
+    typeof Intl === 'undefined' ? 'UTC' : Intl.DateTimeFormat().resolvedOptions().timeZone,
+  )
+  const [primaryCurrency, setPrimaryCurrency] = useState('COP')
+  const [extra, setExtra] = useState<string[]>([])
+  const [currencyToAdd, setCurrencyToAdd] = useState('USD')
+
+  const currencies = useMemo(() => currenciesByLabel(), [])
+  const countries = useMemo(() => countriesByLabel(), [])
+
+  if (isPending) return <div className="min-h-dvh" aria-busy="true" />
+  if (!session) return <Navigate to="/sign-in" />
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    complete.mutate(
+      {
+        country,
+        locale,
+        timezone,
+        primaryCurrency,
+        currencies: extra.filter((code) => code !== primaryCurrency),
+      },
+      // Onboarding created the settings; go straight to the accounts screen.
+      {
+        onSuccess: () => void navigate({ to: '/accounts' }),
+      },
+    )
+  }
+
+  return (
+    <main className="grid min-h-dvh place-items-center p-4">
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle className="text-xl">{m.onboarding_title()}</CardTitle>
+          <CardDescription>
+            {step === 1 ? m.onboarding_step_country() : m.onboarding_step_money()}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {step === 1 && (
+            <div className="grid gap-4">
+              <Field id="country" label={m.label_country()} hint={m.onboarding_country_hint()}>
+                <NativeSelect id="country" value={country} onChange={(event) => setCountry(event.target.value)}>
+                  <option value="" disabled />
+                  {countries.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+              <Field id="locale" label={m.label_language()}>
+                <NativeSelect id="locale" value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
+                  {Object.entries(localeNames).map(([code, name]) => (
+                    <option key={code} value={code}>
+                      {name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+              <Field id="timezone" label={m.label_timezone()} hint={m.onboarding_timezone_hint()}>
+                <Input id="timezone" value={timezone} readOnly />
+              </Field>
+              <Button type="button" disabled={country.length !== 2} onClick={() => setStep(2)}>
+                {m.action_next()}
+              </Button>
+            </div>
+          )}
+
+          {step === 2 && (
+            <form onSubmit={submit} className="grid gap-4">
+              <Field id="primary-currency" label={m.label_primary_currency()} hint={m.onboarding_primary_currency_hint()}>
+                <NativeSelect
+                  id="primary-currency"
+                  value={primaryCurrency}
+                  onChange={(event) => {
+                    setPrimaryCurrency(event.target.value)
+                    setExtra((codes) => codes.filter((code) => code !== event.target.value))
+                  }}
+                >
+                  {currencies.map((currency) => (
+                    <option key={currency.code} value={currency.code}>
+                      {currency.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+
+              <Field id="extra-currency" label={m.label_other_currencies()} hint={m.onboarding_other_currencies_hint()}>
+                <div className="flex gap-2">
+                  <NativeSelect
+                    id="extra-currency"
+                    value={currencyToAdd}
+                    onChange={(event) => setCurrencyToAdd(event.target.value)}
+                  >
+                    {currencies.map((currency) => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.label}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={currencyToAdd === primaryCurrency || extra.includes(currencyToAdd)}
+                    onClick={() => setExtra((codes) => [...codes, currencyToAdd])}
+                  >
+                    {m.onboarding_add_currency()}
+                  </Button>
+                </div>
+              </Field>
+
+              {extra.length > 0 && (
+                <ul className="grid gap-2 text-sm">
+                  {extra.map((code) => (
+                    <li key={code} className="flex items-center justify-between rounded-md border px-3 py-2">
+                      {currencyLabel(code)}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setExtra((codes) => codes.filter((value) => value !== code))}
+                      >
+                        {m.action_delete()}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <FormError message={complete.error?.message} />
+              <div className="flex justify-between gap-2">
+                <Button type="button" variant="ghost" onClick={() => setStep(1)}>
+                  {m.action_back()}
+                </Button>
+                <Button type="submit" disabled={complete.isPending}>
+                  {m.action_finish()}
+                </Button>
+              </div>
+            </form>
+          )}
+
+        </CardContent>
+      </Card>
+    </main>
+  )
+}

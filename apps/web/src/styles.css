@@ -1,0 +1,107 @@
+@import '@fontsource-variable/geist';
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Theme follows the OS setting (see DESIGN.md → Dark mode). */
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+/* Tokens: DESIGN.md is the source of truth. Neutrals are zinc; cobalt is the only accent. */
+:root {
+  --background: oklch(0.985 0.002 286);
+  --foreground: oklch(0.21 0.006 286);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.5 0.17 262);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.955 0.003 286);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.955 0.003 286);
+  --muted-foreground: oklch(0.5 0.014 286);
+  --accent: oklch(0.955 0.003 286);
+  --accent-foreground: var(--foreground);
+  --destructive: oklch(0.55 0.2 27);
+  --border: oklch(0.91 0.004 286);
+  --input: oklch(0.87 0.005 286);
+  --ring: oklch(0.5 0.17 262);
+  --income: oklch(0.52 0.12 158);
+  --expense: var(--foreground);
+  --radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.16 0.004 286);
+    --foreground: oklch(0.96 0.002 286);
+    --card: oklch(0.2 0.005 286);
+    --popover: oklch(0.2 0.005 286);
+    --primary: oklch(0.68 0.15 262);
+    --primary-foreground: oklch(0.16 0.004 286);
+    --secondary: oklch(0.26 0.006 286);
+    --muted: oklch(0.26 0.006 286);
+    --muted-foreground: oklch(0.71 0.012 286);
+    --accent: oklch(0.26 0.006 286);
+    --destructive: oklch(0.68 0.19 25);
+    --border: oklch(0.28 0.006 286);
+    --input: oklch(0.34 0.007 286);
+    --ring: oklch(0.68 0.15 262);
+    --income: oklch(0.74 0.14 158);
+  }
+}
+
+@theme inline {
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  /* Form controls, scrollbars and selection follow the app theme, not the system one. */
+  html {
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    html {
+      color-scheme: dark;
+    }
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+  /*
+   * The browser paints the native dropdown list itself, and on Windows it uses the system theme,
+   * which can contradict the page (light list, white text). Set the row colors explicitly.
+   */
+  option,
+  optgroup {
+    background-color: var(--card);
+    color: var(--card-foreground);
+  }
+}
