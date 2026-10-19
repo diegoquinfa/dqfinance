@@ -6,7 +6,8 @@ import { SignInForm } from '#/features/auth/sign-in-form'
 export const Route = createFileRoute('/sign-in')({
   ssr: false,
   component: () => (
-    <FocusLayout>
+    // The panel title carries the logo here, so the corner one would repeat it.
+    <FocusLayout logo={false}>
       <SignInForm />
     </FocusLayout>
   ),
