@@ -4,7 +4,7 @@
  *
  * - Only staged files are checked, and the *staged blob* is measured, not the working tree,
  *   so a partially staged file is judged on what will actually be committed.
- * - Lockfiles, codegen output, build output and binaries are ignored: no agent authors them.
+ * - Lockfiles, codegen output, the i18n catalogs, build output and binaries are ignored: no agent authors them.
  *
  * Wired up by .githooks/pre-commit (see scripts/install-hooks.mjs).
  */
@@ -17,7 +17,7 @@ export const BYTE_LIMIT = TOKEN_LIMIT * BYTES_PER_TOKEN
 
 export const tokens = (bytes) => bytes / BYTES_PER_TOKEN
 
-/** Paths no agent authors. Rules: `*.ext` matches the basename suffix, `dir/` any folder, otherwise the basename. */
+/** Paths no agent authors. Rules: `*.ext` matches the basename suffix, `dir/` any folder, `dir/*.ext` that folder's files, otherwise the basename. */
 const IGNORED = [
   // Lockfiles
   'pnpm-lock.yaml',
@@ -36,6 +36,8 @@ const IGNORED = [
   '*_snapshot.json', // drizzle-kit meta snapshots
   'paraglide/', // paraglide output
   'project.inlang/', // inlang project cache
+  // Paraglide keeps one catalog per locale; every feature grows them, and they are not files to split
+  'packages/i18n/messages/*.json',
   // Build output, in case it ever gets staged
   'dist/',
   'build/',
@@ -80,6 +82,10 @@ export function isIgnored(file) {
   return IGNORED.some((rule) => {
     if (rule.startsWith('*.')) return base.endsWith(rule.slice(1))
     if (rule.endsWith('/')) return path.includes(`/${rule}`) || path.startsWith(rule)
+    if (rule.includes('/*.')) {
+      const dir = rule.slice(0, rule.indexOf('/*'))
+      return path.startsWith(`${dir}/`) && base.endsWith(rule.slice(rule.indexOf('*') + 1))
+    }
     return base === rule
   })
 }
@@ -109,7 +115,7 @@ export function buildReport(over) {
     '     the caller thin: it calls, it does not compute.',
     '  4. Name every new file after what it contains, then re-stage what you moved: git add <paths>',
     '',
-    'Exempt: lockfiles, codegen and binaries (listed in scripts/check-file-size.mjs).',
+    'Exempt: lockfiles, codegen, the i18n catalogs and binaries (listed in scripts/check-file-size.mjs).',
     'Justified one-off? Bypass once with: git commit --no-verify',
   ].join('\n')
 }
