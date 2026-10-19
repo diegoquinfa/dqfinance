@@ -4,10 +4,12 @@ import type { Db } from '../../db'
 import type { Locale } from '../../shared/locale'
 import { category, type SystemCategoryKey } from './category.schema'
 
-const SYSTEM_KINDS: Record<SystemCategoryKey, 'expense' | 'income'> = {
+export const SYSTEM_KINDS: Record<SystemCategoryKey, 'expense' | 'income'> = {
   fx_loss: 'expense',
   fx_gain: 'income',
   bank_fees: 'expense',
+  other_expense: 'expense',
+  other_income: 'income',
 }
 
 /** Display name: stored name for user categories, translated name for system ones. */

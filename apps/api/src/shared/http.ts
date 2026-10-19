@@ -30,6 +30,9 @@ export const ERROR_CODES = [
   'transfer_already_received',
   'recurring_not_found',
   'push_not_configured',
+  'document_not_found',
+  'document_type_not_allowed',
+  'document_too_large',
 ] as const
 
 export type ErrorCode = (typeof ERROR_CODES)[number]
@@ -60,6 +63,10 @@ export function onError<E extends Env & { Variables: { locale: Locale } }>(err: 
 /** Validates a JSON body with a zod schema; invalid input becomes AppError('invalid_input'). */
 export const jsonBody = <T extends z.ZodType>(schema: T) =>
   validator('json', (value) => parseOrThrow(schema, value))
+
+/** Validates a multipart form; the file arrives as a File, the rest as strings. */
+export const formBody = <T extends z.ZodType>(schema: T) =>
+  validator('form', (value) => parseOrThrow(schema, value))
 
 /**
  * Validates query parameters with the use case's own schema. Query values arrive as strings, so
