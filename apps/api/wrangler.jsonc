@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dqfinance-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-18",
+  // Better Auth relies on AsyncLocalStorage and node:crypto.
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    // Public origin of this worker. It is the OAuth issuer and the base of the MCP resource URL.
+    "BETTER_AUTH_URL": "http://localhost:8787",
+    // Origin of apps/web. It hosts the sign-in and consent pages and is the only CORS origin.
+    "WEB_URL": "http://localhost:3000"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dqfinance",
+      // Replace with the id printed by `wrangler d1 create dqfinance` before deploying.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+  // Secrets (set with `wrangler secret put`, or in .dev.vars locally): BETTER_AUTH_SECRET
+}

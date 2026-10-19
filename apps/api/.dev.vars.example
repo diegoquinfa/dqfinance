@@ -1,0 +1,2 @@
+# Copy to .dev.vars. Generate with: openssl rand -base64 32
+BETTER_AUTH_SECRET=change-me-to-a-32-byte-random-secret
