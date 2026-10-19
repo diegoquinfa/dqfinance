@@ -7,6 +7,7 @@ import { currencyCode } from '../../shared/money'
 import { cashWallet } from '../accounts/account.schema'
 import { category, SYSTEM_CATEGORY_KEYS } from '../categories/category.schema'
 import { defaultCategoryRows } from '../categories/default-categories'
+import { SYSTEM_KINDS } from '../categories/system-categories'
 import { getSettings } from '../settings/get-settings'
 import { LOCALES, userCurrency, userSettings } from '../settings/settings.schema'
 
@@ -38,11 +39,7 @@ export async function completeOnboarding(db: Db, userId: string, input: z.infer<
     db.insert(userCurrency).values(codes.map((code) => ({ userId, code }))),
     db.insert(category).values([
       ...defaultCategoryRows(userId, input.locale),
-      ...SYSTEM_CATEGORY_KEYS.map((systemKey) => ({
-        userId,
-        systemKey,
-        kind: systemKey === 'fx_gain' ? ('income' as const) : ('expense' as const),
-      })),
+      ...SYSTEM_CATEGORY_KEYS.map((systemKey) => ({ userId, systemKey, kind: SYSTEM_KINDS[systemKey] })),
     ]),
     db.insert(cashWallet).values({
       userId,

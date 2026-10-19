@@ -20,8 +20,20 @@
       "migrations_dir": "migrations"
     }
   ],
+  // Documents per source. Local dev uses miniflare's local R2; create the bucket before deploying.
+  "r2_buckets": [
+    {
+      "binding": "DOCUMENTS",
+      "bucket_name": "dqfinance-documents"
+    }
+  ],
   "observability": {
     "enabled": true
+  },
+  // Declared so `cf-typegen` is deterministic without a local .dev.vars. VAPID keys stay optional
+  // (see src/app-env.ts): absent means push notifications are off.
+  "secrets": {
+    "required": ["BETTER_AUTH_SECRET"]
   }
   // Secrets (set with `wrangler secret put`, or in .dev.vars locally): BETTER_AUTH_SECRET
 }
