@@ -1,46 +1,63 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
-import { EmptyState, Field, FormError, ListSkeleton } from '#/shared/ui/field'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
+import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
+import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
-import { Segmented } from '#/shared/ui/segmented'
+import { Spinner } from '#/shared/ui/spinner'
+import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
+import { toast } from 'sonner'
 import { useCounterparties, useCreateCounterparty, type NewCounterparty } from './counterparties-api'
 
 function NewContactForm({ close }: { close: () => void }) {
   const [kind, setKind] = useState<NewCounterparty['kind']>('person')
   const create = useCreateCounterparty()
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    create.mutate({ name: String(form.get('name')), kind }, { onSuccess: close })
+    create.mutate(
+      { name: String(form.get('name')), kind },
+      {
+        onSuccess: () => {
+          close()
+          toast.success(m.toast_contact_created())
+        },
+      },
+    )
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4">
-      <Segmented
-        name={m.label_kind()}
-        value={kind}
-        onChange={setKind}
-        options={[
-          { value: 'person', label: m.label_person() },
-          { value: 'business', label: m.label_business() },
-        ]}
-      />
-      <Field id="contact-name" label={m.label_name()}>
-        <Input id="contact-name" name="name" required maxLength={80} autoFocus />
-      </Field>
-      <FormError message={create.error?.message} />
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={close}>
-          {m.action_cancel()}
-        </Button>
-        <Button type="submit" disabled={create.isPending}>
-          {m.action_create()}
-        </Button>
-      </div>
+    <form onSubmit={submit}>
+      <FieldGroup>
+        <ToggleGroup
+          type="single"
+          className="w-full"
+          aria-label={m.label_kind()}
+          value={kind}
+          onValueChange={(value) => setKind(value as NewCounterparty['kind'])}
+        >
+          <ToggleGroupItem value="person">{m.label_person()}</ToggleGroupItem>
+          <ToggleGroupItem value="business">{m.label_business()}</ToggleGroupItem>
+        </ToggleGroup>
+        <Field>
+          <FieldLabel htmlFor="contact-name">{m.label_name()}</FieldLabel>
+          <Input id="contact-name" name="name" required maxLength={80} autoFocus />
+        </Field>
+        <FieldError>{create.error?.message}</FieldError>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={close}>
+            {m.action_cancel()}
+          </Button>
+          <Button type="submit" disabled={create.isPending}>
+            {create.isPending && <Spinner data-icon="inline-start" />}
+            {m.action_create()}
+          </Button>
+        </div>
+      </FieldGroup>
     </form>
   )
 }
@@ -65,7 +82,8 @@ export function ContactsPage() {
         }
       />
 
-      <Field id="contacts-search" label={m.contacts_search()} className="max-w-md">
+      <Field className="max-w-md">
+        <FieldLabel htmlFor="contacts-search">{m.contacts_search()}</FieldLabel>
         <Input
           id="contacts-search"
           type="search"
@@ -81,7 +99,12 @@ export function ContactsPage() {
           {contacts.error.message}
         </p>
       ) : (contacts.data ?? []).length === 0 ? (
-        <EmptyState title={m.contacts_empty()} description={m.contacts_empty_description()} />
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{m.contacts_empty()}</EmptyTitle>
+            <EmptyDescription>{m.contacts_empty_description()}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <div className="pt-4">
           {(['person', 'business'] as const).map((kind, index) => (

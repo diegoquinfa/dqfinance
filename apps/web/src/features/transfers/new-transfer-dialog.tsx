@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { cashAndProducts, findSource, transferDestinations, useSources } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { useSettings } from '#/features/settings/settings-api'
@@ -6,9 +6,11 @@ import { dayToIso, today } from '#/shared/dates'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
-import { Field, FormError } from '#/shared/ui/field'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { NativeSelect } from '#/shared/ui/native-select'
+import { Spinner } from '#/shared/ui/spinner'
+import { toast } from 'sonner'
 import { useCreateTransfer } from './transfers-api'
 
 function NewTransferForm({ close }: { close: () => void }) {
@@ -25,7 +27,7 @@ function NewTransferForm({ close }: { close: () => void }) {
   const receivedCurrency = to?.cardKind === 'credit' ? debtCurrency || to.currency : (to?.currency ?? '')
   const needsReceivedAmount = Boolean(from && to && receivedCurrency && receivedCurrency !== from.currency)
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!from || !to || sameSource) return
     const form = new FormData(event.currentTarget)
@@ -43,7 +45,12 @@ function NewTransferForm({ close }: { close: () => void }) {
         sentAt: dayToIso(String(form.get('date'))),
         inTransit: form.get('inTransit') === 'on',
       },
-      { onSuccess: close },
+      {
+        onSuccess: () => {
+          close()
+          toast.success(m.toast_transfer_created())
+        },
+      },
     )
   }
 
@@ -61,91 +68,91 @@ function NewTransferForm({ close }: { close: () => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4">
-      <SourceSelect
-        id="transfer-from"
-        label={m.label_from()}
-        hint={m.transfers_from_hint()}
-        options={cashAndProducts(sources)}
-        value={fromKey}
-        onChange={setFromKey}
-      />
-      <SourceSelect
-        id="transfer-to"
-        label={m.label_to()}
-        hint={m.transfers_to_hint()}
-        options={transferDestinations(sources)}
-        value={toKey}
-        onChange={setToKey}
-      />
-      {sameSource && (
-        <p role="alert" className="text-sm text-destructive">
-          {m.transfers_same_source()}
-        </p>
-      )}
+    <form onSubmit={submit}>
+      <FieldGroup>
+        <SourceSelect
+          id="transfer-from"
+          label={m.label_from()}
+          hint={m.transfers_from_hint()}
+          options={cashAndProducts(sources)}
+          value={fromKey}
+          onChange={setFromKey}
+        />
+        <SourceSelect
+          id="transfer-to"
+          label={m.label_to()}
+          hint={m.transfers_to_hint()}
+          options={transferDestinations(sources)}
+          value={toKey}
+          onChange={setToKey}
+        />
+        {sameSource && <FieldError>{m.transfers_same_source()}</FieldError>}
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field id="transfer-amount" label={`${m.label_amount()} (${from?.currency ?? ''})`}>
-          <Input
-            id="transfer-amount"
-            name="amount"
-            type="number"
-            step="0.01"
-            min="0.01"
-            inputMode="decimal"
-            required
-            className="tabular-nums"
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <Field>
+            <FieldLabel htmlFor="transfer-amount">{`${m.label_amount()} (${from?.currency ?? ''})`}</FieldLabel>
+            <Input
+              id="transfer-amount"
+              name="amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              inputMode="decimal"
+              required
+              className="tabular-nums"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="transfer-date">{m.label_date()}</FieldLabel>
+            <Input id="transfer-date" name="date" type="date" defaultValue={today()} max={today()} required />
+          </Field>
+        </div>
+
+        {to?.cardKind === 'credit' && (
+          <Field>
+            <FieldLabel htmlFor="transfer-debt-currency">{m.label_debt_currency()}</FieldLabel>
+            <NativeSelect
+              id="transfer-debt-currency"
+              value={receivedCurrency}
+              onChange={(event) => setDebtCurrency(event.target.value)}
+            >
+              {(settings.data?.currencies ?? [to.currency]).map((code) => (
+                <option key={code} value={code}>
+                  {code}
+                </option>
+              ))}
+            </NativeSelect>
+            <FieldDescription>{m.transfers_debt_currency_hint()}</FieldDescription>
+          </Field>
+        )}
+
+        {needsReceivedAmount && (
+          <Field>
+            <FieldLabel htmlFor="transfer-received">{`${m.label_received_amount()} (${receivedCurrency})`}</FieldLabel>
+            <Input
+              id="transfer-received"
+              name="receivedAmount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              inputMode="decimal"
+              required
+              className="tabular-nums"
+            />
+            <FieldDescription>{m.transfers_received_amount_hint()}</FieldDescription>
+          </Field>
+        )}
+
+        <Field>
+          <FieldLabel htmlFor="transfer-fee">{`${m.label_fee()} (${m.label_optional()})`}</FieldLabel>
+          <Input id="transfer-fee" name="fee" type="number" step="0.01" min="0" inputMode="decimal" className="tabular-nums" />
         </Field>
-        <Field id="transfer-date" label={m.label_date()}>
-          <Input id="transfer-date" name="date" type="date" defaultValue={today()} max={today()} required />
+
+        <Field>
+          <FieldLabel htmlFor="transfer-note">{`${m.label_note()} (${m.label_optional()})`}</FieldLabel>
+          <Input id="transfer-note" name="note" maxLength={200} />
         </Field>
-      </div>
 
-      {to?.cardKind === 'credit' && (
-        <Field id="transfer-debt-currency" label={m.label_debt_currency()} hint={m.transfers_debt_currency_hint()}>
-          <NativeSelect
-            id="transfer-debt-currency"
-            value={receivedCurrency}
-            onChange={(event) => setDebtCurrency(event.target.value)}
-          >
-            {(settings.data?.currencies ?? [to.currency]).map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-      )}
-
-      {needsReceivedAmount && (
-        <Field
-          id="transfer-received"
-          label={`${m.label_received_amount()} (${receivedCurrency})`}
-          hint={m.transfers_received_amount_hint()}
-        >
-          <Input
-            id="transfer-received"
-            name="receivedAmount"
-            type="number"
-            step="0.01"
-            min="0.01"
-            inputMode="decimal"
-            required
-            className="tabular-nums"
-          />
-        </Field>
-      )}
-
-      <Field id="transfer-fee" label={`${m.label_fee()} (${m.label_optional()})`}>
-        <Input id="transfer-fee" name="fee" type="number" step="0.01" min="0" inputMode="decimal" className="tabular-nums" />
-      </Field>
-
-      <Field id="transfer-note" label={`${m.label_note()} (${m.label_optional()})`}>
-        <Input id="transfer-note" name="note" maxLength={200} />
-      </Field>
-
-      <div className="grid gap-2">
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" name="inTransit" className="mt-1 size-4 accent-signal" />
           <span>
@@ -153,17 +160,18 @@ function NewTransferForm({ close }: { close: () => void }) {
             <span className="block text-muted-foreground">{m.transfers_in_transit_hint()}</span>
           </span>
         </label>
-      </div>
 
-      <FormError message={create.error?.message} />
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={close}>
-          {m.action_cancel()}
-        </Button>
-        <Button type="submit" disabled={create.isPending || !fromKey || !toKey || sameSource}>
-          {m.transfers_submit()}
-        </Button>
-      </div>
+        <FieldError>{create.error?.message}</FieldError>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={close}>
+            {m.action_cancel()}
+          </Button>
+          <Button type="submit" disabled={create.isPending || !fromKey || !toKey || sameSource}>
+            {create.isPending && <Spinner data-icon="inline-start" />}
+            {m.transfers_submit()}
+          </Button>
+        </div>
+      </FieldGroup>
     </form>
   )
 }

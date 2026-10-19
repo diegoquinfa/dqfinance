@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
-import { FormError } from '#/shared/ui/field'
+import { FieldError } from '#/shared/ui/field'
 import { Section } from '#/shared/ui/page'
 import { disablePush, enablePush, hasPushSubscription, pushSupported } from './push-api'
 
@@ -26,20 +26,19 @@ export function PushSection() {
       if (state === 'on') {
         await disablePush()
         setState('off')
-        return
+      } else {
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') {
+          setState(permission === 'denied' ? 'denied' : 'off')
+        } else {
+          await enablePush()
+          setState('on')
+        }
       }
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        setState(permission === 'denied' ? 'denied' : 'off')
-        return
-      }
-      await enablePush()
-      setState('on')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : m.error_generic())
-    } finally {
-      setPending(false)
     }
+    setPending(false)
   }
 
   return (
@@ -52,7 +51,7 @@ export function PushSection() {
             {state === 'on' ? m.push_disable() : m.push_enable()}
           </Button>
         )}
-        <FormError message={error} />
+        <FieldError>{error}</FieldError>
       </div>
     </Section>
   )

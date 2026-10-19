@@ -3,7 +3,8 @@ import { ownerId } from '../auth/owner'
 import { createdAt, id } from '../../shared/schema-columns'
 
 export const CATEGORY_KINDS = ['expense', 'income'] as const
-export const SYSTEM_CATEGORY_KEYS = ['fx_loss', 'fx_gain', 'bank_fees'] as const
+/** Booked automatically: FX difference, bank fees, and the fallback an import uses for uncategorized rows. */
+export const SYSTEM_CATEGORY_KEYS = ['fx_loss', 'fx_gain', 'bank_fees', 'other_expense', 'other_income'] as const
 
 export type SystemCategoryKey = (typeof SYSTEM_CATEGORY_KEYS)[number]
 

@@ -1,11 +1,13 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
-import { Field, FormError } from '#/shared/ui/field'
+import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { NativeSelect } from '#/shared/ui/native-select'
+import { Spinner } from '#/shared/ui/spinner'
+import { toast } from 'sonner'
 import { useAdjustBalance } from './accounts-api'
 import type { SourceRef } from './sources'
 
@@ -39,8 +41,7 @@ export function AdjustBalanceDialog({
     >
       {(close) => (
         <form
-          className="grid gap-4"
-          onSubmit={(event: FormEvent<HTMLFormElement>) => {
+          onSubmit={(event) => {
             event.preventDefault()
             const form = new FormData(event.currentTarget)
             adjust.mutate(
@@ -50,47 +51,62 @@ export function AdjustBalanceDialog({
                 currency: currencies.length > 1 ? selected : undefined,
                 note: String(form.get('note')) || undefined,
               },
-              { onSuccess: close },
+              {
+                onSuccess: () => {
+                  close()
+                  toast.success(m.toast_balance_adjusted())
+                },
+              },
             )
           }}
         >
-          <p className="text-sm text-muted-foreground">
-            {m.label_balance()}: {formatMoney(currentBalance, selected)}
-          </p>
-          {currencies.length > 1 && (
-            <Field id="adjust-currency" label={m.label_debt_currency()}>
-              <NativeSelect id="adjust-currency" value={selected} onChange={(event) => setSelected(event.target.value)}>
-                {currencies.map((code) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
-              </NativeSelect>
+          <FieldGroup>
+            <p className="text-sm text-muted-foreground">
+              {m.label_balance()}: {formatMoney(currentBalance, selected)}
+            </p>
+            {currencies.length > 1 && (
+              <Field>
+                <FieldLabel htmlFor="adjust-currency">{m.label_debt_currency()}</FieldLabel>
+                <NativeSelect
+                  id="adjust-currency"
+                  value={selected}
+                  onChange={(event) => setSelected(event.target.value)}
+                >
+                  {currencies.map((code) => (
+                    <option key={code} value={code}>
+                      {code}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+            <Field>
+              <FieldLabel htmlFor="adjust-observed">{m.label_observed_balance()}</FieldLabel>
+              <Input
+                id="adjust-observed"
+                name="observedBalance"
+                type="number"
+                step="0.01"
+                inputMode="decimal"
+                required
+                autoFocus
+              />
             </Field>
-          )}
-          <Field id="adjust-observed" label={m.label_observed_balance()}>
-            <Input
-              id="adjust-observed"
-              name="observedBalance"
-              type="number"
-              step="0.01"
-              inputMode="decimal"
-              required
-              autoFocus
-            />
-          </Field>
-          <Field id="adjust-note" label={`${m.label_note()} (${m.label_optional()})`}>
-            <Input id="adjust-note" name="note" maxLength={200} />
-          </Field>
-          <FormError message={adjust.error?.message} />
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={close}>
-              {m.action_cancel()}
-            </Button>
-            <Button type="submit" disabled={adjust.isPending}>
-              {m.action_adjust()}
-            </Button>
-          </div>
+            <Field>
+              <FieldLabel htmlFor="adjust-note">{`${m.label_note()} (${m.label_optional()})`}</FieldLabel>
+              <Input id="adjust-note" name="note" maxLength={200} />
+            </Field>
+            <FieldError>{adjust.error?.message}</FieldError>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={close}>
+                {m.action_cancel()}
+              </Button>
+              <Button type="submit" disabled={adjust.isPending}>
+                {adjust.isPending && <Spinner data-icon="inline-start" />}
+                {m.action_adjust()}
+              </Button>
+            </div>
+          </FieldGroup>
         </form>
       )}
     </DialogPanel>

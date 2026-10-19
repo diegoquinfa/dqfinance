@@ -6,7 +6,7 @@ import { formatMoney } from '#/shared/money'
 import { periodRange, type Period } from '#/shared/periods'
 import { Button } from '#/shared/ui/button'
 import { rowsClass } from '#/shared/ui/page'
-import { Segmented } from '#/shared/ui/segmented'
+import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { totalsIn } from './totals'
 
 /** Spent and received (and net) in one currency for the given filters. Totals come from the API. */
@@ -61,6 +61,17 @@ export function PeriodTotals({
 
 const dayDate = (day: string) => new Date(`${day}T12:00`)
 
+// Intl formatters are expensive to build and the period label renders on every offset change.
+const formatters = new Map<string, Intl.DateTimeFormat>()
+const format = (locale: string, options: Intl.DateTimeFormatOptions, date: Date) => {
+  const key = `${locale}/${options.month}/${options.day ?? ''}`
+  const cached = formatters.get(key)
+  if (cached) return cached.format(date)
+  const formatter = new Intl.DateTimeFormat(locale, options)
+  formatters.set(key, formatter)
+  return formatter.format(date)
+}
+
 function periodLabel(period: Period, offset: number, range: { from: string; to: string }) {
   if (offset === 0) {
     return { week: m.period_this_week, month: m.period_this_month, year: m.period_this_year }[period]()
@@ -68,11 +79,11 @@ function periodLabel(period: Period, offset: number, range: { from: string; to: 
   const locale = currentLocale()
   const from = dayDate(range.from)
   if (period === 'year') return String(from.getFullYear())
-  if (period === 'month') return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(from)
+  if (period === 'month') return format(locale, { month: 'long', year: 'numeric' }, from)
   const last = dayDate(range.to)
   last.setDate(last.getDate() - 1)
-  const short = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' })
-  return `${short.format(from)} - ${short.format(last)}`
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+  return `${format(locale, options, from)} - ${format(locale, options, last)}`
 }
 
 /** Week / month / year with previous and next, then what was spent and received in it. */
@@ -84,19 +95,19 @@ export function CalendarPeriod({ currency }: { currency: string }) {
   return (
     <div className="grid gap-5">
       <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-6">
-        <Segmented
-          name={m.period_label()}
+        <ToggleGroup
+          type="single"
+          aria-label={m.period_label()}
           value={period}
-          onChange={(value) => {
-            setPeriod(value)
+          onValueChange={(value) => {
+            setPeriod(value as Period)
             setOffset(0)
           }}
-          options={[
-            { value: 'week', label: m.period_week() },
-            { value: 'month', label: m.period_month() },
-            { value: 'year', label: m.period_year() },
-          ]}
-        />
+        >
+          <ToggleGroupItem value="week">{m.period_week()}</ToggleGroupItem>
+          <ToggleGroupItem value="month">{m.period_month()}</ToggleGroupItem>
+          <ToggleGroupItem value="year">{m.period_year()}</ToggleGroupItem>
+        </ToggleGroup>
         <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" size="icon-sm" aria-label={m.period_previous()} onClick={() => setOffset(offset - 1)}>
             <ChevronLeft aria-hidden />

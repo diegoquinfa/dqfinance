@@ -3,10 +3,12 @@ import { createMCPServer } from '@tanstack/ai-mcp/server'
 import { Hono } from 'hono'
 import type { AppEnv } from '../../app-env'
 import { MCP_SCOPES, mcpResource } from '../auth/auth'
+import { accountTools } from '../accounts/accounts.tools'
 import { balanceAdjustmentTools } from '../balance-adjustments/balance-adjustments.tools'
 import { balanceTools } from '../balances/balances.tools'
 import { categoryTools } from '../categories/categories.tools'
 import { counterpartyTools } from '../counterparties/counterparties.tools'
+import { documentTools } from '../documents/documents.tools'
 import { recurringExpenseTools } from '../recurring-expenses/recurring-expenses.tools'
 import { pushConfigFrom } from '../push/push-config'
 import { getSettings } from '../settings/get-settings'
@@ -18,6 +20,7 @@ const mcpServer = createMCPServer({
   name: 'dqfinance',
   version: '0.2.0',
   tools: [
+    ...accountTools,
     ...balanceTools,
     ...categoryTools,
     ...counterpartyTools,
@@ -25,6 +28,7 @@ const mcpServer = createMCPServer({
     ...transferTools,
     ...balanceAdjustmentTools,
     ...recurringExpenseTools,
+    ...documentTools,
   ],
 })
 

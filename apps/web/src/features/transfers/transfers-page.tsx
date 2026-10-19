@@ -3,8 +3,9 @@ import { formatDate } from '#/shared/dates'
 import { formatMoney } from '#/shared/money'
 import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
-import { EmptyState, ListSkeleton } from '#/shared/ui/field'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
 import { PageHeader, rowsClass } from '#/shared/ui/page'
+import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { NewTransferDialog } from './new-transfer-dialog'
 import { useMarkTransferReceived, useTransfers, type Transfer } from './transfers-api'
 
@@ -32,7 +33,12 @@ export function TransfersPage() {
           {transfers.error.message}
         </p>
       ) : transfers.data.length === 0 ? (
-        <EmptyState title={m.transfers_empty()} description={m.transfers_empty_description()} />
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{m.transfers_empty()}</EmptyTitle>
+            <EmptyDescription>{m.transfers_empty_description()}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ul className={rowsClass}>
           {transfers.data.map((transfer) => (

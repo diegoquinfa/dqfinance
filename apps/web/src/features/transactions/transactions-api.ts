@@ -43,3 +43,24 @@ export function useCreateTransaction() {
     onSuccess: invalidate,
   })
 }
+
+export type ImportInput = InferRequestType<typeof api.api.transactions.import.$post>['json']
+export type ImportView = InferResponseType<typeof api.api.transactions.import.$post, 200>
+
+/** The dry run of a statement import: what would be recorded, duplicates included. */
+export function useImportPreview(input: ImportInput | null) {
+  return useQuery({
+    queryKey: ['transactions', 'import', input],
+    queryFn: async () => unwrap(api.api.transactions.import.$post({ json: input! })),
+    enabled: input !== null,
+  })
+}
+
+/** The real import: the same rows with `dryRun: false`. */
+export function useImportTransactions() {
+  const invalidate = useInvalidateTransactions()
+  return useMutation({
+    mutationFn: async (json: ImportInput) => unwrap(api.api.transactions.import.$post({ json })),
+    onSuccess: invalidate,
+  })
+}

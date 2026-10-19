@@ -5,10 +5,11 @@ import { browserCountry, countriesByLabel, currenciesByLabel, currencyLabel } fr
 import { currentLocale, localeNames, m, type Locale } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/shared/ui/card'
-import { Field, FormError } from '#/shared/ui/field'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { NativeSelect } from '#/shared/ui/native-select'
 import { FocusLayout } from '#/shared/ui/page'
+import { Spinner } from '#/shared/ui/spinner'
 import { useCompleteOnboarding } from './onboarding-api'
 
 /** Wizard: country, language and timezone, then the currencies the user works with. */
@@ -18,7 +19,7 @@ export function OnboardingWizard() {
   const complete = useCompleteOnboarding()
   const [step, setStep] = useState<1 | 2>(1)
   const [country, setCountry] = useState(() => (typeof navigator === 'undefined' ? '' : (browserCountry() ?? '')))
-  const [locale, setLocale] = useState<Locale>(currentLocale())
+  const [locale, setLocale] = useState<Locale>(() => currentLocale())
   const [timezone] = useState(() =>
     typeof Intl === 'undefined' ? 'UTC' : Intl.DateTimeFormat().resolvedOptions().timeZone,
   )
@@ -60,8 +61,9 @@ export function OnboardingWizard() {
         </CardHeader>
         <CardContent>
           {step === 1 && (
-            <div className="grid gap-4">
-              <Field id="country" label={m.label_country()} hint={m.onboarding_country_hint()}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="country">{m.label_country()}</FieldLabel>
                 <NativeSelect id="country" value={country} onChange={(event) => setCountry(event.target.value)}>
                   <option value="" disabled />
                   {countries.map((item) => (
@@ -70,8 +72,10 @@ export function OnboardingWizard() {
                     </option>
                   ))}
                 </NativeSelect>
+                <FieldDescription>{m.onboarding_country_hint()}</FieldDescription>
               </Field>
-              <Field id="locale" label={m.label_language()}>
+              <Field>
+                <FieldLabel htmlFor="locale">{m.label_language()}</FieldLabel>
                 <NativeSelect id="locale" value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
                   {Object.entries(localeNames).map(([code, name]) => (
                     <option key={code} value={code}>
@@ -80,40 +84,29 @@ export function OnboardingWizard() {
                   ))}
                 </NativeSelect>
               </Field>
-              <Field id="timezone" label={m.label_timezone()} hint={m.onboarding_timezone_hint()}>
+              <Field>
+                <FieldLabel htmlFor="timezone">{m.label_timezone()}</FieldLabel>
                 <Input id="timezone" value={timezone} readOnly />
+                <FieldDescription>{m.onboarding_timezone_hint()}</FieldDescription>
               </Field>
               <Button type="button" disabled={country.length !== 2} onClick={() => setStep(2)}>
                 {m.action_next()}
               </Button>
-            </div>
+            </FieldGroup>
           )}
 
           {step === 2 && (
-            <form onSubmit={submit} className="grid gap-4">
-              <Field id="primary-currency" label={m.label_primary_currency()} hint={m.onboarding_primary_currency_hint()}>
-                <NativeSelect
-                  id="primary-currency"
-                  value={primaryCurrency}
-                  onChange={(event) => {
-                    setPrimaryCurrency(event.target.value)
-                    setExtra((codes) => codes.filter((code) => code !== event.target.value))
-                  }}
-                >
-                  {currencies.map((currency) => (
-                    <option key={currency.code} value={currency.code}>
-                      {currency.label}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-
-              <Field id="extra-currency" label={m.label_other_currencies()} hint={m.onboarding_other_currencies_hint()}>
-                <div className="flex gap-2">
+            <form onSubmit={submit}>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="primary-currency">{m.label_primary_currency()}</FieldLabel>
                   <NativeSelect
-                    id="extra-currency"
-                    value={currencyToAdd}
-                    onChange={(event) => setCurrencyToAdd(event.target.value)}
+                    id="primary-currency"
+                    value={primaryCurrency}
+                    onChange={(event) => {
+                      setPrimaryCurrency(event.target.value)
+                      setExtra((codes) => codes.filter((code) => code !== event.target.value))
+                    }}
                   >
                     {currencies.map((currency) => (
                       <option key={currency.code} value={currency.code}>
@@ -121,44 +114,64 @@ export function OnboardingWizard() {
                       </option>
                     ))}
                   </NativeSelect>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={currencyToAdd === primaryCurrency || extra.includes(currencyToAdd)}
-                    onClick={() => setExtra((codes) => [...codes, currencyToAdd])}
-                  >
-                    {m.onboarding_add_currency()}
+                  <FieldDescription>{m.onboarding_primary_currency_hint()}</FieldDescription>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="extra-currency">{m.label_other_currencies()}</FieldLabel>
+                  <div className="flex gap-2">
+                    <NativeSelect
+                      id="extra-currency"
+                      value={currencyToAdd}
+                      onChange={(event) => setCurrencyToAdd(event.target.value)}
+                    >
+                      {currencies.map((currency) => (
+                        <option key={currency.code} value={currency.code}>
+                          {currency.label}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={currencyToAdd === primaryCurrency || extra.includes(currencyToAdd)}
+                      onClick={() => setExtra((codes) => [...codes, currencyToAdd])}
+                    >
+                      {m.onboarding_add_currency()}
+                    </Button>
+                  </div>
+                  <FieldDescription>{m.onboarding_other_currencies_hint()}</FieldDescription>
+                </Field>
+
+                {extra.length > 0 && (
+                  <ul className="divide-y divide-line border-y border-line text-sm">
+                    {extra.map((code) => (
+                      <li key={code} className="flex items-center justify-between py-2 text-ink">
+                        {currencyLabel(code)}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setExtra((codes) => codes.filter((value) => value !== code))}
+                        >
+                          {m.action_delete()}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <FieldError>{complete.error?.message}</FieldError>
+                <div className="flex justify-between gap-2">
+                  <Button type="button" variant="ghost" onClick={() => setStep(1)}>
+                    {m.action_back()}
+                  </Button>
+                  <Button type="submit" disabled={complete.isPending}>
+                    {complete.isPending && <Spinner data-icon="inline-start" />}
+                    {m.action_finish()}
                   </Button>
                 </div>
-              </Field>
-
-              {extra.length > 0 && (
-                <ul className="divide-y divide-line border-y border-line text-sm">
-                  {extra.map((code) => (
-                    <li key={code} className="flex items-center justify-between py-2 text-ink">
-                      {currencyLabel(code)}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setExtra((codes) => codes.filter((value) => value !== code))}
-                      >
-                        {m.action_delete()}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <FormError message={complete.error?.message} />
-              <div className="flex justify-between gap-2">
-                <Button type="button" variant="ghost" onClick={() => setStep(1)}>
-                  {m.action_back()}
-                </Button>
-                <Button type="submit" disabled={complete.isPending}>
-                  {m.action_finish()}
-                </Button>
-              </div>
+              </FieldGroup>
             </form>
           )}
 

@@ -36,3 +36,7 @@ apps/api  /mcp
 
 - **Workers:** create the auth instance per request with `createAuth`, never at module scope. Better Auth starts D1 I/O on init, and a Worker hangs when a request awaits I/O that belongs to another request.
 - **DCR is a shortcut:** `@better-auth/cimd` ships only a Node transport. Switch to `cimd()` once there is a Workers-safe `fetchClientMetadataResource`.
+
+## Importing a statement
+
+`import_transactions` takes one source and up to 500 rows. The tool description asks the agent to parse the PDF or screenshot itself, call with `dryRun: true`, show the preview, and only then call again with `dryRun: false`; the write is one multi-row INSERT. A row is a duplicate when the source, type, amount in cents, calendar day and (when both have one) description already exist. The rule is `features/transactions/duplicate.ts` (pure, tested).

@@ -37,15 +37,16 @@ All tables have `id` (text UUID, except where noted), `user_id` (FK → `user`, 
 | `user_currency` | (`user_id`, `code`) PK | The user's currencies; always includes `primary_currency`. |
 | `bank` | `name` | Colombian users pick from a catalog; others type the name. |
 | `bank_account` | `bank_id`, `name`, `last4?` | |
-| `product` | `bank_account_id`, `type` (`savings` \| `checking` \| `payroll` \| `investment` \| `other`), `name`, `currency` | A **source**. |
+| `product` | `bank_account_id`, `type` (`savings` \| `checking` \| `payroll` \| `investment` \| `other`), `name`, `currency`, `annual_rate_bps?` | A **source**. `annual_rate_bps` is the effective annual rate (E.A.) in basis points (10000 = 100%); it only feeds an estimate, never a balance. |
 | `cash_wallet` | `name`, `currency` | A **source**. Several allowed (COP wallet, USD wallet). |
-| `card` | `product_id`, `kind` (`debit` \| `credit`), `name`, `last4?`, `credit_limit_cents?`, `statement_day?`, `due_day?` | A **source**. Currency = its product's currency. |
-| `category` | `name?`, `kind` (`expense` \| `income`), `system_key?` | System categories (`fx_loss`, `fx_gain`, `bank_fees`) have a key and no stored name; the name is translated on read. |
+| `card` | `product_id`, `kind` (`debit` \| `credit`), `name`, `last4?`, `credit_limit_cents?`, `statement_day?`, `due_day?`, `brand?`, `interest_rate_bps?`, `interest_rate_period?`, `color?` | A **source**. Currency = its product's currency. `brand` is `visa` \| `mastercard` \| `amex` \| `diners` \| `other`; `interest_rate_period` is `monthly` (MV) or `annual` (EA), and the rate belongs to a credit card. `color` is presentation only. |
+| `category` | `name?`, `kind` (`expense` \| `income`), `system_key?` | System categories (`fx_loss`, `fx_gain`, `bank_fees`, `other_expense`, `other_income`) have a key and no stored name; the name is translated on read. An import row without a category is booked in `other_expense` / `other_income`. |
 | `counterparty` | `name`, `kind` (`person` \| `business`) | |
 | `transaction` | `type` (`income` \| `expense`), `amount_cents`, `currency`, **source** (`product_id?` \| `cash_wallet_id?` \| `card_id?`), `primary_amount_cents?`, `category_id`, `counterparty_id?`, `recurring_expense_id?`, `transfer_id?`, `description?`, `occurred_at` | `primary_amount_cents` only for a credit-card charge in a foreign currency. `transfer_id` links the fee and FX entries a transfer created. |
 | `transfer` | **from** (`from_product_id?` \| `from_cash_wallet_id?`), **to** (`to_product_id?` \| `to_cash_wallet_id?` \| `to_card_id?`), `sent_amount_cents`, `sent_currency`, `received_amount_cents`, `received_currency`, `fee_cents?`, `cost_basis_cents?`, `note?`, `sent_at`, `received_at?` | `cost_basis_cents` = purchase-day value released when paying foreign card debt. |
 | `balance_adjustment` | **source** (one of three), `currency`, `observed_balance_cents`, `delta_cents`, `note?`, `adjusted_at` | For a card, the balance is the debt in that currency. |
 | `recurring_expense` | `name`, `amount_cents`, `currency`, **source**, `category_id`, `counterparty_id?`, `frequency` (`weekly` \| `monthly` \| `yearly`), `starts_on`, `next_due_on`, `active` | Dates are calendar dates (`YYYY-MM-DD`) in the user's timezone. |
+| `document` | **source**, `name`, `content_type`, `size_bytes`, `r2_key` | A file attached to a source (contract, terms, fee table), stored in the R2 bucket `DOCUMENTS` under a key namespaced by `user_id`. PDF or image, up to 10 MB. |
 
 **Source columns.** A source is stored as three nullable foreign keys plus a `CHECK` that exactly one is set. This keeps referential integrity in the database (no "type + id" text pairs).
 
@@ -77,6 +78,10 @@ debt(C, k) = Σ expense − Σ income        (transactions on C in k)
 Card total in its own currency = debt in its currency + Σ over foreign currencies of their **outstanding cost basis**.
 
 **In transit** = Σ `sent_amount` of transfers with no `received_at`, shown per currency on the overview.
+
+**History.** The same rules, applied to a ledger seen from a date: `computeBalancesAt` drops every movement after it (a transfer's `sent_at` and `received_at` are two dates, so in-transit money stays at the origin), and `assetsAndLiabilities` sums the result per currency. Month ends are calendar month ends in UTC, and the current month's point is "now".
+
+**Yield estimate.** `balance × ((1 + rate)^(1/12) − 1)` a month and `balance × ((1 + rate)^(1/365) − 1)` a day, from `annual_rate_bps`. An estimate shown as "≈": the real interest arrives as an income or an adjustment (D2), never from this field.
 
 ## FX difference on card payments (D7)
 
@@ -111,6 +116,21 @@ difference        = sent_amount − released_basis
 - **Skip** only advances `next_due_on`.
 - Monthly and yearly advances keep the day of `starts_on`, clamped to the month's last day (Jan 31 → Feb 28 → Mar 31).
 
+## Statement import
+
+One source, up to 500 rows, and a `dryRun` flag. Each row is `{ type, amount, occurredAt, description?, categoryId? }`; `occurredAt` is a calendar date or an ISO datetime.
+
+- **Duplicate:** same source, same type, same amount in cents, same calendar day (UTC), and the same description when both rows have one. Existing movements on those days and earlier rows of the same batch both count; the first occurrence wins.
+- **Category:** the row's `categoryId` when given (its kind must match the type), else the system `other_expense` / `other_income`, translated on read.
+- **dryRun:** returns every row with `duplicate` and its resolved category, and writes nothing.
+- **Write:** the non-duplicate rows in one multi-row INSERT, so D1 applies it entirely or not at all. Returns `{ created, skipped }`.
+
+Agents parse the statement themselves and always preview first (`docs/mcp.md#importing-a-statement`).
+
+## Documents
+
+A file attached to a source: contract, terms, or fee table. PDF or a common image, up to 10 MB, in the R2 bucket `DOCUMENTS` under `user_id/random-id` (the object key never comes from the uploaded name). Rows live in `document` with the same three-nullable-FK source shape. The download route streams the object with its `Content-Type` and an attachment `Content-Disposition`, after the ownership check. Upload and download stay in the web app; agents only list them.
+
 ## Internationalization (D13)
 
 - `packages/i18n`: Paraglide catalog, locales `en` (base) and `es`. Message functions take the locale explicitly on the server (`m.key({}, { locale })`), so no per-request global state on Workers.
@@ -125,13 +145,17 @@ difference        = sent_amount − released_basis
 | Tool | Purpose |
 | --- | --- |
 | `list_accounts` | Every source with its id, currency, and balance or debt |
+| `get_balance_history` | Month-end assets and card debt per currency, optionally for one source |
+| `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, brand, interest rate, and color |
 | `list_categories`, `list_contacts`, `create_contact` | Lookups needed to record movements |
-| `create_transaction`, `list_transactions` | Record and query income and expenses |
-| `create_transfer`, `mark_transfer_received` | Move money between the user's own sources |
+| `create_transaction`, `list_transactions`, `summarize_transactions` | Record, query and total income and expenses |
+| `create_transfer`, `list_transfers`, `mark_transfer_received` | Move money between the user's own sources |
 | `adjust_balance` | Set the real balance of a source |
 | `list_pending_recurring`, `confirm_recurring`, `skip_recurring` | Work the "to confirm" inbox |
+| `import_transactions` | Record a whole statement at once, with a dry-run preview and duplicate detection |
+| `list_documents` | The files attached to the user's sources |
 
-Setup (banks, accounts, products, cards) stays in the web app. Scopes: `finance:read`, `finance:write`.
+Banks, bank accounts, and cash wallets are set up in the web app only; products and cards are also reachable through the tools above. Scopes: `finance:read`, `finance:write`.
 
 ## Web screens
 

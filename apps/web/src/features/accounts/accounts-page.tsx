@@ -2,7 +2,9 @@ import { Link } from '@tanstack/react-router'
 import type * as React from 'react'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
-import { EmptyState, ListSkeleton } from '#/shared/ui/field'
+import { Button } from '#/shared/ui/button'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
+import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { useBalances } from '../balances/balances-api'
 import {
@@ -16,10 +18,39 @@ import {
   productTypes,
 } from './add-dialogs'
 import { useAccounts } from './accounts-api'
+import { brandLabel } from './card-face'
 import { sourceKey, type SourceRef } from './sources'
 
 const typeLabel = (type: string) => productTypes.find((item) => item.value === type)?.label() ?? type
 const kindLabel = (kind: string) => cardKinds.find((item) => item.value === kind)?.label() ?? kind
+
+/**
+ * #7: on a phone every create form is a page; from lg the dialog stays as the fast path beside the link.
+ * The link always shows, so the long form is one tap away on a desktop too; the arrow says it navigates.
+ */
+function CreateActions({
+  dialog,
+  to,
+  search,
+  label,
+}: {
+  dialog: React.ReactNode
+  to: '/accounts/new' | '/accounts/new-card'
+  search?: { bankId?: string; bankAccountId?: string; productId?: string }
+  label: string
+}) {
+  return (
+    <>
+      <div className="hidden lg:block">{dialog}</div>
+      <Button variant="link" asChild>
+        <Link to={to} search={search}>
+          {label}
+          <span aria-hidden>→</span>
+        </Link>
+      </Button>
+    </>
+  )
+}
 
 // Full width on mobile so the actions wrap below; beside them from sm up.
 const lineClass = 'flex min-w-0 basis-full items-baseline justify-between gap-4 sm:basis-0 sm:flex-1'
@@ -43,12 +74,14 @@ function SourceLine({
   const body = (
     <>
       <span className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-        {nested && (
-          <span aria-hidden className="text-faint">
-            ↳
-          </span>
-        )}
-        <span className="text-ink transition-transform duration-500 group-hover:translate-x-1">{name}</span>
+        <span className="text-ink transition-transform duration-500 group-hover:translate-x-1">
+          {nested && (
+            <span aria-hidden className="mr-2 text-faint">
+              ↳
+            </span>
+          )}
+          {name}
+        </span>
         {badges}
       </span>
       {amount && <span className="shrink-0 font-medium text-ink tabular-nums">{amount}</span>}
@@ -93,14 +126,19 @@ export function AccountsPage() {
         title={m.accounts_title()}
         actions={
           <>
-            <AddBankDialog />
+            <CreateActions dialog={<AddBankDialog />} to="/accounts/new" label={m.accounts_new_title()} />
             <AddCashWalletDialog />
           </>
         }
       />
 
       {tree.banks.length === 0 && tree.cashWallets.length === 0 && (
-        <EmptyState title={m.accounts_empty()} description={m.accounts_empty_description()} />
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{m.accounts_empty()}</EmptyTitle>
+            <EmptyDescription>{m.accounts_empty_description()}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
 
       {tree.banks.map((bank, position) => (
@@ -108,7 +146,14 @@ export function AccountsPage() {
           key={bank.id}
           index={index(position)}
           label={bank.name}
-          action={<AddBankAccountDialog bankId={bank.id} bankName={bank.name} />}
+          action={
+            <CreateActions
+              dialog={<AddBankAccountDialog bankId={bank.id} bankName={bank.name} />}
+              to="/accounts/new"
+              search={{ bankId: bank.id }}
+              label={m.accounts_add_bank_account()}
+            />
+          }
         >
           <div className="grid gap-8">
             {bank.accounts.map((account) => (
@@ -116,9 +161,16 @@ export function AccountsPage() {
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="type-heading-sm font-medium text-ink">
                     {account.name}
-                    {account.last4 && <span className="label-mono ml-3 text-muted-foreground">•••• {account.last4}</span>}
+                    {account.last4 && (
+                      <span className="label-mono ml-3 whitespace-nowrap text-muted-foreground">•••• {account.last4}</span>
+                    )}
                   </h3>
-                  <AddProductDialog bankAccountId={account.id} accountName={account.name} />
+                  <CreateActions
+                    dialog={<AddProductDialog bankAccountId={account.id} accountName={account.name} />}
+                    to="/accounts/new"
+                    search={{ bankAccountId: account.id }}
+                    label={m.accounts_add_product()}
+                  />
                 </div>
 
                 {account.products.length > 0 && (
@@ -137,7 +189,14 @@ export function AccountsPage() {
                             </>
                           }
                           amount={formatMoney(balanceOf(ref), product.currency)}
-                          actions={<AddCardDialog productId={product.id} productName={product.name} />}
+                          actions={
+                            <CreateActions
+                              dialog={<AddCardDialog productId={product.id} productName={product.name} />}
+                              to="/accounts/new-card"
+                              search={{ productId: product.id }}
+                              label={m.accounts_add_card()}
+                            />
+                          }
                         />,
                         ...product.cards.map((card) => {
                           const debt = cardDebt(card.id)
@@ -150,12 +209,17 @@ export function AccountsPage() {
                               name={
                                 <>
                                   {card.name}
-                                  {card.last4 && <span className="label-mono ml-3 text-muted-foreground">•••• {card.last4}</span>}
+                                  {card.last4 && (
+                                    <span className="label-mono ml-3 whitespace-nowrap text-muted-foreground">
+                                      •••• {card.last4}
+                                    </span>
+                                  )}
                                 </>
                               }
                               badges={
                                 <>
                                   <TypeBadge>{kindLabel(card.kind)}</TypeBadge>
+                                  {card.brand && <TypeBadge>{brandLabel(card.brand)}</TypeBadge>}
                                   <span className="label-mono text-muted-foreground">
                                     {credit
                                       ? card.creditLimit !== null &&

@@ -5,6 +5,7 @@ import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/reac
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { useEffect } from 'react'
 import { currentLocale } from '#/shared/i18n'
+import { Toaster } from '#/shared/ui/sonner'
 import appCss from '../styles.css?url'
 
 interface RouterContext {
@@ -35,6 +36,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <LocaleDocument />
         {children}
+        <Toaster />
         {import.meta.env.DEV && (
           <TanStackDevtools
             config={{ position: 'middle-right' }}

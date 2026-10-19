@@ -29,6 +29,7 @@ export async function listAccounts(db: Db, userId: string) {
               type: p.type,
               name: p.name,
               currency: p.currency,
+              annualRateBps: p.annualRateBps,
               cards: cards
                 .filter((c) => c.productId === p.id)
                 .map((c) => ({
@@ -40,6 +41,10 @@ export async function listAccounts(db: Db, userId: string) {
                   creditLimit: c.creditLimitCents === null ? null : fromCents(c.creditLimitCents),
                   statementDay: c.statementDay,
                   dueDay: c.dueDay,
+                  brand: c.brand,
+                  interestRateBps: c.interestRateBps,
+                  interestRatePeriod: c.interestRatePeriod,
+                  color: c.color,
                 })),
             })),
         })),
