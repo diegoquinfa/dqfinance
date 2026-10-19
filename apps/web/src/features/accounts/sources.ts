@@ -45,6 +45,20 @@ export function useSources() {
             balance: balanceByKey.get(sourceKey(ref)) ?? 0,
             debt: null,
           })
+          // A pocket is a source like its parent: money can move in and out of it (design D14).
+          for (const pocket of product.pockets) {
+            const pocketRef: SourceRef = { type: 'product', id: pocket.id }
+            options.push({
+              key: sourceKey(pocketRef),
+              ref: pocketRef,
+              label: pocket.name,
+              group: bank.name,
+              currency: pocket.currency,
+              cardKind: null,
+              balance: balanceByKey.get(sourceKey(pocketRef)) ?? 0,
+              debt: null,
+            })
+          }
           for (const card of product.cards) {
             const cardRef: SourceRef = { type: 'card', id: card.id }
             options.push({

@@ -5,7 +5,8 @@ import { api, unwrap } from '#/shared/api'
 export type AccountsTree = InferResponseType<typeof api.api.accounts.$get, 200>
 
 type Bank = AccountsTree['banks'][number]
-type ProductRow = Bank['accounts'][number]['products'][number]
+type Account = Bank['accounts'][number]
+type ProductRow = Account['products'][number]
 export type CardRow = ProductRow['cards'][number]
 
 export const accountsQuery = queryOptions({
@@ -65,12 +66,36 @@ export const useUpdateCard = () =>
     unwrap(api.api.accounts.cards[':id'].$patch({ param: { id }, json })),
   )
 
+/** A product with the bank account that owns it: the tree hides that level and a pocket under its parent. */
+type ProductInfo = {
+  id: string
+  type: string
+  name: string
+  currency: string
+  annualRateBps: number | null
+  parentProductId: string | null
+  yieldPayout: 'daily' | 'monthly' | null
+  bankAccountId: string
+  last4: string | null
+}
+
+const productInfo = (
+  product: Omit<ProductInfo, 'bankAccountId' | 'last4'>,
+  account: { id: string; last4: string | null },
+): ProductInfo => ({ ...product, bankAccountId: account.id, last4: account.last4 })
+
+/** Every product of the user, pockets included: the tree keeps a pocket under its parent (design D14). */
+export const listProducts = (tree: AccountsTree | undefined): ProductInfo[] =>
+  tree?.banks.flatMap((bank) =>
+    bank.accounts.flatMap((account) => [
+      ...account.products.map((product) => productInfo(product, account)),
+      ...account.products.flatMap((parent) => parent.pockets.map((pocket) => productInfo(pocket, account))),
+    ]),
+  ) ?? []
+
 /** The product behind a source page: the type and rate the balances view does not carry. */
 export const findProduct = (tree: AccountsTree | undefined, id: string) =>
-  tree?.banks
-    .flatMap((bank) => bank.accounts)
-    .flatMap((account) => account.products)
-    .find((product) => product.id === id)
+  listProducts(tree).find((product) => product.id === id)
 
 /** The card behind a source page: brand, color and last 4, which balances does not carry. */
 export const findCard = (tree: AccountsTree | undefined, id: string) =>

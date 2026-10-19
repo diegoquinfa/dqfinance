@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { toast } from 'sonner'
 import { SubmitRow, productTypes } from './add-dialogs'
 import { useUpdateCard, useUpdateProduct, type CardRow } from './accounts-api'
@@ -17,13 +19,21 @@ export function EditProductDialog({
   name,
   type,
   annualRateBps,
+  yieldPayout,
+  currency,
 }: {
   id: string
   name: string
   type: string
   annualRateBps: number | null
+  yieldPayout?: 'daily' | 'monthly' | null
+  currency?: string
 }) {
   const update = useUpdateProduct()
+  const [rate, setRate] = useState(annualRateBps === null ? '' : String(annualRateBps / 100))
+  const [payout, setPayout] = useState<'daily' | 'monthly'>(yieldPayout ?? 'monthly')
+  // A pocket keeps its type and its currency (design D14): the API rejects any change.
+  const isPocket = type === 'pocket'
   return (
     <DialogPanel
       trigger={<Button variant="outline">{m.accounts_edit_product()}</Button>}
@@ -34,14 +44,14 @@ export function EditProductDialog({
           onSubmit={(event) => {
             event.preventDefault()
             const form = new FormData(event.currentTarget)
-            const rate = String(form.get('annualRate')).trim()
             update.mutate(
               {
                 id,
                 json: {
                   name: String(form.get('name')),
-                  type: String(form.get('type')) as never,
+                  type: isPocket ? undefined : (String(form.get('type')) as never),
                   annualRateBps: rate ? percentToBps(Number(rate)) : null,
+                  yieldPayout: rate ? payout : null,
                 },
               },
               {
@@ -60,16 +70,20 @@ export function EditProductDialog({
             </Field>
             <Field>
               <FieldLabel htmlFor="edit-product-type">{m.label_product_type()}</FieldLabel>
-              <Select name="type" defaultValue={type}>
+              <Select name="type" defaultValue={type} disabled={isPocket}>
                 <SelectTrigger id="edit-product-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {productTypes.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label()}
-                    </SelectItem>
-                  ))}
+                  {isPocket ? (
+                    <SelectItem value="pocket">{m.product_pocket()}</SelectItem>
+                  ) : (
+                    productTypes.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label()}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </Field>
@@ -82,10 +96,40 @@ export function EditProductDialog({
                 min="0"
                 step="0.01"
                 inputMode="decimal"
-                defaultValue={annualRateBps === null ? undefined : annualRateBps / 100}
+                value={rate}
+                onChange={(event) => setRate(event.target.value)}
               />
               <FieldDescription>{m.product_annual_rate_hint()}</FieldDescription>
+              {/* The payout only matters once there is a rate. */}
+              {rate && (
+                <div className="flex items-center gap-3">
+                  <span className="label-mono text-muted-foreground">{m.yield_payout_label()}</span>
+                  <ToggleGroup
+                    type="single"
+                    aria-label={m.yield_payout_label()}
+                    value={payout}
+                    onValueChange={(value) => setPayout(value as 'daily' | 'monthly')}
+                  >
+                    <ToggleGroupItem value="daily">{m.yield_payout_daily()}</ToggleGroupItem>
+                    <ToggleGroupItem value="monthly">{m.yield_payout_monthly()}</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              )}
             </Field>
+            {isPocket && currency && (
+              <Field>
+                <FieldLabel htmlFor="edit-product-currency">{m.label_currency()}</FieldLabel>
+                {/* A pocket keeps the currency of the account it lives in (design D14). */}
+                <Select name="currency" defaultValue={currency} disabled>
+                  <SelectTrigger id="edit-product-currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={currency}>{currency}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
             <SubmitRow close={close} pending={update.isPending} error={update.error?.message} label={m.action_save()} />
           </FieldGroup>
         </form>

@@ -23,6 +23,7 @@ import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
 import { Route as AppTransfersRouteImport } from './routes/_app/transfers'
 import { Route as AppAccountsNewRouteImport } from './routes/_app/accounts_.new'
 import { Route as AppAccountsNewCardRouteImport } from './routes/_app/accounts_.new-card'
+import { Route as AppAccountsNewPocketRouteImport } from './routes/_app/accounts_.new-pocket'
 import { Route as AppTransactionsImportRouteImport } from './routes/_app/transactions_.import'
 import { Route as AppAccountsTypeIdRouteImport } from './routes/_app/accounts_.$type.$id'
 
@@ -95,6 +96,11 @@ const AppAccountsNewCardRoute = AppAccountsNewCardRouteImport.update({
   path: '/accounts/new-card',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountsNewPocketRoute = AppAccountsNewPocketRouteImport.update({
+  id: '/accounts_/new-pocket',
+  path: '/accounts/new-pocket',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTransactionsImportRoute = AppTransactionsImportRouteImport.update({
   id: '/transactions_/import',
   path: '/transactions/import',
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/transfers': typeof AppTransfersRoute
   '/accounts/new': typeof AppAccountsNewRoute
   '/accounts/new-card': typeof AppAccountsNewCardRoute
+  '/accounts/new-pocket': typeof AppAccountsNewPocketRoute
   '/transactions/import': typeof AppTransactionsImportRoute
   '/accounts/$type/$id': typeof AppAccountsTypeIdRoute
 }
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/transfers': typeof AppTransfersRoute
   '/accounts/new': typeof AppAccountsNewRoute
   '/accounts/new-card': typeof AppAccountsNewCardRoute
+  '/accounts/new-pocket': typeof AppAccountsNewPocketRoute
   '/transactions/import': typeof AppTransactionsImportRoute
   '/accounts/$type/$id': typeof AppAccountsTypeIdRoute
 }
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/_app/transfers': typeof AppTransfersRoute
   '/_app/accounts_/new': typeof AppAccountsNewRoute
   '/_app/accounts_/new-card': typeof AppAccountsNewCardRoute
+  '/_app/accounts_/new-pocket': typeof AppAccountsNewPocketRoute
   '/_app/transactions_/import': typeof AppTransactionsImportRoute
   '/_app/accounts_/$type/$id': typeof AppAccountsTypeIdRoute
 }
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/transfers'
     | '/accounts/new'
     | '/accounts/new-card'
+    | '/accounts/new-pocket'
     | '/transactions/import'
     | '/accounts/$type/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/transfers'
     | '/accounts/new'
     | '/accounts/new-card'
+    | '/accounts/new-pocket'
     | '/transactions/import'
     | '/accounts/$type/$id'
   id:
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/_app/transfers'
     | '/_app/accounts_/new'
     | '/_app/accounts_/new-card'
+    | '/_app/accounts_/new-pocket'
     | '/_app/transactions_/import'
     | '/_app/accounts_/$type/$id'
   fileRoutesById: FileRoutesById
@@ -322,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsNewCardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounts_/new-pocket': {
+      id: '/_app/accounts_/new-pocket'
+      path: '/accounts/new-pocket'
+      fullPath: '/accounts/new-pocket'
+      preLoaderRoute: typeof AppAccountsNewPocketRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/transactions_/import': {
       id: '/_app/transactions_/import'
       path: '/transactions/import'
@@ -349,6 +368,7 @@ interface AppRouteChildren {
   AppTransfersRoute: typeof AppTransfersRoute
   AppAccountsNewRoute: typeof AppAccountsNewRoute
   AppAccountsNewCardRoute: typeof AppAccountsNewCardRoute
+  AppAccountsNewPocketRoute: typeof AppAccountsNewPocketRoute
   AppTransactionsImportRoute: typeof AppTransactionsImportRoute
   AppAccountsTypeIdRoute: typeof AppAccountsTypeIdRoute
 }
@@ -363,6 +383,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTransfersRoute: AppTransfersRoute,
   AppAccountsNewRoute: AppAccountsNewRoute,
   AppAccountsNewCardRoute: AppAccountsNewCardRoute,
+  AppAccountsNewPocketRoute: AppAccountsNewPocketRoute,
   AppTransactionsImportRoute: AppTransactionsImportRoute,
   AppAccountsTypeIdRoute: AppAccountsTypeIdRoute,
 }
