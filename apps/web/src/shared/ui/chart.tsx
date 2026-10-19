@@ -109,27 +109,26 @@ function ChartTooltipContent({
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
             const indicatorColor = color ?? item.payload?.fill ?? item.color
             return (
-              <div key={index} className="flex w-full flex-wrap items-stretch gap-2">
-                {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
-                ) : (
-                  <>
-                    {!hideIndicator && (
-                      <div
-                        className="mt-1.5 h-2.5 w-2.5 shrink-0 border border-(--color-border) bg-(--color-bg)"
-                        style={{ '--color-bg': indicatorColor, '--color-border': indicatorColor } as React.CSSProperties}
-                      />
-                    )}
-                    <div className="flex flex-1 items-baseline justify-between gap-4 leading-none">
-                      <span className="label-mono text-muted-foreground">{itemConfig?.label ?? item.name}</span>
-                      {item.value != null && (
-                        <span className="font-medium text-ink tabular-nums">
-                          {typeof item.value === 'number' ? item.value.toLocaleString() : String(item.value)}
-                        </span>
-                      )}
-                    </div>
-                  </>
+              <div key={index} className="flex w-full items-center gap-2">
+                {!hideIndicator && (
+                  <div
+                    className="h-2.5 w-2.5 shrink-0 border border-(--color-border) bg-(--color-bg)"
+                    style={{ '--color-bg': indicatorColor, '--color-border': indicatorColor } as React.CSSProperties}
+                  />
                 )}
+                <div className="flex flex-1 items-baseline justify-between gap-6 leading-none">
+                  <span className="label-mono text-muted-foreground">{itemConfig?.label ?? item.name}</span>
+                  {item.value != null && (
+                    <span className="font-medium text-ink tabular-nums">
+                      {/* The formatter shapes the value only, so the series label stays beside it. */}
+                      {formatter && item.name !== undefined
+                        ? formatter(item.value, item.name, item, index, item.payload)
+                        : typeof item.value === 'number'
+                          ? item.value.toLocaleString()
+                          : String(item.value)}
+                    </span>
+                  )}
+                </div>
               </div>
             )
           })}
