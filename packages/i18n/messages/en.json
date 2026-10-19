@@ -238,5 +238,7 @@
   "settings_saved": "Saved",
   "settings_save_currencies": "Save currencies",
   "settings_session": "Session",
-  "settings_account": "Account"
+  "settings_account": "Account",
+  "push_expense_title": "New expense recorded",
+  "push_expense_body": "Open the app to see your updated balances."
 }

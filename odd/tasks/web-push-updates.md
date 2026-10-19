@@ -56,7 +56,7 @@ PRs are not opened until asked. Child 1 targets the tracker; later children targ
 ## Tasks
 
 - [x] `push-1` Subscription table, session routes, error catalog, env secret names. Route: delegated (multi-file write).
-- [ ] `push-2` Send one notification after expense creation, including confirm-recurring once. Route: delegated.
+- [x] `push-2` Send one notification after expense creation, including confirm-recurring once. Route: delegated. Income creates do not notify.
 - [ ] `push-3` Service worker, settings opt-in, query invalidation on `postMessage`. Route: delegated.
 
 ## Acceptance
@@ -69,10 +69,10 @@ PRs are not opened until asked. Child 1 targets the tracker; later children targ
 
 ## Progress
 
-Branch: `feat/web-push-updates`. No commits yet.
+Tracker `feat/web-push-updates` stays at `main`. Slice 1 is `feat/web-push-updates-01-subscriptions`.
 
-`push-1` evidence: i18n build, api check-types, and api test passed (writer). Parent re-ran `pnpm --filter @dqfinance/api test`: 18 pass, 0 fail. Readback of routes, upsert, and migration matched the task. `gentle-ai-verify` failed twice before any tool call (`assistant reported an error`); not a code result. Native assess was unassessable because of untracked files.
+`push-1` commit: `dc3e97af6c4cc9f37cd540be532535f34d8ea24c` `feat(push): store browser push subscriptions`. Checks: writer i18n build, api check-types, api test passed. Parent re-ran api test: 18 pass, 0 fail. `gentle-ai-verify` failed twice before any tool call. Native assess unassessable (untracked files).
 
 ## Next
 
-Ask chain strategy, then commit `push-1`.
+`push-2` on `feat/web-push-updates-02-send`.

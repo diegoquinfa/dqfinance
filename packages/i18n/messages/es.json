@@ -238,5 +238,7 @@
   "settings_saved": "Guardado",
   "settings_save_currencies": "Guardar monedas",
   "settings_session": "Sesión",
-  "settings_account": "Cuenta"
+  "settings_account": "Cuenta",
+  "push_expense_title": "Nuevo gasto registrado",
+  "push_expense_body": "Abre la app para ver tus saldos actualizados."
 }

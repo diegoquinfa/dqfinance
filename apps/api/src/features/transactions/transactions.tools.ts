@@ -1,5 +1,6 @@
 import { toolDefinition } from '@tanstack/ai'
 import type { McpContext } from '../mcp/mcp-context'
+import { sendExpensePush } from '../push/send-expense-push'
 import { createTransaction, createTransactionInput } from './create-transaction'
 import { listTransactions, listTransactionsInput } from './list-transactions'
 
@@ -10,7 +11,13 @@ export const transactionTools = [
     description:
       'Record an income or expense on one of the user\'s sources. Not for moving money between the user\'s own accounts: use create_transfer for that.',
     inputSchema: createTransactionInput,
-  }).server<McpContext>((input, ctx) => createTransaction(ctx.context.db, ctx.context.userId, input)),
+  }).server<McpContext>(async (input, ctx) => {
+    const created = await createTransaction(ctx.context.db, ctx.context.userId, input)
+    if (created.type === 'expense') {
+      await sendExpensePush(ctx.context.db, ctx.context.userId, ctx.context.locale, ctx.context.push)
+    }
+    return created
+  }),
 
   toolDefinition({
     name: 'list_transactions',

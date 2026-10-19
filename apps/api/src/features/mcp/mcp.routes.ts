@@ -8,6 +8,7 @@ import { balanceTools } from '../balances/balances.tools'
 import { categoryTools } from '../categories/categories.tools'
 import { counterpartyTools } from '../counterparties/counterparties.tools'
 import { recurringExpenseTools } from '../recurring-expenses/recurring-expenses.tools'
+import { pushConfigFrom } from '../push/push-config'
 import { getSettings } from '../settings/get-settings'
 import { transactionTools } from '../transactions/transactions.tools'
 import { transferTools } from '../transfers/transfers.tools'
@@ -34,7 +35,9 @@ export const mcpRoutes = new Hono<AppEnv>().all('/', (c) =>
       if (!claims.sub) return Response.json({ error: 'invalid_token' }, { status: 401 })
       // Agents get system category names in the user's saved language.
       const locale = (await getSettings(c.var.db, claims.sub))?.locale ?? 'en'
-      return mcpServer.handle(request, { context: { db: c.var.db, userId: claims.sub, locale } })
+      // Only the VAPID values cross into tool context; the rest of c.env holds auth secrets.
+      const push = pushConfigFrom(c.env)
+      return mcpServer.handle(request, { context: { db: c.var.db, userId: claims.sub, locale, push } })
     },
     { resource: mcpResource(c.env), requiredScopes: MCP_SCOPES },
   )(c.req.raw),
