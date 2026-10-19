@@ -24,6 +24,8 @@ Domain terms used in code, docs, and reviews. Code uses the English term; the Sp
 | **FX difference** (Diferencia en cambio) | Money gained or lost because foreign card debt was paid at a different rate than it was charged. Booked automatically. |
 | **Balance adjustment** (Ajuste de saldo) | A correction to match the real balance. Stores the observed balance and the delta; never rewrites movements. |
 | **Category** (Categoría) | What a transaction was for. System categories have a `system_key` and a translated name. |
+| **Import** (Importación) | Recording a whole bank or card statement at once. Rows that already exist on the source are skipped; the preview is dry-run only. |
+| **Document** (Documento) | A file attached to a source: contract, terms, or fee table. A PDF or an image, up to 10 MB, stored in R2. |
 | **Counterparty** (Contacto / Comercio) | Who money went to or came from: a `person` or a `business`. |
 | **Recurring expense** (Gasto recurrente) | A repeating expense that appears in the "to confirm" inbox when due. |
 | **User currencies** (Monedas) | Currencies the user chose in onboarding; they limit every currency picker. |
