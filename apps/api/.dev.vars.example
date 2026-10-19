@@ -1,2 +1,7 @@
 # Copy to .dev.vars. Generate with: openssl rand -base64 32
 BETTER_AUTH_SECRET=change-me-to-a-32-byte-random-secret
+
+# Web Push (VAPID): secrets, so they go in `.dev.vars` locally and through `wrangler secret put <NAME>` in production.
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=

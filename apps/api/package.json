@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@better-auth/mcp": "^1.7.10",
+    "@block65/webcrypto-web-push": "^2.0.0",
     "@dqfinance/i18n": "workspace:*",
     "@tanstack/ai": "0.69.0",
     "@tanstack/ai-mcp": "^0.9.0",

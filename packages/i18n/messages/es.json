@@ -23,6 +23,7 @@
   "error_transfer_not_found": "Esa transferencia no existe.",
   "error_transfer_already_received": "Esa transferencia ya fue recibida.",
   "error_recurring_not_found": "Ese gasto recurrente no existe.",
+  "error_push_not_configured": "Las notificaciones push no están configuradas en este servidor.",
   "error_network": "No se pudo conectar con el servidor en {url}. Verifica que la API esté activa e intenta de nuevo.",
   "error_generic": "Algo falló. Intenta de nuevo.",
   "error_load": "No se pudo cargar. Intenta de nuevo.",
@@ -236,6 +237,14 @@
   "settings_categories_empty": "Aún no hay categorías",
   "settings_saved": "Guardado",
   "settings_save_currencies": "Guardar monedas",
+  "settings_notifications": "Notificaciones",
+  "push_enable": "Activar notificaciones",
+  "push_disable": "Desactivar notificaciones",
+  "push_denied": "Las notificaciones están bloqueadas. Permítelas en la configuración del sitio de tu navegador.",
+  "push_unsupported": "Este navegador no puede mostrar notificaciones.",
   "settings_session": "Sesión",
-  "settings_account": "Cuenta"
+  "settings_account": "Cuenta",
+  "push_income_title": "Nuevo ingreso registrado",
+  "push_expense_title": "Nuevo gasto registrado",
+  "push_expense_body": "Abre la app para ver tus saldos actualizados."
 }

@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../../app-env'
 import { jsonBody, queryParams } from '../../shared/http'
 import { requireSession } from '../auth/require-session'
+import { pushConfigFrom } from '../push/push-config'
+import { sendExpensePush } from '../push/send-expense-push'
 import {
   confirmRecurringExpense,
   confirmRecurringExpenseInput,
@@ -19,8 +21,13 @@ export const recurringExpensesRoutes = new Hono<AppEnv>()
   .post('/', jsonBody(createRecurringExpenseInput), async (c) =>
     c.json(await createRecurringExpense(c.var.db, c.var.userId, c.req.valid('json')), 201),
   )
-  .post('/:id/confirm', jsonBody(confirmRecurringExpenseInput.omit({ id: true })), async (c) =>
-    c.json(await confirmRecurringExpense(c.var.db, c.var.userId, { ...c.req.valid('json'), id: c.req.param('id') })),
-  )
+  .post('/:id/confirm', jsonBody(confirmRecurringExpenseInput.omit({ id: true })), async (c) => {
+    const confirmed = await confirmRecurringExpense(c.var.db, c.var.userId, {
+      ...c.req.valid('json'),
+      id: c.req.param('id'),
+    })
+    await sendExpensePush(c.var.db, c.var.userId, c.var.locale, pushConfigFrom(c.env))
+    return c.json(confirmed)
+  })
   .post('/:id/skip', async (c) => c.json(await skipRecurringExpense(c.var.db, c.var.userId, { id: c.req.param('id') })))
   .delete('/:id', async (c) => c.json(await deleteRecurringExpense(c.var.db, c.var.userId, c.req.param('id'))))
