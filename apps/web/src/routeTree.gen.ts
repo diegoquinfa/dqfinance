@@ -21,6 +21,9 @@ import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
 import { Route as AppTransfersRouteImport } from './routes/_app/transfers'
+import { Route as AppAccountsNewRouteImport } from './routes/_app/accounts_.new'
+import { Route as AppAccountsNewCardRouteImport } from './routes/_app/accounts_.new-card'
+import { Route as AppTransactionsImportRouteImport } from './routes/_app/transactions_.import'
 import { Route as AppAccountsTypeIdRouteImport } from './routes/_app/accounts_.$type.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -82,6 +85,21 @@ const AppTransfersRoute = AppTransfersRouteImport.update({
   path: '/transfers',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountsNewRoute = AppAccountsNewRouteImport.update({
+  id: '/accounts_/new',
+  path: '/accounts/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccountsNewCardRoute = AppAccountsNewCardRouteImport.update({
+  id: '/accounts_/new-card',
+  path: '/accounts/new-card',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTransactionsImportRoute = AppTransactionsImportRouteImport.update({
+  id: '/transactions_/import',
+  path: '/transactions/import',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAccountsTypeIdRoute = AppAccountsTypeIdRouteImport.update({
   id: '/accounts_/$type/$id',
   path: '/accounts/$type/$id',
@@ -100,6 +118,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/transactions': typeof AppTransactionsRoute
   '/transfers': typeof AppTransfersRoute
+  '/accounts/new': typeof AppAccountsNewRoute
+  '/accounts/new-card': typeof AppAccountsNewCardRoute
+  '/transactions/import': typeof AppTransactionsImportRoute
   '/accounts/$type/$id': typeof AppAccountsTypeIdRoute
 }
 export interface FileRoutesByTo {
@@ -114,6 +135,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/transactions': typeof AppTransactionsRoute
   '/transfers': typeof AppTransfersRoute
+  '/accounts/new': typeof AppAccountsNewRoute
+  '/accounts/new-card': typeof AppAccountsNewCardRoute
+  '/transactions/import': typeof AppTransactionsImportRoute
   '/accounts/$type/$id': typeof AppAccountsTypeIdRoute
 }
 export interface FileRoutesById {
@@ -130,6 +154,9 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/transactions': typeof AppTransactionsRoute
   '/_app/transfers': typeof AppTransfersRoute
+  '/_app/accounts_/new': typeof AppAccountsNewRoute
+  '/_app/accounts_/new-card': typeof AppAccountsNewCardRoute
+  '/_app/transactions_/import': typeof AppTransactionsImportRoute
   '/_app/accounts_/$type/$id': typeof AppAccountsTypeIdRoute
 }
 export interface FileRouteTypes {
@@ -146,6 +173,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/transactions'
     | '/transfers'
+    | '/accounts/new'
+    | '/accounts/new-card'
+    | '/transactions/import'
     | '/accounts/$type/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -160,6 +190,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/transactions'
     | '/transfers'
+    | '/accounts/new'
+    | '/accounts/new-card'
+    | '/transactions/import'
     | '/accounts/$type/$id'
   id:
     | '__root__'
@@ -175,6 +208,9 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/transactions'
     | '/_app/transfers'
+    | '/_app/accounts_/new'
+    | '/_app/accounts_/new-card'
+    | '/_app/transactions_/import'
     | '/_app/accounts_/$type/$id'
   fileRoutesById: FileRoutesById
 }
@@ -272,6 +308,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTransfersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounts_/new': {
+      id: '/_app/accounts_/new'
+      path: '/accounts/new'
+      fullPath: '/accounts/new'
+      preLoaderRoute: typeof AppAccountsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/accounts_/new-card': {
+      id: '/_app/accounts_/new-card'
+      path: '/accounts/new-card'
+      fullPath: '/accounts/new-card'
+      preLoaderRoute: typeof AppAccountsNewCardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/transactions_/import': {
+      id: '/_app/transactions_/import'
+      path: '/transactions/import'
+      fullPath: '/transactions/import'
+      preLoaderRoute: typeof AppTransactionsImportRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/accounts_/$type/$id': {
       id: '/_app/accounts_/$type/$id'
       path: '/accounts/$type/$id'
@@ -290,6 +347,9 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppTransactionsRoute: typeof AppTransactionsRoute
   AppTransfersRoute: typeof AppTransfersRoute
+  AppAccountsNewRoute: typeof AppAccountsNewRoute
+  AppAccountsNewCardRoute: typeof AppAccountsNewCardRoute
+  AppTransactionsImportRoute: typeof AppTransactionsImportRoute
   AppAccountsTypeIdRoute: typeof AppAccountsTypeIdRoute
 }
 
@@ -301,6 +361,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppTransactionsRoute: AppTransactionsRoute,
   AppTransfersRoute: AppTransfersRoute,
+  AppAccountsNewRoute: AppAccountsNewRoute,
+  AppAccountsNewCardRoute: AppAccountsNewCardRoute,
+  AppTransactionsImportRoute: AppTransactionsImportRoute,
   AppAccountsTypeIdRoute: AppAccountsTypeIdRoute,
 }
 

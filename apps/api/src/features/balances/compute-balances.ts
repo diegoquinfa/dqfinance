@@ -7,7 +7,7 @@ const sourceKey = (ref: SourceRef) => `${ref.type}:${ref.id}`
  * All amounts are integer cents.
  */
 export type Ledger = {
-  products: { id: string; name: string; bankName: string; currency: string }[]
+  products: { id: string; name: string; bankName: string; currency: string; annualRateBps: number | null }[]
   cashWallets: { id: string; name: string; currency: string }[]
   cards: { id: string; name: string; kind: 'debit' | 'credit'; productId: string; currency: string; creditLimitCents: number | null }[]
   transactions: {
@@ -18,6 +18,7 @@ export type Ledger = {
     productId: string | null
     cashWalletId: string | null
     cardId: string | null
+    occurredAt: Date
   }[]
   transfers: {
     fromProductId: string | null
@@ -30,10 +31,21 @@ export type Ledger = {
     receivedAmountCents: number
     receivedCurrency: string
     costBasisCents: number | null
+    sentAt: Date
     receivedAt: Date | null
   }[]
-  adjustments: { productId: string | null; cashWalletId: string | null; cardId: string | null; currency: string; deltaCents: number }[]
+  adjustments: {
+    productId: string | null
+    cashWalletId: string | null
+    cardId: string | null
+    currency: string
+    deltaCents: number
+    adjustedAt: Date
+  }[]
 }
+
+/** A ledger as it stood at `at`: every movement dated after it is dropped. */
+export type LedgerPoint = { at: Date } & Ledger
 
 export type CardDebt = {
   currency: string
@@ -43,7 +55,15 @@ export type CardDebt = {
 }
 
 export type Balances = {
-  accounts: { ref: SourceRef; name: string; bankName: string | null; currency: string; balanceCents: number }[]
+  accounts: {
+    ref: SourceRef
+    name: string
+    bankName: string | null
+    currency: string
+    balanceCents: number
+    /** Effective annual rate of a product; null for cash wallets and products without one. */
+    annualRateBps: number | null
+  }[]
   creditCards: {
     ref: SourceRef
     name: string
@@ -121,12 +141,14 @@ export function computeBalances(ledger: Ledger): Balances {
         name: p.name,
         bankName: p.bankName,
         currency: p.currency,
+        annualRateBps: p.annualRateBps,
       })),
       ...ledger.cashWallets.map((w) => ({
         ref: { type: 'cash_wallet' as const, id: w.id },
         name: w.name,
         bankName: null,
         currency: w.currency,
+        annualRateBps: null,
       })),
     ].map((account) => ({ ...account, balanceCents: balance.get(sourceKey(account.ref)) ?? 0 })),
 
@@ -155,6 +177,47 @@ export function computeBalances(ledger: Ledger): Balances {
 
     inTransit: [...inTransit].map(([currency, amountCents]) => ({ currency, amountCents })),
   }
+}
+
+/**
+ * The same ledger seen from `at`: movements after that instant are dropped, then the same rules run.
+ * A movement counts from its own date, so nothing is rounded to a month here (design D1).
+ */
+export function computeBalancesAt(ledger: LedgerPoint): Balances {
+  const before = ledger.at.getTime()
+  const onTime = (date: Date | null) => date !== null && date.getTime() <= before
+  return computeBalances({
+    ...ledger,
+    transactions: ledger.transactions.filter((t) => onTime(t.occurredAt)),
+    // Sent and received are two dates: money in transit has left the origin but not reached the destination.
+    transfers: ledger.transfers
+      .filter((t) => onTime(t.sentAt))
+      .map((t) => ({ ...t, receivedAt: onTime(t.receivedAt) ? t.receivedAt : null })),
+    adjustments: ledger.adjustments.filter((a) => onTime(a.adjustedAt)),
+  })
+}
+
+/**
+ * The last instant of each of the last `months` calendar months (UTC), oldest first, with `now` for
+ * the current one: the current month has no end yet.
+ */
+export function monthEnds(months: number, now: Date): Date[] {
+  const ends: Date[] = []
+  for (let back = months - 1; back >= 0; back--) {
+    ends.push(back === 0 ? now : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - back + 1, 1) - 1))
+  }
+  return ends
+}
+
+/** Assets (product and cash balances) and liabilities (card debt) per currency, like the overview. */
+export function assetsAndLiabilities(balances: Balances) {
+  const totals = new Map<string, { assetsCents: number; liabilitiesCents: number }>()
+  const entry = (currency: string) =>
+    totals.get(currency) ?? totals.set(currency, { assetsCents: 0, liabilitiesCents: 0 }).get(currency)!
+  for (const account of balances.accounts) entry(account.currency).assetsCents += account.balanceCents
+  // A card's debt counts in the card's currency, like its statement (foreign charges at purchase-day cost).
+  for (const card of balances.creditCards) entry(card.currency).liabilitiesCents += card.totalCents
+  return [...totals].map(([currency, total]) => ({ currency, ...total }))
 }
 
 /** Outstanding units and cost basis of one currency of a card's debt (zero when there is none). */

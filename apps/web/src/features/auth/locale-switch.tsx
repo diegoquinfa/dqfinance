@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { currentLocale, localeNames, m, switchLocale, type Locale } from '#/shared/i18n'
-import { Field } from '#/shared/ui/field'
+import { Field, FieldLabel } from '#/shared/ui/field'
 import { NativeSelect } from '#/shared/ui/native-select'
 
 /**
@@ -17,7 +17,8 @@ export function LocaleSwitch({
   const [pending, setPending] = useState(false)
 
   return (
-    <Field id={id} label={m.label_language()}>
+    <Field>
+      <FieldLabel htmlFor={id}>{m.label_language()}</FieldLabel>
       <NativeSelect
         id={id}
         value={currentLocale()}
@@ -27,10 +28,13 @@ export function LocaleSwitch({
           setPending(true)
           try {
             await persist?.(next)
-            switchLocale(next)
-          } finally {
+          } catch {
+            // The save failed, so the language stays as it was; keep the select usable.
             setPending(false)
+            return
           }
+          // Switching reloads the page, so it happens once the preference is stored.
+          switchLocale(next)
         }}
       >
         {Object.entries(localeNames).map(([code, name]) => (

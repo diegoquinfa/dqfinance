@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { authClient } from '#/features/auth/auth-client'
 import { LocaleSwitch } from '#/features/auth/locale-switch'
 import { useCategories, useCreateCategory } from '#/features/categories/categories-api'
@@ -8,10 +8,13 @@ import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
-import { Field, FormError, ListSkeleton } from '#/shared/ui/field'
+import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
+import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { NativeSelect } from '#/shared/ui/native-select'
-import { Segmented } from '#/shared/ui/segmented'
+import { Spinner } from '#/shared/ui/spinner'
+import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
+import { toast } from 'sonner'
 import { PushSection } from './push-section'
 import { useSettings, useUpdateSettings } from './settings-api'
 
@@ -20,34 +23,44 @@ function NewCategoryForm({ close }: { close: () => void }) {
   const create = useCreateCategory()
   return (
     <form
-      className="grid gap-4"
-      onSubmit={(event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault()
-        const form = new FormData(event.currentTarget)
-        create.mutate({ name: String(form.get('name')), kind }, { onSuccess: close })
+      action={(form) => {
+        create.mutate(
+          { name: String(form.get('name')), kind },
+          {
+            onSuccess: () => {
+              close()
+              toast.success(m.toast_category_created())
+            },
+          },
+        )
       }}
     >
-      <Segmented
-        name={m.label_kind()}
-        value={kind}
-        onChange={setKind}
-        options={[
-          { value: 'expense', label: m.label_expense() },
-          { value: 'income', label: m.label_income() },
-        ]}
-      />
-      <Field id="category-name" label={m.label_name()}>
-        <Input id="category-name" name="name" required maxLength={60} autoFocus />
-      </Field>
-      <FormError message={create.error?.message} />
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={close}>
-          {m.action_cancel()}
-        </Button>
-        <Button type="submit" disabled={create.isPending}>
-          {m.action_create()}
-        </Button>
-      </div>
+      <FieldGroup>
+        <ToggleGroup
+          type="single"
+          className="w-full"
+          aria-label={m.label_kind()}
+          value={kind}
+          onValueChange={(value) => setKind(value as 'expense' | 'income')}
+        >
+          <ToggleGroupItem value="expense">{m.label_expense()}</ToggleGroupItem>
+          <ToggleGroupItem value="income">{m.label_income()}</ToggleGroupItem>
+        </ToggleGroup>
+        <Field>
+          <FieldLabel htmlFor="category-name">{m.label_name()}</FieldLabel>
+          <Input id="category-name" name="name" required maxLength={60} autoFocus />
+        </Field>
+        <FieldError>{create.error?.message}</FieldError>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={close}>
+            {m.action_cancel()}
+          </Button>
+          <Button type="submit" disabled={create.isPending}>
+            {create.isPending && <Spinner data-icon="inline-start" />}
+            {m.action_create()}
+          </Button>
+        </div>
+      </FieldGroup>
     </form>
   )
 }
@@ -98,7 +111,8 @@ export function SettingsPage() {
           </ul>
 
           <div className="flex items-end gap-2">
-            <Field id="add-currency" label={m.onboarding_add_currency()} className="flex-1">
+            <Field className="flex-1">
+              <FieldLabel htmlFor="add-currency">{m.onboarding_add_currency()}</FieldLabel>
               <NativeSelect
                 id="add-currency"
                 value={currencyToAdd}
@@ -120,13 +134,14 @@ export function SettingsPage() {
             </Button>
           </div>
 
-          <FormError message={update.error?.message} />
+          <FieldError>{update.error?.message}</FieldError>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
               disabled={draft === null || update.isPending}
               onClick={() => update.mutate({ currencies }, { onSuccess: () => setDraft(null) })}
             >
+              {update.isPending && <Spinner data-icon="inline-start" />}
               {m.settings_save_currencies()}
             </Button>
             {update.isSuccess && draft === null && <span className="label-mono text-muted-foreground">{m.settings_saved()}</span>}

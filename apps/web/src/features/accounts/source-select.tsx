@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { Field } from '#/shared/ui/field'
+import { m } from '#/shared/i18n'
+import { Field, FieldDescription, FieldError, FieldLabel } from '#/shared/ui/field'
 import { NativeSelect } from '#/shared/ui/native-select'
 import type { SourceOption } from './sources'
 
@@ -34,9 +35,19 @@ export function SourceSelect({
   }, [options])
 
   return (
-    <Field id={id} label={label} hint={hint} error={error} className={className}>
-      <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)} required>
-        <option value="" disabled />
+    <Field className={className} data-invalid={Boolean(error)}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <NativeSelect
+        id={id}
+        value={value}
+        aria-invalid={Boolean(error)}
+        onChange={(event) => onChange(event.target.value)}
+        required
+      >
+        {/* No `disabled`: a filter clears back to "None"; `required` still blocks an empty form submit. */}
+        <option value="">
+          {m.label_none()}
+        </option>
         {groups.map(([group, groupOptions]) => (
           <optgroup key={group} label={group}>
             {groupOptions.map((option) => (
@@ -47,6 +58,7 @@ export function SourceSelect({
           </optgroup>
         ))}
       </NativeSelect>
+      {error ? <FieldError>{error}</FieldError> : hint ? <FieldDescription>{hint}</FieldDescription> : null}
     </Field>
   )
 }
