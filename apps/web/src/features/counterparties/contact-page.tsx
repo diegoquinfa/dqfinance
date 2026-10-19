@@ -16,7 +16,8 @@ import { Section, rowsClass } from '#/shared/ui/page'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { useCounterparty } from './counterparties-api'
 import { ContactSpendingChart } from './contact-spending-chart'
-import { ContactTotals, kindTag } from './contact-row'
+import { kindTag } from './contact-kind'
+import { ContactTotals } from './contact-row'
 
 type Months = '6' | '12'
 
