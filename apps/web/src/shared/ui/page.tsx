@@ -3,7 +3,7 @@ import { cn } from 'cn'
 import { m } from '#/shared/i18n'
 
 /** `// 01 Label`: the lilac marker opens a block, the text stays muted. */
-export function Eyebrow({ index, children, className }: { index?: string; children: React.ReactNode; className?: string }) {
+export function Eyebrow({ index, children, className }: { index?: string; children?: React.ReactNode; className?: string }) {
   return (
     <p className={cn('label-mono text-muted-foreground', className)}>
       {index && (
@@ -43,12 +43,15 @@ export function PageHeader({
 /**
  * A block of a page. `rail` puts the label in columns 1-3 and the content in 4-12 on desktop;
  * `stack` keeps the label on top at full width. Space separates sections, never lines.
+ * `prominent` makes the label a heading under its `// 0X` index, for sections named after a thing
+ * (a bank) rather than a topic.
  */
 export function Section({
   index,
   label,
   action,
   layout = 'rail',
+  prominent = false,
   className,
   children,
 }: {
@@ -56,16 +59,31 @@ export function Section({
   label: string
   action?: React.ReactNode
   layout?: 'rail' | 'stack'
+  prominent?: boolean
   className?: string
   children: React.ReactNode
 }) {
   const rail = layout === 'rail'
   return (
     <section className={cn('grid gap-5 py-8 md:py-12', rail && 'lg:grid-cols-12 lg:gap-x-12', className)}>
-      <div className={cn('flex items-baseline justify-between gap-4', rail && 'lg:col-span-3 lg:flex-col lg:justify-start')}>
-        <h2>
-          <Eyebrow index={index}>{label}</Eyebrow>
-        </h2>
+      {/* A prominent heading is two lines: on mobile the action sits beside the name, not the index. */}
+      <div
+        className={cn(
+          'flex justify-between gap-4',
+          prominent ? 'items-end' : 'items-baseline',
+          rail && 'lg:col-span-3 lg:flex-col lg:items-start lg:justify-start',
+        )}
+      >
+        {prominent ? (
+          <h2 className="grid min-w-0 gap-2">
+            <Eyebrow index={index} />
+            <span className="type-heading font-medium break-words text-ink">{label}</span>
+          </h2>
+        ) : (
+          <h2>
+            <Eyebrow index={index}>{label}</Eyebrow>
+          </h2>
+        )}
         {action}
       </div>
       <div className={cn('min-w-0', rail && 'lg:col-span-9')}>{children}</div>

@@ -5,15 +5,19 @@ export function BankNameInput({
   id,
   name,
   suggestions,
+  value,
+  onValueChange,
   autoFocus,
 }: {
   id: string
   name: string
   suggestions: string[]
+  value?: string
+  onValueChange?: (text: string) => void
   autoFocus?: boolean
 }) {
   return (
-    <Autocomplete items={suggestions} name={name} required>
+    <Autocomplete items={suggestions} name={name} required value={value} onValueChange={onValueChange}>
       <ComboboxInput id={id} showTrigger={false} maxLength={80} autoFocus={autoFocus} />
       {/* Like a datalist, nothing shows when no suggestion matches. */}
       <ComboboxContent className="data-empty:hidden">
