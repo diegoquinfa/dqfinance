@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { countryLabel } from '#/shared/currencies'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
@@ -10,6 +9,7 @@ import { Label } from '#/shared/ui/label'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
+import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { useSettings } from '../settings/settings-api'
 import {
   useAccounts,
@@ -24,9 +24,12 @@ import { BankNameInput } from './bank-name-input'
 import { percentToBps } from './rates'
 import { suggestedBanks } from './suggested-banks'
 
-/** The sentinel of the two selects: it reveals the field that creates the row instead. */
+/** The sentinel of the existing-account select: it reveals the field that creates the row instead. */
 const NEW = 'new'
 const FORM_ID = 'new-account-form'
+
+/** A bank name matches without case or accent: "bancolombia" is "Bancolombia". */
+const sameName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' }) === 0
 
 /**
  * #7: a whole account as a page. The opening balance is the first and largest field, and it is
@@ -41,18 +44,14 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
   const adjust = useAdjustBalance()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
-
-  const banks = accounts.data?.banks ?? []
-  // A preselected bank account (the accounts page links here) fixes its bank too.
-  const selectedAccount = bankAccountId
-    ? banks.flatMap((bank) => bank.accounts.map((account) => ({ bank, account }))).find((row) => row.account.id === bankAccountId)
-    : undefined
   // null means untouched: the first choice that exists wins, so landing before the tree loads is safe.
-  const [bank, setBank] = useState<string | null>(selectedAccount?.bank.id ?? bankId ?? null)
-  const [account, setAccount] = useState<string | null>(selectedAccount?.account.id ?? null)
-  const bankValue = bank ?? banks[0]?.id ?? NEW
-  const bankAccounts = banks.find((item) => item.id === bankValue)?.accounts ?? []
-  const accountValue = account ?? bankAccounts[0]?.id ?? NEW
+  const [bankText, setBankText] = useState<string | null>(null)
+  // The choice belongs to a bank: when the bank changes, the choice starts over.
+  const [choice, setChoice] = useState<{ bank: string; value: string } | null>(null)
+  const [type, setType] = useState<string>('savings')
+  // What a previous attempt created, so a retry does not create it twice.
+  const [createdBank, setCreatedBank] = useState<{ id: string; name: string } | null>(null)
+  const [createdAccount, setCreatedAccount] = useState<{ id: string; bankId: string } | null>(null)
 
   if (accounts.isPending || settings.isPending) return <ListSkeleton rows={5} />
   if (accounts.error) {
@@ -65,42 +64,70 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
   // The signed-in shell only renders this page once the settings exist.
   if (!settings.data) return null
 
+  const banks = accounts.data?.banks ?? []
+  // A preselected bank account (the accounts page links here) fixes its bank too.
+  const selectedAccount = bankAccountId
+    ? banks.flatMap((bank) => bank.accounts.map((account) => ({ bank, account }))).find((row) => row.account.id === bankAccountId)
+    : undefined
+  const preselectedBank = selectedAccount?.bank ?? banks.find((bank) => bank.id === bankId)
+  const text = (bankText ?? preselectedBank?.name ?? '').trim()
+  const matchedBank = banks.find((bank) => sameName(bank.name, text))
+  const bankAccounts = matchedBank?.accounts ?? []
+  // NEW, unless the preselected bank account belongs to the bank the name matches.
+  const preselectedAccount =
+    selectedAccount && selectedAccount.bank.id === matchedBank?.id ? selectedAccount.account.id : NEW
+  const accountChoice = choice && choice.bank === matchedBank?.id ? choice.value : preselectedAccount
+  const creatingAccount = accountChoice === NEW
+  const typeLabel = productTypes.find((item) => item.value === type)?.label() ?? type
+
   const country = settings.data.country
-  const suggestions = suggestedBanks(country)
+  const suggestions = [
+    ...banks.map((bank) => bank.name),
+    ...suggestedBanks(country).filter((name) => !banks.some((bank) => sameName(bank.name, name))),
+  ]
   const pending =
     createBank.isPending || createBankAccount.isPending || createProduct.isPending || adjust.isPending
-  const creatingBank = bankValue === NEW
-  const creatingAccount = accountValue === NEW
 
   /** The chain the API needs: bank, its account, the product, then the opening balance as an adjustment. */
   async function submit(form: FormData) {
     setError(null)
     const created: string[] = []
-    let chosenBank = bankValue
-    let chosenAccount = accountValue
     try {
-      if (creatingBank) {
-        const row = await createBank.mutateAsync({ name: String(form.get('bankName')) })
-        chosenBank = row.id
-        setBank(chosenBank)
-        created.push(m.toast_bank_created())
+      const name = text.trim()
+      const productName = String(form.get('productName') ?? '').trim() || typeLabel
+      let chosenBank = matchedBank?.id
+      if (!chosenBank) {
+        // A retry after a partial failure reuses what the first attempt created.
+        if (createdBank && sameName(createdBank.name, name)) {
+          chosenBank = createdBank.id
+        } else {
+          const row = await createBank.mutateAsync({ name })
+          setCreatedBank({ id: row.id, name })
+          chosenBank = row.id
+          created.push(m.toast_bank_created())
+        }
       }
-      if (creatingAccount) {
-        const last4 = String(form.get('last4')).trim()
-        const row = await createBankAccount.mutateAsync({
-          bankId: chosenBank,
-          name: String(form.get('accountName')),
-          last4: last4 || undefined,
-        })
-        chosenAccount = row.id
-        setAccount(chosenAccount)
-        created.push(m.toast_account_created())
+      let chosenAccount = creatingAccount ? undefined : accountChoice
+      if (!chosenAccount) {
+        if (createdAccount && createdAccount.bankId === chosenBank) {
+          chosenAccount = createdAccount.id
+        } else {
+          const last4 = String(form.get('last4') ?? '').trim()
+          const row = await createBankAccount.mutateAsync({
+            bankId: chosenBank,
+            name: productName,
+            last4: last4 || undefined,
+          })
+          setCreatedAccount({ id: row.id, bankId: chosenBank })
+          chosenAccount = row.id
+          created.push(m.toast_account_created())
+        }
       }
       const rate = String(form.get('annualRate')).trim()
       const product = await createProduct.mutateAsync({
         bankAccountId: chosenAccount,
-        name: String(form.get('productName')),
-        type: String(form.get('type')) as ProductInput['type'],
+        name: productName,
+        type: type as ProductInput['type'],
         currency: String(form.get('currency')) as never,
         annualRateBps: rate ? percentToBps(Number(rate)) : undefined,
       })
@@ -186,97 +213,77 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
         </div>
 
         <FieldGroup>
-          {banks.length > 0 && (
-            <Field>
-              <FieldLabel htmlFor="new-bank">{m.label_bank()}</FieldLabel>
-              <Select
-                value={bankValue}
-                onValueChange={(value) => {
-                  setBank(value)
-                  setAccount(null)
-                }}
-              >
-                <SelectTrigger id="new-bank">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {banks.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value={NEW}>{m.accounts_new_bank_new()}</SelectItem>
-                </SelectContent>
-              </Select>
-              <FieldDescription>{m.accounts_new_bank_hint()}</FieldDescription>
-            </Field>
-          )}
+          <Field>
+            <FieldLabel htmlFor="new-bank">{m.label_bank()}</FieldLabel>
+            <BankNameInput
+              id="new-bank"
+              name="bankName"
+              suggestions={suggestions}
+              value={bankText ?? preselectedBank?.name ?? ''}
+              onValueChange={setBankText}
+            />
+            <FieldDescription>
+              {!text
+                ? m.accounts_new_bank_hint()
+                : matchedBank
+                  ? m.accounts_bank_reuse({ bank: matchedBank.name })
+                  : m.accounts_bank_create({ bank: text })}
+            </FieldDescription>
+          </Field>
 
-          {creatingBank && (
-            <Field>
-              <FieldLabel htmlFor="new-bank-name">{m.accounts_new_bank_new()}</FieldLabel>
-              <BankNameInput id="new-bank-name" name="bankName" suggestions={suggestions} />
-              <FieldDescription>
-                {suggestions.length
-                  ? m.accounts_suggested_banks({ country: countryLabel(country!) })
-                  : m.accounts_bank_name_hint()}
-              </FieldDescription>
-            </Field>
-          )}
-
+          {/* The bank account level is hidden: it only shows when the bank already has one to pick. */}
           {bankAccounts.length > 0 && (
             <Field>
-              <FieldLabel htmlFor="new-bank-account">{m.label_account()}</FieldLabel>
-              <Select value={accountValue} onValueChange={setAccount}>
-                <SelectTrigger id="new-bank-account">
+              <FieldLabel htmlFor="new-existing-account">{m.accounts_new_existing_account()}</FieldLabel>
+              <Select
+                value={accountChoice}
+                onValueChange={(value) => setChoice({ bank: matchedBank?.id ?? '', value })}
+              >
+                <SelectTrigger id="new-existing-account">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={NEW}>{m.accounts_new_existing_none()}</SelectItem>
                   {bankAccounts.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       {item.last4 ? `${item.name} ···· ${item.last4}` : item.name}
                     </SelectItem>
                   ))}
-                  <SelectItem value={NEW}>{m.accounts_new_account_new()}</SelectItem>
                 </SelectContent>
               </Select>
               <FieldDescription>{m.accounts_new_account_hint()}</FieldDescription>
             </Field>
           )}
 
-          {creatingAccount && (
-            <>
-              <Field>
-                <FieldLabel htmlFor="new-account-name">{m.accounts_new_account_new()}</FieldLabel>
-                <Input id="new-account-name" name="accountName" required maxLength={80} />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="new-account-last4">{`${m.label_last4()} (${m.label_optional()})`}</FieldLabel>
-                <Input id="new-account-last4" name="last4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
-              </Field>
-            </>
-          )}
+          <Field>
+            <span className="label-mono text-muted-foreground">{m.label_product_type()}</span>
+            <ToggleGroup
+              type="single"
+              className="w-full flex-wrap"
+              aria-label={m.label_product_type()}
+              value={type}
+              onValueChange={(value) => setType(value)}
+            >
+              {productTypes.map((item) => (
+                <ToggleGroupItem key={item.value} value={item.value}>
+                  {item.label()}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </Field>
 
           <Field>
             <FieldLabel htmlFor="new-product-name">{m.accounts_new_product_name()}</FieldLabel>
-            <Input id="new-product-name" name="productName" required maxLength={80} />
+            <Input id="new-product-name" name="productName" maxLength={80} placeholder={typeLabel} />
+            <FieldDescription>{m.accounts_new_name_hint()}</FieldDescription>
           </Field>
 
-          <Field>
-            <FieldLabel htmlFor="new-product-type">{m.label_product_type()}</FieldLabel>
-            <Select name="type" defaultValue="savings">
-              <SelectTrigger id="new-product-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {productTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+          {creatingAccount && (
+            <Field>
+              <FieldLabel htmlFor="new-account-last4">{`${m.label_last4()} (${m.label_optional()})`}</FieldLabel>
+              <Input id="new-account-last4" name="last4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
+            </Field>
+          )}
 
           <Field>
             <FieldLabel htmlFor="new-product-rate">{m.product_annual_rate()}</FieldLabel>
