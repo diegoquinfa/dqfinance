@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { cardDebtOf, computeBalances, currentBalanceOf, type Ledger } from './compute-balances.ts'
+import { assetsAndLiabilities, cardDebtOf, computeBalances, computeBalancesAt, currentBalanceOf, monthEnds, type Ledger, type LedgerPoint } from './compute-balances.ts'
 
-const none = { productId: null, cashWalletId: null, cardId: null }
+// Source columns plus the date each movement row carries; only computeBalancesAt reads the date.
+const none = { productId: null, cashWalletId: null, cardId: null, occurredAt: new Date(), adjustedAt: new Date() }
+const at = (iso: string) => new Date(iso)
 const transferBase = {
   fromProductId: null,
   fromCashWalletId: null,
@@ -10,13 +12,14 @@ const transferBase = {
   toCashWalletId: null,
   toCardId: null,
   costBasisCents: null,
+  sentAt: new Date(),
   receivedAt: new Date(),
 }
 
 const ledger = (overrides: Partial<Ledger>): Ledger => ({
   products: [
-    { id: 'savings', name: 'Savings', bankName: 'Bank A', currency: 'COP' },
-    { id: 'other', name: 'Other', bankName: 'Bank B', currency: 'COP' },
+    { id: 'savings', name: 'Savings', bankName: 'Bank A', currency: 'COP', annualRateBps: 900 },
+    { id: 'other', name: 'Other', bankName: 'Bank B', currency: 'COP', annualRateBps: null },
   ],
   cashWallets: [{ id: 'wallet', name: 'Wallet', currency: 'COP' }],
   cards: [
@@ -88,7 +91,7 @@ test('credit card keeps debt per currency, valued at purchase-day cost, and leav
 test('a fully paid currency disappears from the card debts', () => {
   const balances = computeBalances(
     ledger({
-      transactions: [{ ...none, type: 'expense', amountCents: 50_000, currency: 'COP', primaryAmountCents: null, cardId: 'visa' }],
+      transactions: [{ ...none, type: 'expense', amountCents: 50_000, currency: 'COP', primaryAmountCents: null, cardId: 'visa', occurredAt: new Date() }],
       transfers: [
         { ...transferBase, fromProductId: 'savings', toCardId: 'visa', sentAmountCents: 50_000, sentCurrency: 'COP', receivedAmountCents: 50_000, receivedCurrency: 'COP' },
       ],
@@ -96,4 +99,91 @@ test('a fully paid currency disappears from the card debts', () => {
   )
   assert.deepEqual(balances.creditCards[0]!.debts, [])
   assert.equal(balances.creditCards[0]!.totalCents, 0)
+})
+
+const historyLedger = (overrides: Partial<LedgerPoint> = {}): LedgerPoint => ({
+  ...ledger({
+    transactions: [
+      // January: the salary lands and a USD charge hits the credit card.
+      { ...none, type: 'income', amountCents: 1_000_000, currency: 'COP', primaryAmountCents: null, productId: 'savings', occurredAt: at('2026-01-15T12:00:00Z') },
+      { ...none, type: 'expense', amountCents: 50_00, currency: 'USD', primaryAmountCents: 200_000, cardId: 'visa', occurredAt: at('2026-01-20T12:00:00Z') },
+      // February: rent leaves the savings account.
+      { ...none, type: 'expense', amountCents: 300_000, currency: 'COP', primaryAmountCents: null, productId: 'savings', occurredAt: at('2026-02-10T12:00:00Z') },
+    ],
+  }),
+  at: at('2026-03-31T23:59:59Z'),
+  ...overrides,
+})
+
+test('a balance point only counts the movements dated on or before it', () => {
+  const point = historyLedger({})
+  const january = computeBalancesAt({ ...point, at: at('2026-01-31T23:59:59Z') })
+  const february = computeBalancesAt({ ...point, at: at('2026-02-28T23:59:59Z') })
+
+  assert.equal(currentBalanceOf(january, { type: 'product', id: 'savings' }, 'COP'), 1_000_000)
+  assert.equal(currentBalanceOf(february, { type: 'product', id: 'savings' }, 'COP'), 700_000)
+  // A month-end point sees its own month's last day and never looks ahead to the next month.
+  assert.deepEqual(assetsAndLiabilities(january), [{ currency: 'COP', assetsCents: 1_000_000, liabilitiesCents: 200_000 }])
+})
+
+test('the foreign card charge counts at its purchase-day cost from its own month on', () => {
+  const point = historyLedger({})
+  assert.deepEqual(assetsAndLiabilities(computeBalancesAt({ ...point, at: at('2026-01-20T11:59:59Z') })), [
+    { currency: 'COP', assetsCents: 1_000_000, liabilitiesCents: 0 },
+  ])
+  assert.deepEqual(assetsAndLiabilities(computeBalancesAt({ ...point, at: at('2026-01-20T12:00:00Z') })), [
+    { currency: 'COP', assetsCents: 1_000_000, liabilitiesCents: 200_000 },
+  ])
+})
+
+test('a transfer in transit shows at the month-end it was sent in, before the destination receives it', () => {
+  const point = historyLedger({
+    transfers: [
+      {
+        ...transferBase,
+        fromProductId: 'savings',
+        toProductId: 'other',
+        sentAmountCents: 100_000,
+        sentCurrency: 'COP',
+        receivedAmountCents: 100_000,
+        receivedCurrency: 'COP',
+        sentAt: at('2026-02-27T12:00:00Z'),
+        receivedAt: at('2026-03-02T12:00:00Z'),
+      },
+    ],
+  })
+  const february = computeBalancesAt({ ...point, at: at('2026-02-28T23:59:59Z') })
+  const march = computeBalancesAt({ ...point, at: at('2026-03-31T23:59:59Z') })
+
+  assert.equal(currentBalanceOf(february, { type: 'product', id: 'savings' }, 'COP'), 700_000 - 100_000)
+  assert.equal(currentBalanceOf(february, { type: 'product', id: 'other' }, 'COP'), 0)
+  assert.deepEqual(february.inTransit, [{ currency: 'COP', amountCents: 100_000 }])
+  assert.equal(currentBalanceOf(march, { type: 'product', id: 'other' }, 'COP'), 100_000)
+  assert.deepEqual(march.inTransit, [])
+})
+
+test('a product carries its rate into the balance sheet; a cash wallet never has one', () => {
+  const balances = computeBalances(ledger({}))
+  assert.deepEqual(
+    balances.accounts.map((a) => [a.ref.id, a.annualRateBps]),
+    [
+      ['savings', 900],
+      ['other', null],
+      ['wallet', null],
+    ],
+  )
+})
+
+test('month ends step back from the current month, which is "now"', () => {
+  const now = at('2026-03-15T10:00:00Z')
+  assert.deepEqual(
+    monthEnds(3, now).map((d) => d.toISOString()),
+    ['2026-01-31T23:59:59.999Z', '2026-02-28T23:59:59.999Z', '2026-03-15T10:00:00.000Z'],
+  )
+  // Across a year boundary, and a single point is just now.
+  assert.deepEqual(monthEnds(2, at('2026-01-10T00:00:00Z')).map((d) => d.toISOString()), [
+    '2025-12-31T23:59:59.999Z',
+    '2026-01-10T00:00:00.000Z',
+  ])
+  assert.deepEqual(monthEnds(1, now), [now])
 })
