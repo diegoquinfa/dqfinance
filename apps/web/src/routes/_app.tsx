@@ -216,10 +216,10 @@ function ProfileMenu({ name, email }: { name: string; email: string }) {
           <span className="sr-only">{m.nav_profile()}</span>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
+      <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="grid gap-1">
           <span className="truncate text-ink">{name}</span>
-          <span className="truncate">{email}</span>
+          <span className="break-all">{email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

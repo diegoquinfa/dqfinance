@@ -332,7 +332,7 @@
   "source_cost_add": "Add cost",
   "source_costs_empty": "No costs yet",
   "source_costs_empty_description": "A cost is a recurring charge on this account: a monthly fee, a handling fee, or a card fee. Add it here so the app tells you when it is due.",
-  "source_recent_empty": "No movements yet. Record one, or ask your AI assistant.",
+  "source_recent_empty": "Record one, or ask your AI assistant.",
   "source_open": "Open {name}",
   "source_yield": "Yield",
   "source_yield_rate_label": "Annual rate (E.A.)",

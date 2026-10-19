@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { m } from '#/shared/i18n'
 import { Field, FieldDescription, FieldError, FieldLabel } from '#/shared/ui/field'
 import { NativeSelect } from '#/shared/ui/native-select'
 import type { SourceOption } from './sources'
@@ -43,7 +44,10 @@ export function SourceSelect({
         onChange={(event) => onChange(event.target.value)}
         required
       >
-        <option value="" disabled />
+        {/* No `disabled`: a filter clears back to "None"; `required` still blocks an empty form submit. */}
+        <option value="">
+          {m.label_none()}
+        </option>
         {groups.map(([group, groupOptions]) => (
           <optgroup key={group} label={group}>
             {groupOptions.map((option) => (
