@@ -3,7 +3,7 @@ import type { AppEnv } from '../../app-env'
 import { jsonBody, queryParams } from '../../shared/http'
 import { requireSession } from '../auth/require-session'
 import { pushConfigFrom } from '../push/push-config'
-import { sendExpensePush } from '../push/send-expense-push'
+import { sendPush } from '../push/send-push'
 import {
   confirmRecurringExpense,
   confirmRecurringExpenseInput,
@@ -26,7 +26,7 @@ export const recurringExpensesRoutes = new Hono<AppEnv>()
       ...c.req.valid('json'),
       id: c.req.param('id'),
     })
-    await sendExpensePush(c.var.db, c.var.userId, c.var.locale, pushConfigFrom(c.env))
+    await sendPush(c.var.db, c.var.userId, c.var.locale, pushConfigFrom(c.env))
     return c.json(confirmed)
   })
   .post('/:id/skip', async (c) => c.json(await skipRecurringExpense(c.var.db, c.var.userId, { id: c.req.param('id') })))

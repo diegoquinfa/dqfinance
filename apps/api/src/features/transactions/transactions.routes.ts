@@ -3,7 +3,7 @@ import type { AppEnv } from '../../app-env'
 import { jsonBody, queryParams } from '../../shared/http'
 import { requireSession } from '../auth/require-session'
 import { pushConfigFrom } from '../push/push-config'
-import { sendExpensePush } from '../push/send-expense-push'
+import { sendPush } from '../push/send-push'
 import { createTransaction, createTransactionInput } from './create-transaction'
 import { listTransactions, listTransactionsInput } from './list-transactions'
 import { summarizeTransactions, summarizeTransactionsInput } from './summarize-transactions'
@@ -18,6 +18,6 @@ export const transactionsRoutes = new Hono<AppEnv>()
   )
   .post('/', jsonBody(createTransactionInput), async (c) => {
     const created = await createTransaction(c.var.db, c.var.userId, c.req.valid('json'))
-    await sendExpensePush(c.var.db, c.var.userId, c.var.locale, pushConfigFrom(c.env), created.type)
+    await sendPush(c.var.db, c.var.userId, c.var.locale, pushConfigFrom(c.env), created.type)
     return c.json(created, 201)
   })
