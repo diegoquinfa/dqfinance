@@ -16,6 +16,17 @@ export function useTransactions(filters?: TransactionFilters) {
   return useQuery(transactionsQuery(filters))
 }
 
+export type SummaryFilters = InferRequestType<typeof api.api.transactions.summary.$get>['query']
+
+/** Income and expense totals per currency, summed by the API (no page limit). */
+export function useTransactionSummary(filters: SummaryFilters) {
+  return useQuery({
+    queryKey: ['transactions', 'summary', filters],
+    queryFn: async () => unwrap(api.api.transactions.summary.$get({ query: filters })),
+    placeholderData: (previous) => previous,
+  })
+}
+
 /** Recording a movement changes balances too. */
 function useInvalidateTransactions() {
   const queryClient = useQueryClient()

@@ -46,23 +46,23 @@ export function FormError({ message }: { message?: string }) {
 /** Skeleton rows shaped like the list they replace. */
 export function ListSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <ul className="divide-y" aria-busy="true">
+    <ul className="divide-y divide-line border-y border-line" aria-busy="true">
       {Array.from({ length: rows }, (_, index) => (
-        <li key={index} className="flex justify-between py-3">
-          <span className="h-4 w-40 animate-pulse rounded bg-muted" />
-          <span className="h-4 w-20 animate-pulse rounded bg-muted" />
+        <li key={index} className="flex justify-between py-4">
+          <span className="h-4 w-40 animate-pulse bg-surface" />
+          <span className="h-4 w-20 animate-pulse bg-surface" />
         </li>
       ))}
     </ul>
   )
 }
 
-/** Centered empty state that says how to start. */
+/** Empty state that says how to start. Left aligned, like every block of content. */
 export function EmptyState({ title, description }: { title: string; description?: string }) {
   return (
-    <div className="py-10 text-center">
-      <p className="font-medium">{title}</p>
-      {description && <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{description}</p>}
+    <div className="border-y border-line py-10">
+      <p className="type-heading-sm text-ink">{title}</p>
+      {description && <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>}
     </div>
   )
 }

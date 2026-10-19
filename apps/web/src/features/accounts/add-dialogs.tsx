@@ -138,7 +138,7 @@ export function AddBankAccountDialog({ bankId, bankName }: { bankId: string; ban
   const create = useCreateBankAccount()
   return (
     <DialogPanel
-      trigger={<Button variant="ghost" size="sm">{m.accounts_add_bank_account()}</Button>}
+      trigger={<Button variant="link">{m.accounts_add_bank_account()}</Button>}
       title={`${m.accounts_add_bank_account()} · ${bankName}`}
     >
       {(close) => (
@@ -171,7 +171,7 @@ export function AddProductDialog({ bankAccountId, accountName }: { bankAccountId
   const create = useCreateProduct()
   return (
     <DialogPanel
-      trigger={<Button variant="ghost" size="sm">{m.accounts_add_product()}</Button>}
+      trigger={<Button variant="link">{m.accounts_add_product()}</Button>}
       title={`${m.accounts_add_product()} · ${accountName}`}
     >
       {(close) => (
@@ -217,7 +217,7 @@ export function AddCardDialog({ productId, productName }: { productId: string; p
   const isCredit = kind === 'credit'
   return (
     <DialogPanel
-      trigger={<Button variant="ghost" size="sm">{m.accounts_add_card()}</Button>}
+      trigger={<Button variant="link">{m.accounts_add_card()}</Button>}
       title={`${m.accounts_add_card()} · ${productName}`}
     >
       {(close) => (
