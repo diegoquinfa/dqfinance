@@ -72,7 +72,7 @@ The scale is `@utility type-*`, not `--text-*` theme sizes: `cn` (tailwind-merge
 
 ## Shell
 
-- **Top bar** (64px, `canvas` + hairline, sticky): `DQFINANCE` in mono on the left. From `xl`, the seven mono links with a drawn underline (`link-draw`) and `ink` for the current page. From `lg`, the primary "New movement" button. Below `xl`, "Menu" opens a full-screen menu with large numbered links (`01`... in `faint`, the current one in `signal`), the email, and "Sign out".
+- **Top bar** (64px, `canvas` + hairline, sticky): `DQFINANCE` in mono on the left. From `xl`, the seven mono links with a drawn underline (`link-draw`) and `ink` for the current page. From `lg`, the primary "New movement" button. From `xl`, the account is a square avatar (the user's initials) opening a dropdown with the name and email (mono), Settings and Sign out. Below `xl`, "Menu" opens a full-screen menu with large numbered links (`01`... in `faint`, the current one in `signal`), the name, the email, and "Sign out".
 - **Bottom bar** (below `lg`): Overview, Movements, Accounts, Recurring as icons (accessible names in `sr-only`), the current one in `ink` with a 1px lilac mark on top, and a square `ink` "+" that opens New movement.
 
 ## Components
@@ -99,6 +99,7 @@ Checklist for every added component:
 | `Card` | Only for raised surfaces: the auth and consent panels. |
 | `Dialog`, `DialogPanel`, `AlertDialog` | Bottom sheet on mobile, centered square panel from `sm`. Overlay `canvas` at 90 %, no blur. `AlertDialog` confirms what runs immediately, like deleting a recurring expense. |
 | `Empty` | Empty states, left aligned, hairlines above and below, with an optional action. |
+| `Avatar`, `DropdownMenu` | The account: a square avatar with initials (mono), its dropdown names the user and offers Settings and Sign out. |
 | `Skeleton`, `ListSkeleton` | Loading states shaped like what they replace: `Skeleton` is a bare `surface` block, `ListSkeleton` is hairline rows. |
 | `Spinner` | Only inside a pending button, next to its text; the button also gets `disabled`. |
 | `Separator` | A lone divider line, where a `border-t` used to be. List rows keep `divide-y` through `rowsClass`. |
@@ -117,8 +118,8 @@ States: hover changes tone or moves a row title 4px right, never size. Focus is 
 | `/onboarding` | Two steps (country / language / timezone, then currencies) in the same layout as sign-in. |
 | `/overview` | 01 total balance (display size, primary currency) beside the period block: Week / Month / Year with previous and next, then Spent and Received (summed by `GET /api/transactions/summary`). 02 net worth per currency (assets, card debt, net). 03 accounts, 04 credit cards (rows open the source), 05 to confirm, 06 recent movements, 07 in transit. |
 | `/accounts` | One section per bank: bank accounts, products as rows that open their detail, cards nested with `↳`; then cash. Add actions as `link` buttons. |
-| `/accounts/$type/$id` | A product, cash wallet or credit card: back link, bank, name, balance (or debt and available credit), "Adjust balance", income / expenses / net for the last 6 or 12 months, and its recent movements. |
-| `/transactions` | Filters (type, source, date range) and the movement list. |
+| `/accounts/$type/$id` | A product, cash wallet or credit card: back link, bank, name, balance (or debt and available credit), "Adjust balance", income / expenses / net for the last 6 or 12 months, its costs (the recurring expenses paid with it, with "Add cost"), and its recent movements with "View all". |
+| `/transactions` | Filters (type, source, date range) and the movement list. The filters live in the URL, so a link can preselect a source. |
 | `/transfers` | Transfers with a derived type tag, fee and FX notes, an "in transit" tag, and "Mark received". |
 | `/recurring` | "Due now" with an editable amount, Confirm and Skip, then the full schedule. |
 | `/contacts` | Search, then people and businesses as sections. |
