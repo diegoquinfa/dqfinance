@@ -75,6 +75,10 @@ Tracker `feat/web-push-updates` stays at `main`. Slice 1 is `feat/web-push-updat
 
 `push-2` commit: `ba514920dd9b0c6beb56d0266aeb230a2c0b05c9` `feat(push): notify the browser when an expense is recorded`. api test 20 pass. Independent verify passed, with a gap: non-404/410 error responses were silent. Parent logged those in `send-expense-push.ts` and re-ran api test: 20 pass.
 
+`push-3` commit: `e1d6785bc3dc3b98bc52de3c3ec558dbcf991d64` `feat(web): refresh open pages when an expense push arrives`. Web check-types passed. Parent added base64url padding in `fromBase64Url` before that commit.
+
+Closure on `feat/web-push-updates-03-web`: `pnpm check-types` exit 0, `pnpm test` exit 0 (api 20 pass, file-size 5 pass), `pnpm build` exit 0. No browser run.
+
 ## Next
 
-`push-3` on `feat/web-push-updates-03-web`.
+None. PRs are not opened. To try it, set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` in `apps/api/.dev.vars`, restart the API, and enable notifications in Settings.
