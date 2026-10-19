@@ -3,7 +3,7 @@ import { alias } from 'drizzle-orm/sqlite-core'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { fromCents } from '../../shared/money'
-import { bankAccount, card, cashWallet, product } from '../accounts/account.schema'
+import { bank, bankAccount, card, cashWallet, product } from '../accounts/account.schema'
 import { category } from '../categories/category.schema'
 import { transaction } from '../transactions/transaction.schema'
 import { transferType, TRANSFER_TYPES } from './transfer-type'
@@ -17,12 +17,15 @@ export const listTransfersInput = z.object({
 
 const fromProduct = alias(product, 'from_product')
 const fromAccount = alias(bankAccount, 'from_account')
+const fromBank = alias(bank, 'from_bank')
 const fromWallet = alias(cashWallet, 'from_wallet')
 const toProduct = alias(product, 'to_product')
 const toAccount = alias(bankAccount, 'to_account')
+const toBank = alias(bank, 'to_bank')
 const toWallet = alias(cashWallet, 'to_wallet')
 const toCardProduct = alias(product, 'to_card_product')
 const toCardAccount = alias(bankAccount, 'to_card_account')
+const toCardBank = alias(bank, 'to_card_bank')
 
 export async function listTransfers(db: Db, userId: string, input: z.infer<typeof listTransfersInput>) {
   const rows = await db
@@ -31,22 +34,33 @@ export async function listTransfers(db: Db, userId: string, input: z.infer<typeo
       fromName: fromProduct.name,
       fromWalletName: fromWallet.name,
       fromBankId: fromAccount.bankId,
+      fromBankName: fromBank.name,
+      fromLast4: fromAccount.last4,
       toName: toProduct.name,
       toWalletName: toWallet.name,
       toCardName: card.name,
       toBankId: toAccount.bankId,
+      toBankName: toBank.name,
+      toLast4: toAccount.last4,
       toCardBankId: toCardAccount.bankId,
+      toCardBankName: toCardBank.name,
+      toCardOwnLast4: card.last4,
     })
     .from(transfer)
+    // Every join hangs off an id taken from the user's own transfer row, so no other user's
+    // bank or bank account can be pulled in.
     .leftJoin(fromProduct, eq(fromProduct.id, transfer.fromProductId))
     .leftJoin(fromAccount, eq(fromAccount.id, fromProduct.bankAccountId))
+    .leftJoin(fromBank, eq(fromBank.id, fromAccount.bankId))
     .leftJoin(fromWallet, eq(fromWallet.id, transfer.fromCashWalletId))
     .leftJoin(toProduct, eq(toProduct.id, transfer.toProductId))
     .leftJoin(toAccount, eq(toAccount.id, toProduct.bankAccountId))
+    .leftJoin(toBank, eq(toBank.id, toAccount.bankId))
     .leftJoin(toWallet, eq(toWallet.id, transfer.toCashWalletId))
     .leftJoin(card, eq(card.id, transfer.toCardId))
     .leftJoin(toCardProduct, eq(toCardProduct.id, card.productId))
     .leftJoin(toCardAccount, eq(toCardAccount.id, toCardProduct.bankAccountId))
+    .leftJoin(toCardBank, eq(toCardBank.id, toCardAccount.bankId))
     .where(and(eq(transfer.userId, userId), input.inTransit ? isNull(transfer.receivedAt) : undefined))
     .orderBy(desc(transfer.sentAt))
     .limit(input.limit ?? 50)
@@ -73,11 +87,21 @@ export async function listTransfers(db: Db, userId: string, input: z.infer<typeo
           { type: fromType, bankId: j.fromBankId },
           { type: toType, bankId: j.toBankId ?? j.toCardBankId },
         ),
-        from: { type: fromType, id: (t.fromProductId ?? t.fromCashWalletId)!, name: (j.fromName ?? j.fromWalletName)! },
+        from: {
+          type: fromType,
+          id: (t.fromProductId ?? t.fromCashWalletId)!,
+          name: (j.fromName ?? j.fromWalletName)!,
+          bankName: j.fromBankName ?? null,
+          last4: j.fromLast4 ?? null,
+        },
         to: {
           type: toType,
           id: (t.toProductId ?? t.toCashWalletId ?? t.toCardId)!,
           name: (j.toName ?? j.toWalletName ?? j.toCardName)!,
+          // A card destination borrows the bank of the card's own product, but its digits
+          // are the card's own printed last4.
+          bankName: (toType === 'card' ? j.toCardBankName : j.toBankName) ?? null,
+          last4: (toType === 'card' ? j.toCardOwnLast4 : j.toLast4) ?? null,
         },
         sentAmount: fromCents(t.sentAmountCents + fx),
         sentCurrency: t.sentCurrency,
