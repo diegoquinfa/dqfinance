@@ -1,159 +1,52 @@
-# Turborepo starter
+# DQFinance
 
-This Turborepo starter is maintained by the Turborepo core team.
+Personal finance tracker with an OAuth-protected MCP server, so AI agents can read and record your transactions.
 
-## Using this example
+- `apps/api` — Cloudflare Worker: Hono REST API, Better Auth (OAuth 2.1 authorization server), MCP server at `/mcp`, D1 + Drizzle.
+- `apps/web` — TanStack Start app: sign-in, consent, transactions.
 
-Run the following command:
+Architecture and conventions: [AGENTS.md](./AGENTS.md). UI rules: [DESIGN.md](./DESIGN.md).
 
-```sh
-npx create-turbo@latest
+## Run locally
+
+```bash
+pnpm install
+cp apps/api/.dev.vars.example apps/api/.dev.vars   # then set BETTER_AUTH_SECRET (openssl rand -base64 32)
+pnpm db:migrate:local                              # creates the local D1 database
+pnpm dev                                           # api → http://localhost:8787, web → http://localhost:3000
 ```
 
-## What's inside?
+Open http://localhost:3000, create an account, and follow the setup wizard: country, language, and the currencies you use. It creates your categories and a cash wallet ("Wallet"), then you add your banks, accounts, products and cards under **Accounts**.
 
-This Turborepo includes the following packages/apps:
+## Connect an agent
 
-### Apps and Packages
+Point any MCP client that supports remote servers with OAuth at `http://localhost:8787/mcp`. The client registers itself, sends you to sign in and approve access, and then gets these tools:
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+| Tool | What it does |
+| --- | --- |
+| `list_accounts` | Every source with its id, balance or card debt |
+| `list_categories`, `list_contacts`, `create_contact` | Lookups needed to record something |
+| `create_transaction`, `list_transactions` | Income and expenses |
+| `create_transfer`, `list_transfers`, `mark_transfer_received` | Moving your own money; card payments and in-transit transfers |
+| `adjust_balance` | Set the real balance of an account, cash wallet or card |
+| `list_pending_recurring`, `confirm_recurring`, `skip_recurring` | The "to confirm" inbox |
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+Inspect it with `npx @modelcontextprotocol/inspector`. Setting up banks and cards stays in the web app.
 
-### Utilities
+## Common tasks
 
-This Turborepo has some additional tools already setup for you:
+| Task | Command |
+| --- | --- |
+| Type-check, test, build everything | `pnpm check-types && pnpm test && pnpm build` |
+| New migration after editing a `*.schema.ts` | `pnpm --filter @dqfinance/api db:generate` |
+| Regenerate the Better Auth schema after changing plugins | `pnpm --filter @dqfinance/api auth:schema` |
+| Regenerate Worker binding types after editing `wrangler.jsonc` | `pnpm --filter @dqfinance/api cf-typegen` |
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## Deploy
 
-### Build
+1. `wrangler d1 create dqfinance` and put the id in `apps/api/wrangler.jsonc`.
+2. Set `BETTER_AUTH_URL` and `WEB_URL` in `apps/api/wrangler.jsonc` to the production origins. Run `wrangler secret put BETTER_AUTH_SECRET`.
+3. `pnpm --filter @dqfinance/api db:migrate:remote && pnpm --filter @dqfinance/api deploy`.
+4. Build the web app with `VITE_API_URL=<api origin>`, then `pnpm --filter @dqfinance/web deploy`.
 
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo build
-pnpm exec turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Keep the API and web on the same site (e.g. `api.example.com` and `app.example.com`) so the `SameSite=Lax` session cookie works.
