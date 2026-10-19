@@ -12,6 +12,7 @@ import { Field, FormError, ListSkeleton } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { NativeSelect } from '#/shared/ui/native-select'
 import { Segmented } from '#/shared/ui/segmented'
+import { PushCard } from './push-card'
 import { useSettings, useUpdateSettings } from './settings-api'
 
 function NewCategoryForm({ close }: { close: () => void }) {
@@ -174,6 +175,8 @@ export function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      <PushCard />
 
       <Card>
         <CardHeader>

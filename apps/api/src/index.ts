@@ -11,6 +11,7 @@ import { categoriesRoutes } from './features/categories/categories.routes'
 import { counterpartiesRoutes } from './features/counterparties/counterparties.routes'
 import { mcpRoutes } from './features/mcp/mcp.routes'
 import { onboardingRoutes } from './features/onboarding/onboarding.routes'
+import { pushRoutes } from './features/push/push.routes'
 import { recurringExpensesRoutes } from './features/recurring-expenses/recurring-expenses.routes'
 import { settingsRoutes } from './features/settings/settings.routes'
 import { transactionsRoutes } from './features/transactions/transactions.routes'
@@ -41,6 +42,7 @@ const app = new Hono<AppEnv>()
   .route('/api/transfers', transfersRoutes)
   .route('/api/balance-adjustments', balanceAdjustmentsRoutes)
   .route('/api/recurring-expenses', recurringExpensesRoutes)
+  .route('/api/push-subscriptions', pushRoutes)
   .route('/mcp', mcpRoutes)
   .onError(onError)
 
