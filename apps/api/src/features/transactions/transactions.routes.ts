@@ -6,11 +6,15 @@ import { pushConfigFrom } from '../push/push-config'
 import { sendExpensePush } from '../push/send-expense-push'
 import { createTransaction, createTransactionInput } from './create-transaction'
 import { listTransactions, listTransactionsInput } from './list-transactions'
+import { summarizeTransactions, summarizeTransactionsInput } from './summarize-transactions'
 
 export const transactionsRoutes = new Hono<AppEnv>()
   .use(requireSession)
   .get('/', queryParams(listTransactionsInput), async (c) =>
     c.json(await listTransactions(c.var.db, c.var.userId, c.var.locale, c.req.valid('query'))),
+  )
+  .get('/summary', queryParams(summarizeTransactionsInput), async (c) =>
+    c.json(await summarizeTransactions(c.var.db, c.var.userId, c.req.valid('query'))),
   )
   .post('/', jsonBody(createTransactionInput), async (c) => {
     const created = await createTransaction(c.var.db, c.var.userId, c.req.valid('json'))

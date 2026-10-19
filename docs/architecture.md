@@ -27,7 +27,7 @@ Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rule
 - `auth/`: also the OAuth consent card.
 - `settings/`: also manages categories; `categories/` holds only the query hooks.
 - `accounts/`: also the adjust-balance dialog and the source picker other forms reuse.
-- `balances/`: the overview page.
+- `balances/`: the overview and the source detail page (`/accounts/$type/$id`).
 - `counterparties/`: the contacts page.
 
 `shared/api.ts` is the single Hono RPC client, with `unwrap()`.

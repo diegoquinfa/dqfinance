@@ -33,7 +33,7 @@ export function AdjustBalanceDialog({
 
   return (
     <DialogPanel
-      trigger={<Button variant="ghost" size="sm">{m.accounts_adjust_title()}</Button>}
+      trigger={<Button variant="outline">{m.accounts_adjust_title()}</Button>}
       title={`${m.accounts_adjust_title()} · ${name}`}
       description={m.accounts_adjust_description()}
     >

@@ -1,6 +1,6 @@
 import { cn } from 'cn'
 
-/** Radio group styled as a segmented control. Used for expense/income and other short either-or choices. */
+/** Radio group styled as square chips; the chosen one is inverted. Expense/income, periods, filters. */
 export function Segmented<T extends string>({
   name,
   value,
@@ -15,14 +15,17 @@ export function Segmented<T extends string>({
   className?: string
 }) {
   return (
-    <fieldset className={cn('grid rounded-md bg-muted p-1', className)} style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+    <fieldset
+      className={cn('grid border border-line', className)}
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+    >
       <legend className="sr-only">{name}</legend>
       {options.map((option) => (
         <label
           key={option.value}
           className={cn(
-            'cursor-pointer rounded-sm py-1.5 text-center text-sm font-medium text-muted-foreground transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring',
-            value === option.value && 'bg-card text-foreground shadow-sm',
+            'label-mono flex h-10 cursor-pointer items-center justify-center px-2 text-center whitespace-nowrap text-muted-foreground transition-colors duration-300 hover:text-ink has-focus-visible:outline has-focus-visible:outline-1 has-focus-visible:outline-offset-4 has-focus-visible:outline-signal',
+            value === option.value && 'bg-ink text-canvas hover:text-canvas',
           )}
         >
           <input

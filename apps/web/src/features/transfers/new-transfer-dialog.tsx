@@ -147,7 +147,7 @@ function NewTransferForm({ close }: { close: () => void }) {
 
       <div className="grid gap-2">
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" name="inTransit" className="mt-1 size-4 rounded border-input" />
+          <input type="checkbox" name="inTransit" className="mt-1 size-4 accent-signal" />
           <span>
             {m.transfers_in_transit()}
             <span className="block text-muted-foreground">{m.transfers_in_transit_hint()}</span>
