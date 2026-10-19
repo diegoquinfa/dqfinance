@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '#/shared/ui/card'
-import { FormError } from '#/shared/ui/field'
+import { FieldError } from '#/shared/ui/field'
 import { authClient } from './auth-client'
 
 const scopeLabel = (scope: string) =>
@@ -59,7 +59,7 @@ export function ConsentCard() {
           ))}
         </ul>
         <div className="mt-4">
-          <FormError message={error} />
+          <FieldError>{error}</FieldError>
         </div>
       </CardContent>
       <CardFooter className="justify-end gap-2">

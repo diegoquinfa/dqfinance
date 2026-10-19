@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
-import { FormError } from '#/shared/ui/field'
+import { FieldError } from '#/shared/ui/field'
 import { Section } from '#/shared/ui/page'
 import { disablePush, enablePush, hasPushSubscription, pushSupported } from './push-api'
 
@@ -52,7 +52,7 @@ export function PushSection() {
             {state === 'on' ? m.push_disable() : m.push_enable()}
           </Button>
         )}
-        <FormError message={error} />
+        <FieldError>{error}</FieldError>
       </div>
     </Section>
   )

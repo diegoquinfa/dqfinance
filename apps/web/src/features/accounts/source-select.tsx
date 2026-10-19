@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Field } from '#/shared/ui/field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '#/shared/ui/field'
 import { NativeSelect } from '#/shared/ui/native-select'
 import type { SourceOption } from './sources'
 
@@ -34,8 +34,15 @@ export function SourceSelect({
   }, [options])
 
   return (
-    <Field id={id} label={label} hint={hint} error={error} className={className}>
-      <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)} required>
+    <Field className={className} data-invalid={Boolean(error)}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <NativeSelect
+        id={id}
+        value={value}
+        aria-invalid={Boolean(error)}
+        onChange={(event) => onChange(event.target.value)}
+        required
+      >
         <option value="" disabled />
         {groups.map(([group, groupOptions]) => (
           <optgroup key={group} label={group}>
@@ -47,6 +54,7 @@ export function SourceSelect({
           </optgroup>
         ))}
       </NativeSelect>
+      {error ? <FieldError>{error}</FieldError> : hint ? <FieldDescription>{hint}</FieldDescription> : null}
     </Field>
   )
 }

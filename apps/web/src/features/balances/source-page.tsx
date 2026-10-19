@@ -7,9 +7,11 @@ import { useTransactions } from '#/features/transactions/transactions-api'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
 import { lastMonths } from '#/shared/periods'
-import { EmptyState, ListSkeleton } from '#/shared/ui/field'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
+import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { Eyebrow, Section, rowsClass } from '#/shared/ui/page'
-import { Segmented } from '#/shared/ui/segmented'
+import { Skeleton } from '#/shared/ui/skeleton'
+import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { useBalances } from './balances-api'
 import { PeriodTotals } from './period-totals'
 
@@ -33,8 +35,8 @@ export function SourcePage({ type, id }: SourceRef) {
   if (balances.isPending) {
     return (
       <div className="grid gap-6 py-10" aria-busy="true">
-        <div className="h-4 w-24 animate-pulse bg-surface" />
-        <div className="h-16 w-1/2 animate-pulse bg-surface md:h-20" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-16 w-1/2 md:h-20" />
         <ListSkeleton rows={4} />
       </div>
     )
@@ -54,7 +56,11 @@ export function SourcePage({ type, id }: SourceRef) {
     return (
       <div className="grid gap-6 py-10">
         <BackToAccounts />
-        <EmptyState title={m.source_not_found()} />
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>{m.source_not_found()}</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       </div>
     )
   }
@@ -105,16 +111,16 @@ export function SourcePage({ type, id }: SourceRef) {
         index="01"
         label={m.source_stats()}
         action={
-          <Segmented
-            name={m.period_label()}
+          <ToggleGroup
+            type="single"
             className="w-32"
+            aria-label={m.period_label()}
             value={months}
-            onChange={setMonths}
-            options={[
-              { value: '6', label: m.period_months({ count: 6 }) },
-              { value: '12', label: m.period_months({ count: 12 }) },
-            ]}
-          />
+            onValueChange={(value) => setMonths(value as '6' | '12')}
+          >
+            <ToggleGroupItem value="6">{m.period_months({ count: 6 })}</ToggleGroupItem>
+            <ToggleGroupItem value="12">{m.period_months({ count: 12 })}</ToggleGroupItem>
+          </ToggleGroup>
         }
       >
         <PeriodTotals
@@ -132,7 +138,12 @@ export function SourcePage({ type, id }: SourceRef) {
             {recent.error.message}
           </p>
         ) : recent.data.length === 0 ? (
-          <EmptyState title={m.transactions_empty()} description={m.source_recent_empty()} />
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>{m.transactions_empty()}</EmptyTitle>
+              <EmptyDescription>{m.source_recent_empty()}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <ul className={rowsClass}>
             {recent.data.map((transaction) => (

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { currentLocale, localeNames, m, switchLocale, type Locale } from '#/shared/i18n'
-import { Field } from '#/shared/ui/field'
+import { Field, FieldLabel } from '#/shared/ui/field'
 import { NativeSelect } from '#/shared/ui/native-select'
 
 /**
@@ -17,7 +17,8 @@ export function LocaleSwitch({
   const [pending, setPending] = useState(false)
 
   return (
-    <Field id={id} label={m.label_language()}>
+    <Field>
+      <FieldLabel htmlFor={id}>{m.label_language()}</FieldLabel>
       <NativeSelect
         id={id}
         value={currentLocale()}
