@@ -68,7 +68,9 @@ PRs are not opened until asked.
 
 `contact-1` and `contact-2` were implemented by delegated workers and reviewed by an independent reviewer. The reviewer found no blockers and six findings, all in `contact-3`.
 
-`contact-3` commit: `6355887`. `contact-4` is uncommitted at the time of writing.
+`contact-3` commit: `6355887` (the contacts feature and the review fixes together).
+
+`contact-4` commits: `9d9f9d0` (the categories, the evolution and the period) and `927baec` (recharts behind a lazy boundary, the kind tag in its own module).
 
 The route inventory moved from DESIGN.md to `docs/screens.md`: the size hook refused the commit at 5,078 tokens and the screen table is a different concept from the design system.
 
@@ -76,4 +78,6 @@ The currency rule of a movement ("a foreign card charge counts in the card's cur
 
 ## Next
 
-`contact-3` then `contact-4`, then the close. The native review candidate is a work-unit commit, not this branch.
+None. The branch holds four work-unit commits over `main`: `6355887`, `9d9f9d0`, `927baec` and the `contact-3` fixes inside `6355887`. Nothing is pushed and no PR is opened; both are the user's decision. The native review candidate is a work-unit commit, not this branch.
+
+No browser run: the pages were checked by types, tests and the build, and the three new SQL queries were run against the local D1.
