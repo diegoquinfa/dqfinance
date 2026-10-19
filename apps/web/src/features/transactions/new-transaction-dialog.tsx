@@ -10,6 +10,7 @@ import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FormError } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
+import { Label } from '#/shared/ui/label'
 import { NativeSelect } from '#/shared/ui/native-select'
 import { Segmented } from '#/shared/ui/segmented'
 import { useCreateTransaction, type NewTransaction } from './transactions-api'
@@ -64,7 +65,7 @@ function NewTransactionForm({ close }: { close: () => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4">
+    <form onSubmit={submit} className="grid gap-5">
       <Segmented
         name={m.label_kind()}
         value={type}
@@ -74,6 +75,26 @@ function NewTransactionForm({ close }: { close: () => void }) {
           { value: 'income', label: m.label_income() },
         ]}
       />
+
+      {/* The amount comes first and large: recording must take seconds. Focus shows on the line below. */}
+      <div className="grid gap-2 border-b border-line pb-3 transition-colors has-focus-visible:border-signal">
+        <Label htmlFor="transaction-amount">{m.label_amount()}</Label>
+        <div className="flex items-baseline gap-3">
+          <input
+            id="transaction-amount"
+            name="amount"
+            type="number"
+            step="0.01"
+            min="0.01"
+            inputMode="decimal"
+            placeholder="0"
+            required
+            autoFocus
+            className="type-title w-full min-w-0 [appearance:textfield] bg-transparent font-medium text-ink tabular-nums placeholder:text-muted-foreground focus-visible:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          {source && <span className="label-mono shrink-0 text-muted-foreground">{source.currency}</span>}
+        </div>
+      </div>
 
       <SourceSelect
         id="transaction-source"
@@ -87,23 +108,9 @@ function NewTransactionForm({ close }: { close: () => void }) {
         }}
       />
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field id="transaction-amount" label={m.label_amount()}>
-          <Input
-            id="transaction-amount"
-            name="amount"
-            type="number"
-            step="0.01"
-            min="0.01"
-            inputMode="decimal"
-            required
-            className="tabular-nums"
-          />
-        </Field>
-        <Field id="transaction-date" label={m.label_date()}>
-          <Input id="transaction-date" name="date" type="date" defaultValue={today()} max={today()} required />
-        </Field>
-      </div>
+      <Field id="transaction-date" label={m.label_date()}>
+        <Input id="transaction-date" name="date" type="date" defaultValue={today()} max={today()} required />
+      </Field>
 
       {isCreditCard && (
         <Field id="transaction-currency" label={m.label_currency()}>
