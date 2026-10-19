@@ -3,6 +3,7 @@ import { createMCPServer } from '@tanstack/ai-mcp/server'
 import { Hono } from 'hono'
 import type { AppEnv } from '../../app-env'
 import { MCP_SCOPES, mcpResource } from '../auth/auth'
+import { accountTools } from '../accounts/accounts.tools'
 import { balanceAdjustmentTools } from '../balance-adjustments/balance-adjustments.tools'
 import { balanceTools } from '../balances/balances.tools'
 import { categoryTools } from '../categories/categories.tools'
@@ -18,6 +19,7 @@ const mcpServer = createMCPServer({
   name: 'dqfinance',
   version: '0.2.0',
   tools: [
+    ...accountTools,
     ...balanceTools,
     ...categoryTools,
     ...counterpartyTools,

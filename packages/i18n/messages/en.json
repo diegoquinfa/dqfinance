@@ -13,6 +13,7 @@
   "error_bank_not_found": "That bank doesn't exist.",
   "error_bank_account_not_found": "That bank account doesn't exist.",
   "error_product_not_found": "That product doesn't exist.",
+  "error_card_not_found": "That card doesn't exist.",
   "error_category_not_found": "That category doesn't exist.",
   "error_category_kind_mismatch": "Pick an expense category for expenses and an income category for income.",
   "error_counterparty_not_found": "That contact or business doesn't exist.",

@@ -2,6 +2,7 @@ import { toolDefinition } from '@tanstack/ai'
 import { z } from 'zod'
 import { listAccounts } from '../accounts/list-accounts'
 import type { McpContext } from '../mcp/mcp-context'
+import { balanceHistoryInput, getBalanceHistory, toHistoryView } from './get-balance-history'
 import { getBalances, toBalancesView } from './get-balances'
 
 export const balanceTools = [
@@ -32,4 +33,14 @@ export const balanceTools = [
       inTransit: balances.inTransit,
     }
   }),
+
+  toolDefinition({
+    name: 'get_balance_history',
+    description:
+      'Month-end assets and card debt per currency over the last N months, ending with the current month. Pass sourceType and sourceId to follow one source instead (a card reports its debt).',
+    inputSchema: balanceHistoryInput,
+    metadata: { annotations: { readOnlyHint: true } },
+  }).server<McpContext>(async (input, ctx) => ({
+    points: toHistoryView(await getBalanceHistory(ctx.context.db, ctx.context.userId, input)),
+  })),
 ] as const

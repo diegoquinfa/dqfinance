@@ -8,6 +8,8 @@ import { createCard, createCardInput } from './create-card'
 import { createCashWallet, createCashWalletInput } from './create-cash-wallet'
 import { createProduct, createProductInput } from './create-product'
 import { listAccounts } from './list-accounts'
+import { updateCard, updateCardInput } from './update-card'
+import { updateProduct, updateProductInput } from './update-product'
 
 export const accountsRoutes = new Hono<AppEnv>()
   .use(requireSession)
@@ -21,8 +23,14 @@ export const accountsRoutes = new Hono<AppEnv>()
   .post('/products', jsonBody(createProductInput), async (c) =>
     c.json(await createProduct(c.var.db, c.var.userId, c.req.valid('json')), 201),
   )
+  .patch('/products/:id', jsonBody(updateProductInput), async (c) =>
+    c.json(await updateProduct(c.var.db, c.var.userId, c.req.param('id'), c.req.valid('json'))),
+  )
   .post('/cards', jsonBody(createCardInput), async (c) =>
     c.json(await createCard(c.var.db, c.var.userId, c.req.valid('json')), 201),
+  )
+  .patch('/cards/:id', jsonBody(updateCardInput), async (c) =>
+    c.json(await updateCard(c.var.db, c.var.userId, c.req.param('id'), c.req.valid('json'))),
   )
   .post('/cash-wallets', jsonBody(createCashWalletInput), async (c) =>
     c.json(await createCashWallet(c.var.db, c.var.userId, c.req.valid('json')), 201),
