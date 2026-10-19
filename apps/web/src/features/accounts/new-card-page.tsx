@@ -7,7 +7,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { useAccounts, useCreateCard, type CardInput } from './accounts-api'
 import { cardKinds } from './add-dialogs'
@@ -156,28 +156,34 @@ export function NewCardPage({ productId }: { productId?: string }) {
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="new-card-kind">{m.label_kind()}</FieldLabel>
-            <NativeSelect
-              id="new-card-kind"
-              value={kind}
-              onChange={(event) => setKind(event.target.value as CardInput['kind'])}
-            >
-              {cardKinds.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label()}
-                </option>
-              ))}
-            </NativeSelect>
+            <Select value={kind} onValueChange={(value) => setKind(value as CardInput['kind'])}>
+              <SelectTrigger id="new-card-kind">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {cardKinds.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
 
           <Field>
             <FieldLabel htmlFor="new-card-product">{m.accounts_new_product_label()}</FieldLabel>
-            <NativeSelect id="new-card-product" value={productValue} onChange={(event) => setProduct(event.target.value)}>
-              {products.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </NativeSelect>
+            <Select value={productValue} onValueChange={setProduct}>
+              <SelectTrigger id="new-card-product">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FieldDescription>{m.accounts_new_card_product_hint()}</FieldDescription>
           </Field>
 

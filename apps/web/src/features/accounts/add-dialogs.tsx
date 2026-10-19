@@ -5,7 +5,8 @@ import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { CodeCombobox } from '#/shared/ui/code-combobox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { Badge } from '#/shared/ui/badge'
 import { toast } from 'sonner'
@@ -13,6 +14,7 @@ import { useSettings } from '../settings/settings-api'
 import type { CardBrand, CardColor } from './card-face'
 import { CardDetailsFields } from './card-fields'
 import { percentToBps } from './rates'
+import { BankNameInput } from './bank-name-input'
 import { suggestedBanks } from './suggested-banks'
 import {
   useCreateBank,
@@ -42,13 +44,7 @@ function CurrencySelect({ id, defaultValue, label }: { id: string; defaultValue:
   return (
     <Field>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <NativeSelect id={id} name="currency" defaultValue={defaultValue}>
-        {currenciesByLabel().map((currency) => (
-          <option key={currency.code} value={currency.code}>
-            {currency.label}
-          </option>
-        ))}
-      </NativeSelect>
+      <CodeCombobox id={id} name="currency" items={currenciesByLabel()} defaultValue={defaultValue} required />
     </Field>
   )
 }
@@ -106,21 +102,7 @@ export function AddBankDialog() {
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="bank-name">{m.label_name()}</FieldLabel>
-              <Input
-                id="bank-name"
-                name="name"
-                list={banks.length ? 'bank-suggestions' : undefined}
-                required
-                maxLength={80}
-                autoFocus
-              />
-              {banks.length > 0 && (
-                <datalist id="bank-suggestions">
-                  {banks.map((bank) => (
-                    <option key={bank} value={bank} />
-                  ))}
-                </datalist>
-              )}
+              <BankNameInput id="bank-name" name="name" suggestions={banks} autoFocus />
               <FieldDescription>
                 {banks.length
                   ? m.accounts_suggested_banks({ country: countryLabel(country!) })
@@ -248,13 +230,18 @@ export function AddProductDialog({ bankAccountId, accountName }: { bankAccountId
             </Field>
             <Field>
               <FieldLabel htmlFor="product-type">{m.label_product_type()}</FieldLabel>
-              <NativeSelect id="product-type" name="type" defaultValue="savings">
-                {productTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label()}
-                  </option>
-                ))}
-              </NativeSelect>
+              <Select name="type" defaultValue="savings">
+                <SelectTrigger id="product-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {productTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <CurrencySelect id="product-currency" label={m.label_currency()} defaultValue="COP" />
             <Field>
@@ -316,18 +303,18 @@ export function AddCardDialog({ productId, productName }: { productId: string; p
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="card-kind">{m.label_kind()}</FieldLabel>
-              <NativeSelect
-                id="card-kind"
-                name="kind"
-                value={kind}
-                onChange={(event) => setKind(event.target.value as CardInput['kind'])}
-              >
-                {cardKinds.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label()}
-                  </option>
-                ))}
-              </NativeSelect>
+              <Select name="kind" value={kind} onValueChange={(value) => setKind(value as CardInput['kind'])}>
+                <SelectTrigger id="card-kind">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {cardKinds.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field>
               <FieldLabel htmlFor="card-name">{m.label_name()}</FieldLabel>

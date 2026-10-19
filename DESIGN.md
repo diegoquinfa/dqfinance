@@ -106,7 +106,8 @@ Checklist for every added component:
 | Component | Notes |
 | --- | --- |
 | `Button` | `default`: `ink` on `canvas`, hover `signal`, one per view at most (the top bar or the "+" holds it). `outline`: page actions ("New contact", "Adjust balance", Confirm). `ghost`: icon buttons, Cancel, Skip. `link`: inline text with a drawn underline, for actions inside a section rail; it takes no box size. |
-| `Input`, `NativeSelect` | Filled `surface`, square, 44px, 16px text (no iOS zoom). Border appears on hover/focus. |
+| `Input` | Filled `surface`, square, 44px, 16px text (no iOS zoom). Border appears on hover/focus. |
+| `Select`, `Combobox`, `Autocomplete` | The trigger or input looks like `Input`; the list is a `raised` hairline panel under it, as wide as it, with `soft` rows that turn `surface` + `ink` when highlighted, a check on the chosen one, and `label-mono` group labels. `Select` (Radix) for short fixed lists; `CodeCombobox` (Base UI) to search long `{ code, label }` lists like countries and currencies; `Autocomplete` for free text with suggestions, like a bank's name. A select's "None" is the item `""` plus the same text as placeholder. No native `<select>` or `<datalist>`: Windows paints their lists with the system theme. |
 | `Label`, `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldGroup` | Forms are `FieldGroup` + `Field`: mono label above, control, description or error below. Validation sets `data-invalid` on the field and `aria-invalid` on the control; errors are `role="alert"`. |
 | `ToggleGroup` | Square mono chips with a hairline frame; the chosen one is inverted (`bg-ink text-canvas`). Expense/income, periods, filters. A single-select group never empties: the empty value of a second click is dropped. |
 | `Badge` | Mono tag with a hairline border: product type, currency, in transit. |
@@ -163,4 +164,4 @@ Before signing in, the language follows the browser and the Paraglide cookie. Af
 - Amounts include a screen-reader prefix ("Income: ", "Expense: ") so color is never the only signal.
 - Decorative markers (`//`, `↳`, `→`, `/`, row indices) are `aria-hidden`.
 - Loading regions use `aria-busy`. Errors use `role="alert"`.
-- `html` sets `color-scheme: dark`, and `option`/`optgroup` get explicit colors: on Windows the browser paints native dropdown lists with the system theme otherwise.
+- `html` sets `color-scheme: dark`. Lists are `Select` or `Combobox`, never a native `<select>`, whose dropdown Windows paints with the system theme.

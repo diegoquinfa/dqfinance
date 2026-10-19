@@ -25,7 +25,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/em
 import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
@@ -65,6 +65,10 @@ function NewRecurringForm({
   const source = findSource(sources, sourceKey)
   const isCreditCard = source?.cardKind === 'credit'
   const chargeCurrency = currency || source?.currency || ''
+  const pickableCategories = (categories.data ?? []).filter(
+    (category) => !category.system || category.id === defaultCategoryId,
+  )
+  const initialCategoryId = defaultCategoryId ?? pickableCategories[0]?.id
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -113,13 +117,18 @@ function NewRecurringForm({
           </Field>
           <Field>
             <FieldLabel htmlFor="recurring-frequency">{m.label_frequency()}</FieldLabel>
-            <NativeSelect id="recurring-frequency" name="frequency" defaultValue="monthly">
-              {frequencies.map((frequency) => (
-                <option key={frequency.value} value={frequency.value}>
-                  {frequency.label()}
-                </option>
-              ))}
-            </NativeSelect>
+            <Select name="frequency" defaultValue="monthly">
+              <SelectTrigger id="recurring-frequency">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {frequencies.map((frequency) => (
+                  <SelectItem key={frequency.value} value={frequency.value}>
+                    {frequency.label()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         </div>
         <SourceSelect
@@ -135,37 +144,51 @@ function NewRecurringForm({
         {isCreditCard && (
           <Field>
             <FieldLabel htmlFor="recurring-currency">{m.label_currency()}</FieldLabel>
-            <NativeSelect id="recurring-currency" value={chargeCurrency} onChange={(event) => setCurrency(event.target.value)}>
-              {(settings.data?.currencies ?? [source!.currency]).map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                </option>
-              ))}
-            </NativeSelect>
+            <Select value={chargeCurrency} onValueChange={setCurrency}>
+              <SelectTrigger id="recurring-currency">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(settings.data?.currencies ?? [source!.currency]).map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         )}
         <Field>
           <FieldLabel htmlFor="recurring-category">{m.label_category()}</FieldLabel>
-          <NativeSelect id="recurring-category" name="categoryId" defaultValue={defaultCategoryId} required>
-            {(categories.data ?? [])
-              .filter((category) => !category.system || category.id === defaultCategoryId)
-              .map((category) => (
-                <option key={category.id} value={category.id}>
+          {/* The key re-picks the initial category once the list loads, like the native select did. */}
+          <Select key={initialCategoryId} name="categoryId" defaultValue={initialCategoryId} required>
+            <SelectTrigger id="recurring-category">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {pickableCategories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
                   {category.name}
-                </option>
+                </SelectItem>
               ))}
-          </NativeSelect>
+            </SelectContent>
+          </Select>
         </Field>
         <Field>
           <FieldLabel htmlFor="recurring-counterparty">{`${m.label_contact()} (${m.label_optional()})`}</FieldLabel>
-          <NativeSelect id="recurring-counterparty" name="counterpartyId" defaultValue="">
-            <option value="" />
-            {(counterparties.data ?? []).map((contact) => (
-              <option key={contact.id} value={contact.id}>
-                {contact.name}
-              </option>
-            ))}
-          </NativeSelect>
+          <Select name="counterpartyId" defaultValue="">
+            <SelectTrigger id="recurring-counterparty">
+              <SelectValue placeholder={m.label_none()} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">{m.label_none()}</SelectItem>
+              {(counterparties.data ?? []).map((contact) => (
+                <SelectItem key={contact.id} value={contact.id}>
+                  {contact.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
         <Field>
           <FieldLabel htmlFor="recurring-starts-on">{m.label_date()}</FieldLabel>

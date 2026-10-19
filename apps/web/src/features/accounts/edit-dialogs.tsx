@@ -3,7 +3,7 @@ import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { toast } from 'sonner'
 import { SubmitRow, productTypes } from './add-dialogs'
 import { useUpdateCard, useUpdateProduct, type CardRow } from './accounts-api'
@@ -60,13 +60,18 @@ export function EditProductDialog({
             </Field>
             <Field>
               <FieldLabel htmlFor="edit-product-type">{m.label_product_type()}</FieldLabel>
-              <NativeSelect id="edit-product-type" name="type" defaultValue={type}>
-                {productTypes.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label()}
-                  </option>
-                ))}
-              </NativeSelect>
+              <Select name="type" defaultValue={type}>
+                <SelectTrigger id="edit-product-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {productTypes.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field>
               <FieldLabel htmlFor="edit-product-rate">{m.product_annual_rate()}</FieldLabel>

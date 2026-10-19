@@ -177,15 +177,6 @@
     opacity: 0.035;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
-  /*
-   * The browser paints the native dropdown list itself, and on Windows it uses the system theme,
-   * which can contradict the page (light list, white text). Set the row colors explicitly.
-   */
-  option,
-  optgroup {
-    background-color: var(--raised);
-    color: var(--ink);
-  }
   /* Date pickers: the calendar icon follows the dark scheme but is too bright next to muted text. */
   ::-webkit-calendar-picker-indicator {
     opacity: 0.6;

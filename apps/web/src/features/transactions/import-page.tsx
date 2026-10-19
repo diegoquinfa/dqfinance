@@ -12,7 +12,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/em
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { PageHeader, Section } from '#/shared/ui/page'
 import { Spinner } from '#/shared/ui/spinner'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#/shared/ui/table'
@@ -39,18 +39,22 @@ function ColumnField({
   return (
     <Field>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <NativeSelect
-        id={id}
+      <Select
         value={value === null ? '' : String(value)}
-        onChange={(event) => onChange(event.target.value === '' ? null : Number(event.target.value))}
+        onValueChange={(next) => onChange(next === '' ? null : Number(next))}
       >
-        {optional && <option value="">{m.label_none()}</option>}
-        {headers.map((header, index) => (
-          <option key={index} value={index}>
-            {header || String(index + 1)}
-          </option>
-        ))}
-      </NativeSelect>
+        <SelectTrigger id={id}>
+          <SelectValue placeholder={optional ? m.label_none() : undefined} />
+        </SelectTrigger>
+        <SelectContent>
+          {optional && <SelectItem value="">{m.label_none()}</SelectItem>}
+          {headers.map((header, index) => (
+            <SelectItem key={index} value={String(index)}>
+              {header || String(index + 1)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </Field>
   )
 }

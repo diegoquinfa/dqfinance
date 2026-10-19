@@ -7,7 +7,8 @@ import { Button } from '#/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/shared/ui/card'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { CodeCombobox } from '#/shared/ui/code-combobox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { FocusLayout } from '#/shared/ui/page'
 import { Spinner } from '#/shared/ui/spinner'
 import { useCompleteOnboarding } from './onboarding-api'
@@ -64,25 +65,23 @@ export function OnboardingWizard() {
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="country">{m.label_country()}</FieldLabel>
-                <NativeSelect id="country" value={country} onChange={(event) => setCountry(event.target.value)}>
-                  <option value="" disabled />
-                  {countries.map((item) => (
-                    <option key={item.code} value={item.code}>
-                      {item.label}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <CodeCombobox id="country" items={countries} value={country} onValueChange={setCountry} />
                 <FieldDescription>{m.onboarding_country_hint()}</FieldDescription>
               </Field>
               <Field>
                 <FieldLabel htmlFor="locale">{m.label_language()}</FieldLabel>
-                <NativeSelect id="locale" value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
-                  {Object.entries(localeNames).map(([code, name]) => (
-                    <option key={code} value={code}>
-                      {name}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <Select value={locale} onValueChange={(value) => setLocale(value as Locale)}>
+                  <SelectTrigger id="locale">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(localeNames).map(([code, name]) => (
+                      <SelectItem key={code} value={code}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <FieldLabel htmlFor="timezone">{m.label_timezone()}</FieldLabel>
@@ -100,37 +99,24 @@ export function OnboardingWizard() {
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="primary-currency">{m.label_primary_currency()}</FieldLabel>
-                  <NativeSelect
+                  <CodeCombobox
                     id="primary-currency"
+                    items={currencies}
                     value={primaryCurrency}
-                    onChange={(event) => {
-                      setPrimaryCurrency(event.target.value)
-                      setExtra((codes) => codes.filter((code) => code !== event.target.value))
+                    onValueChange={(code) => {
+                      setPrimaryCurrency(code)
+                      setExtra((codes) => codes.filter((other) => other !== code))
                     }}
-                  >
-                    {currencies.map((currency) => (
-                      <option key={currency.code} value={currency.code}>
-                        {currency.label}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                  />
                   <FieldDescription>{m.onboarding_primary_currency_hint()}</FieldDescription>
                 </Field>
 
                 <Field>
                   <FieldLabel htmlFor="extra-currency">{m.label_other_currencies()}</FieldLabel>
                   <div className="flex gap-2">
-                    <NativeSelect
-                      id="extra-currency"
-                      value={currencyToAdd}
-                      onChange={(event) => setCurrencyToAdd(event.target.value)}
-                    >
-                      {currencies.map((currency) => (
-                        <option key={currency.code} value={currency.code}>
-                          {currency.label}
-                        </option>
-                      ))}
-                    </NativeSelect>
+                    <div className="min-w-0 flex-1">
+                      <CodeCombobox id="extra-currency" items={currencies} value={currencyToAdd} onValueChange={setCurrencyToAdd} />
+                    </div>
                     <Button
                       type="button"
                       variant="outline"
