@@ -244,6 +244,7 @@
   "push_unsupported": "Este navegador no puede mostrar notificaciones.",
   "settings_session": "Sesión",
   "settings_account": "Cuenta",
+  "push_income_title": "Nuevo ingreso registrado",
   "push_expense_title": "Nuevo gasto registrado",
   "push_expense_body": "Abre la app para ver tus saldos actualizados."
 }

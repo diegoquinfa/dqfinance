@@ -14,8 +14,6 @@ export const transactionsRoutes = new Hono<AppEnv>()
   )
   .post('/', jsonBody(createTransactionInput), async (c) => {
     const created = await createTransaction(c.var.db, c.var.userId, c.req.valid('json'))
-    if (created.type === 'expense') {
-      await sendExpensePush(c.var.db, c.var.userId, c.var.locale, pushConfigFrom(c.env))
-    }
+    await sendExpensePush(c.var.db, c.var.userId, c.var.locale, pushConfigFrom(c.env), created.type)
     return c.json(created, 201)
   })

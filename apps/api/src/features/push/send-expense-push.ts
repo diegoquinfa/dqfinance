@@ -1,22 +1,28 @@
 import { buildPushPayload, type PushMessage } from '@block65/webcrypto-web-push'
-import * as m from '@dqfinance/i18n/messages'
 import { eq } from 'drizzle-orm'
 import type { Db } from '../../db'
 import type { Locale } from '../../shared/locale'
 import { expiredPushStatus } from './expired-push-status'
 import type { PushConfig } from './push-config'
 import { pushSubscription } from './push-subscription.schema'
+import { transactionPushCopy } from './transaction-push-copy'
 
 /**
- * One generic notification after an expense write. It never throws: the write already landed, so a
+ * One notification after an income or expense write. It never throws: the write already landed, so a
  * failed push is logged and the remaining subscriptions are still tried.
  */
-export async function sendExpensePush(db: Db, userId: string, locale: Locale, config: PushConfig | null) {
+export async function sendExpensePush(
+  db: Db,
+  userId: string,
+  locale: Locale,
+  config: PushConfig | null,
+  type: 'income' | 'expense' = 'expense',
+) {
   if (!config) return
   try {
     const subscriptions = await db.select().from(pushSubscription).where(eq(pushSubscription.userId, userId))
     const message: PushMessage = {
-      data: { title: m.push_expense_title({}, { locale }), body: m.push_expense_body({}, { locale }) },
+      data: transactionPushCopy(type, locale),
       options: { ttl: 60, urgency: 'normal' },
     }
     await Promise.all(

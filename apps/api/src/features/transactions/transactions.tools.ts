@@ -13,9 +13,7 @@ export const transactionTools = [
     inputSchema: createTransactionInput,
   }).server<McpContext>(async (input, ctx) => {
     const created = await createTransaction(ctx.context.db, ctx.context.userId, input)
-    if (created.type === 'expense') {
-      await sendExpensePush(ctx.context.db, ctx.context.userId, ctx.context.locale, ctx.context.push)
-    }
+    await sendExpensePush(ctx.context.db, ctx.context.userId, ctx.context.locale, ctx.context.push, created.type)
     return created
   }),
 

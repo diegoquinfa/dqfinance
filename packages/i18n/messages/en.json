@@ -244,6 +244,7 @@
   "push_unsupported": "This browser cannot show notifications.",
   "settings_session": "Session",
   "settings_account": "Account",
+  "push_income_title": "New income recorded",
   "push_expense_title": "New expense recorded",
   "push_expense_body": "Open the app to see your updated balances."
 }
