@@ -1,0 +1,4 @@
+# Hooks run through the platform shell: they must keep LF endings or the interpreter
+# (#!/bin/sh) fails on checkout with automcrlf/autocrlf enabled.
+.githooks/** text eol=lf
+scripts/** text eol=lf

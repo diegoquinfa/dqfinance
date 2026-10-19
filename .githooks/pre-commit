@@ -1,0 +1,4 @@
+#!/bin/sh
+# Pre-commit check: no staged file over 5,000 tokens (1 token = 4 bytes).
+# Only staged files that an agent authors are checked. Logic and exemptions: scripts/check-file-size.mjs
+exec node "$(dirname "$0")/../scripts/check-file-size.mjs"
