@@ -18,7 +18,9 @@ export function useAccounts() {
 }
 
 /** Every create invalidates both the tree and the balances that are computed from it. */
-function useAccountMutation<TVariables>(mutationFn: (variables: TVariables) => Promise<unknown>) {
+function useAccountMutation<TVariables, TResult = unknown>(
+  mutationFn: (variables: TVariables) => Promise<TResult>,
+) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn,
