@@ -37,7 +37,9 @@ async function saveSubscription(subscription: PushSubscription) {
 /** Registers the worker, subscribes with the server's VAPID key, and stores the subscription. */
 export async function enablePush() {
   const { publicKey } = await unwrap(api.api['push-subscriptions']['vapid-public-key'].$get())
-  const registration = await navigator.serviceWorker.register('/push-sw.js')
+  await navigator.serviceWorker.register('/push-sw.js')
+  // register() resolves while the worker is still installing. subscribe() requires it active.
+  const registration = await navigator.serviceWorker.ready
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: fromBase64Url(publicKey),
