@@ -8,6 +8,8 @@ const transactionsSearch = z.object({
   source: z.string().optional().catch(''),
   from: z.string().optional().catch(''),
   to: z.string().optional().catch(''),
+  // A contact's page links here to see the movements it does not show.
+  counterpartyId: z.string().optional().catch(''),
 })
 
 export const Route = createFileRoute('/_app/transactions')({

@@ -23,6 +23,7 @@ export function TransactionsPage() {
   const sourceKey = search.source ?? ''
   const from = search.from ?? ''
   const to = search.to ?? ''
+  const counterpartyId = search.counterpartyId ?? ''
   const { sources } = useSources()
   const selected = sources.find((source) => source.key === sourceKey)
 
@@ -36,6 +37,7 @@ export function TransactionsPage() {
     sourceId: selected?.ref.id,
     from: from || undefined,
     to: to || undefined,
+    counterpartyId: counterpartyId || undefined,
   })
 
   return (
