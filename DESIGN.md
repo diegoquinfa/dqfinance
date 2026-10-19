@@ -72,6 +72,8 @@ Two weights only: 400 and 500. Never bold; emphasize by raising the tone (`muted
 | `text-base` / `text-sm` | 16 / 14px | Rows and prose / hints and errors |
 | `label-mono` | 11px mono | All metadata |
 
+A masked last 4 is always `••••` (four bullets) in `label-mono`, on every screen.
+
 The scale is `@utility type-*`, not `--text-*` theme sizes: `cn` (tailwind-merge) would read `text-display` as a color and drop it next to `text-ink`.
 
 ## Layout
@@ -144,7 +146,7 @@ States: hover changes tone or moves a row title 4px right, never size. Focus is 
 | `/accounts/$type/$id` | A product, cash wallet or credit card: back link, bank, name, balance (or debt and available credit), a credit card's face, "Adjust balance", edit, income / expenses / net for the last 6 or 12 months with the same chart for that source, a product's yield (rate, "≈ per month" and "≈ per day", or the single figure that matches its payout), a pocket's "Move money" block ("Set aside more", "Return to {parent}"), its costs (the recurring expenses paid with it, with "Add cost"), its recent movements with "View all", and its documents (contract, terms, fee table) with upload, download and delete. |
 | `/transactions` | Filters (type, source, date range) and the movement list. The filters live in the URL, so a link can preselect a source. "Import" opens the statement import. |
 | `/transactions/import` | A CSV statement: source, the pasted rows or a chosen .csv file, the column map, then the dry-run preview as a table, duplicates marked and left out, and "Import N movements". PDFs and screenshots are imported by asking the AI assistant. |
-| `/transfers` | Transfers with a derived type tag, fee and FX notes, an "in transit" tag, and "Mark received". |
+| `/transfers` | Transfers where each side leads with its bank, or with its own name when it has no bank (a cash wallet), with the account's masked last 4 below, a derived type tag, fee and FX notes, an "in transit" tag, and "Mark received". |
 | `/recurring` | "Due now" with an editable amount, Confirm and Skip, then the full schedule. |
 | `/contacts` | Search, then people and businesses as sections. |
 | `/settings` | Language, currencies, categories, notifications (Web Push, the only permission prompt), session. |

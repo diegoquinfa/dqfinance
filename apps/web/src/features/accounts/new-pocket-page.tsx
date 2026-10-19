@@ -131,7 +131,7 @@ export function NewPocketPage({ productId }: { productId?: string }) {
           {/* The pocket lives inside this account, so it is shown read-only. */}
           <p className="text-sm text-muted-foreground">
             {m.label_account()}: {valid.name}
-            {valid.last4 && <span className="label-mono ml-2 text-muted-foreground">···· {valid.last4}</span>}
+            {valid.last4 && <span className="label-mono ml-2 text-muted-foreground">•••• {valid.last4}</span>}
           </p>
         </div>
         {/* Reachable at the top on mobile; the form repeats it at the end. */}
