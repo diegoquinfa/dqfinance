@@ -4,6 +4,7 @@ import { jsonBody, queryParams } from '../../shared/http'
 import { requireSession } from '../auth/require-session'
 import { createCounterparty, createCounterpartyInput } from './create-counterparty'
 import { deleteCounterparty } from './delete-counterparty'
+import { getCounterparty, getCounterpartyInput } from './get-counterparty'
 import { listCounterparties, listCounterpartiesInput } from './list-counterparties'
 import { updateCounterparty, updateCounterpartyInput } from './update-counterparty'
 
@@ -11,6 +12,9 @@ export const counterpartiesRoutes = new Hono<AppEnv>()
   .use(requireSession)
   .get('/', queryParams(listCounterpartiesInput), async (c) =>
     c.json(await listCounterparties(c.var.db, c.var.userId, c.req.valid('query'))),
+  )
+  .get('/:id', queryParams(getCounterpartyInput), async (c) =>
+    c.json(await getCounterparty(c.var.db, c.var.userId, c.var.locale, c.req.param('id'), c.req.valid('query'))),
   )
   .post('/', jsonBody(createCounterpartyInput), async (c) =>
     c.json(await createCounterparty(c.var.db, c.var.userId, c.req.valid('json')), 201),

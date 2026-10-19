@@ -1,8 +1,6 @@
-import * as m from '@dqfinance/i18n/messages'
 import { and, eq } from 'drizzle-orm'
 import type { Db } from '../../db'
-import type { Locale } from '../../shared/locale'
-import { category, type SystemCategoryKey } from './category.schema'
+import { category, type SystemCategoryKey } from './category.schema.ts'
 
 export const SYSTEM_KINDS: Record<SystemCategoryKey, 'expense' | 'income'> = {
   fx_loss: 'expense',
@@ -12,9 +10,7 @@ export const SYSTEM_KINDS: Record<SystemCategoryKey, 'expense' | 'income'> = {
   other_income: 'income',
 }
 
-/** Display name: stored name for user categories, translated name for system ones. */
-export const categoryName = (row: { name: string | null; systemKey: SystemCategoryKey | null }, locale: Locale) =>
-  row.systemKey ? m[`category_${row.systemKey}`]({}, { locale }) : row.name!
+export { categoryName } from './category-display.ts'
 
 /** Id of a system category, creating it on first use. */
 export async function systemCategoryId(db: Db, userId: string, key: SystemCategoryKey) {

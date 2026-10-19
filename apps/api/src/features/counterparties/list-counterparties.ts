@@ -1,8 +1,8 @@
 import { and, asc, eq, like, sql } from 'drizzle-orm'
-import { alias } from 'drizzle-orm/sqlite-core'
 import { z } from 'zod'
 import type { Db } from '../../db'
-import { card, product } from '../accounts/account.schema'
+import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
+import { card } from '../accounts/account.schema'
 import { transaction } from '../transactions/transaction.schema'
 import { counterpartyAggregates } from './counterparty-aggregates'
 import { COUNTERPARTY_KINDS, counterparty } from './counterparty.schema'
@@ -12,16 +12,13 @@ export const listCounterpartiesInput = z.object({
   search: z.string().trim().max(80).optional().describe('Case-insensitive name fragment'),
 })
 
-// The product behind a card: a foreign card charge counts in the card's currency (like summarize-transactions.ts).
-const cardProduct = alias(product, 'card_product')
-
 /**
  * Every counterparty of the user with the totals of its movements, one line per currency.
  * Only the user's own rows: the counterparty and the movements behind it.
  */
 export async function listCounterparties(db: Db, userId: string, input: z.infer<typeof listCounterpartiesInput> = {}) {
-  const currency = sql<string | null>`case when ${transaction.primaryAmountCents} is null then ${transaction.currency} else coalesce(${cardProduct.currency}, ${transaction.currency}) end`
-  const amount = sql<number>`coalesce(${transaction.primaryAmountCents}, ${transaction.amountCents})`
+  const currency = movementCurrency
+  const amount = movementAmount
   const rows = await db
     .select({
       id: counterparty.id,
