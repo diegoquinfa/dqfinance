@@ -14,6 +14,7 @@ import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { Eyebrow, Section, rowsClass } from '#/shared/ui/page'
 import { Separator } from '#/shared/ui/separator'
 import { Skeleton } from '#/shared/ui/skeleton'
+import { BalanceChart } from './balance-chart'
 import { useBalances } from './balances-api'
 import { CalendarPeriod } from './period-totals'
 import { netWorth } from './totals'
@@ -154,6 +155,7 @@ export function OverviewPage() {
             </li>
           ))}
         </ul>
+        <BalanceChart className="mt-10" currency={primary} />
       </Section>
 
       <Section index="03" label={m.overview_accounts()} action={<ViewAll to="/accounts" />}>
