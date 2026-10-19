@@ -11,7 +11,7 @@ import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { CodeCombobox } from '#/shared/ui/code-combobox'
 import { Spinner } from '#/shared/ui/spinner'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { toast } from 'sonner'
@@ -113,17 +113,12 @@ export function SettingsPage() {
           <div className="flex items-end gap-2">
             <Field className="flex-1">
               <FieldLabel htmlFor="add-currency">{m.onboarding_add_currency()}</FieldLabel>
-              <NativeSelect
+              <CodeCombobox
                 id="add-currency"
+                items={currenciesByLabel()}
                 value={currencyToAdd}
-                onChange={(event) => setCurrencyToAdd(event.target.value)}
-              >
-                {currenciesByLabel().map((currency) => (
-                  <option key={currency.code} value={currency.code}>
-                    {currency.label}
-                  </option>
-                ))}
-              </NativeSelect>
+                onValueChange={setCurrencyToAdd}
+              />
             </Field>
             <Button
               variant="outline"

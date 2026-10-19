@@ -5,7 +5,7 @@ import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
 import { useAdjustBalance } from './accounts-api'
@@ -67,17 +67,18 @@ export function AdjustBalanceDialog({
             {currencies.length > 1 && (
               <Field>
                 <FieldLabel htmlFor="adjust-currency">{m.label_debt_currency()}</FieldLabel>
-                <NativeSelect
-                  id="adjust-currency"
-                  value={selected}
-                  onChange={(event) => setSelected(event.target.value)}
-                >
-                  {currencies.map((code) => (
-                    <option key={code} value={code}>
-                      {code}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <Select value={selected} onValueChange={setSelected}>
+                  <SelectTrigger id="adjust-currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencies.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
             )}
             <Field>

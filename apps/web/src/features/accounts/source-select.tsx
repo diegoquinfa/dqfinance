@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { m } from '#/shared/i18n'
 import { Field, FieldDescription, FieldError, FieldLabel } from '#/shared/ui/field'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import type { SourceOption } from './sources'
 
 /** Grouped source picker (bank, then account-level items). The empty option clears the choice. */
@@ -37,27 +37,25 @@ export function SourceSelect({
   return (
     <Field className={className} data-invalid={Boolean(error)}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <NativeSelect
-        id={id}
-        value={value}
-        aria-invalid={Boolean(error)}
-        onChange={(event) => onChange(event.target.value)}
-        required
-      >
-        {/* No `disabled`: a filter clears back to "None"; `required` still blocks an empty form submit. */}
-        <option value="">
-          {m.label_none()}
-        </option>
-        {groups.map(([group, groupOptions]) => (
-          <optgroup key={group} label={group}>
-            {groupOptions.map((option) => (
-              <option key={option.key} value={option.key}>
-                {option.label} · {option.currency}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </NativeSelect>
+      <Select value={value} onValueChange={onChange} required>
+        <SelectTrigger id={id} aria-invalid={Boolean(error)}>
+          <SelectValue placeholder={m.label_none()} />
+        </SelectTrigger>
+        <SelectContent>
+          {/* A filter clears back to "None"; `required` still blocks an empty form submit. */}
+          <SelectItem value="">{m.label_none()}</SelectItem>
+          {groups.map(([group, groupOptions]) => (
+            <SelectGroup key={group}>
+              <SelectLabel>{group}</SelectLabel>
+              {groupOptions.map((option) => (
+                <SelectItem key={option.key} value={option.key}>
+                  {option.label} · {option.currency}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          ))}
+        </SelectContent>
+      </Select>
       {error ? <FieldError>{error}</FieldError> : hint ? <FieldDescription>{hint}</FieldDescription> : null}
     </Field>
   )

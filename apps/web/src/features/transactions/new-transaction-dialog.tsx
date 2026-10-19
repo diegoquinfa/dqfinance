@@ -11,7 +11,7 @@ import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { Label } from '#/shared/ui/label'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { toast } from 'sonner'
@@ -32,6 +32,7 @@ function NewTransactionForm({ close }: { close: () => void }) {
   const isCreditCard = source?.cardKind === 'credit'
   const chargeCurrency = currency || source?.currency || ''
   const isForeign = Boolean(isCreditCard && source && chargeCurrency !== source.currency)
+  const firstCategoryId = categories.data?.[0]?.id
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -125,17 +126,18 @@ function NewTransactionForm({ close }: { close: () => void }) {
         {isCreditCard && (
           <Field>
             <FieldLabel htmlFor="transaction-currency">{m.label_currency()}</FieldLabel>
-            <NativeSelect
-              id="transaction-currency"
-              value={chargeCurrency}
-              onChange={(event) => setCurrency(event.target.value)}
-            >
-              {(settings.data?.currencies ?? [source!.currency]).map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                </option>
-              ))}
-            </NativeSelect>
+            <Select value={chargeCurrency} onValueChange={setCurrency}>
+              <SelectTrigger id="transaction-currency">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(settings.data?.currencies ?? [source!.currency]).map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         )}
 
@@ -160,25 +162,36 @@ function NewTransactionForm({ close }: { close: () => void }) {
 
         <Field>
           <FieldLabel htmlFor="transaction-category">{m.label_category()}</FieldLabel>
-          <NativeSelect id="transaction-category" name="categoryId" required>
-            {(categories.data ?? []).map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </NativeSelect>
+          {/* Like the native select it replaces, the first category is chosen; the key re-picks it when the list loads or the type changes. */}
+          <Select key={firstCategoryId} name="categoryId" defaultValue={firstCategoryId} required>
+            <SelectTrigger id="transaction-category">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(categories.data ?? []).map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
 
         <Field>
           <FieldLabel htmlFor="transaction-counterparty">{`${m.label_contact()} (${m.label_optional()})`}</FieldLabel>
-          <NativeSelect id="transaction-counterparty" name="counterpartyId" defaultValue="">
-            <option value="" />
-            {(counterparties.data ?? []).map((contact) => (
-              <option key={contact.id} value={contact.id}>
-                {contact.name}
-              </option>
-            ))}
-          </NativeSelect>
+          <Select name="counterpartyId" defaultValue="">
+            <SelectTrigger id="transaction-counterparty">
+              <SelectValue placeholder={m.label_none()} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">{m.label_none()}</SelectItem>
+              {(counterparties.data ?? []).map((contact) => (
+                <SelectItem key={contact.id} value={contact.id}>
+                  {contact.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
 
         <Field>

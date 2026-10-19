@@ -8,7 +8,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/s
 import { Input } from '#/shared/ui/input'
 import { Label } from '#/shared/ui/label'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { NativeSelect } from '#/shared/ui/native-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { useSettings } from '../settings/settings-api'
 import {
@@ -20,6 +20,7 @@ import {
   type ProductInput,
 } from './accounts-api'
 import { productTypes } from './add-dialogs'
+import { BankNameInput } from './bank-name-input'
 import { percentToBps } from './rates'
 import { suggestedBanks } from './suggested-banks'
 
@@ -165,18 +166,21 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
               placeholder="0"
               className="type-title w-full min-w-0 [appearance:textfield] bg-transparent font-medium text-ink tabular-nums placeholder:text-muted-foreground focus-visible:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
-            <NativeSelect
-              name="currency"
-              defaultValue={settings.data.primaryCurrency}
-              aria-label={m.label_currency()}
-              className="label-mono h-9 w-24 border border-line-strong bg-transparent text-center"
-            >
-              {settings.data.currencies.map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                </option>
-              ))}
-            </NativeSelect>
+            <Select name="currency" defaultValue={settings.data.primaryCurrency}>
+              <SelectTrigger
+                aria-label={m.label_currency()}
+                className="label-mono h-9 w-24 border border-line-strong bg-transparent"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {settings.data.currencies.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <FieldDescription>{m.accounts_new_opening_hint()}</FieldDescription>
         </div>
@@ -185,21 +189,25 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
           {banks.length > 0 && (
             <Field>
               <FieldLabel htmlFor="new-bank">{m.label_bank()}</FieldLabel>
-              <NativeSelect
-                id="new-bank"
+              <Select
                 value={bankValue}
-                onChange={(event) => {
-                  setBank(event.target.value)
+                onValueChange={(value) => {
+                  setBank(value)
                   setAccount(null)
                 }}
               >
-                {banks.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-                <option value={NEW}>{m.accounts_new_bank_new()}</option>
-              </NativeSelect>
+                <SelectTrigger id="new-bank">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {banks.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW}>{m.accounts_new_bank_new()}</SelectItem>
+                </SelectContent>
+              </Select>
               <FieldDescription>{m.accounts_new_bank_hint()}</FieldDescription>
             </Field>
           )}
@@ -207,20 +215,7 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
           {creatingBank && (
             <Field>
               <FieldLabel htmlFor="new-bank-name">{m.accounts_new_bank_new()}</FieldLabel>
-              <Input
-                id="new-bank-name"
-                name="bankName"
-                list={suggestions.length ? 'new-bank-suggestions' : undefined}
-                required
-                maxLength={80}
-              />
-              {suggestions.length > 0 && (
-                <datalist id="new-bank-suggestions">
-                  {suggestions.map((name) => (
-                    <option key={name} value={name} />
-                  ))}
-                </datalist>
-              )}
+              <BankNameInput id="new-bank-name" name="bankName" suggestions={suggestions} />
               <FieldDescription>
                 {suggestions.length
                   ? m.accounts_suggested_banks({ country: countryLabel(country!) })
@@ -232,18 +227,19 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
           {bankAccounts.length > 0 && (
             <Field>
               <FieldLabel htmlFor="new-bank-account">{m.label_account()}</FieldLabel>
-              <NativeSelect
-                id="new-bank-account"
-                value={accountValue}
-                onChange={(event) => setAccount(event.target.value)}
-              >
-                {bankAccounts.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.last4 ? `${item.name} ···· ${item.last4}` : item.name}
-                  </option>
-                ))}
-                <option value={NEW}>{m.accounts_new_account_new()}</option>
-              </NativeSelect>
+              <Select value={accountValue} onValueChange={setAccount}>
+                <SelectTrigger id="new-bank-account">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {bankAccounts.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.last4 ? `${item.name} ···· ${item.last4}` : item.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW}>{m.accounts_new_account_new()}</SelectItem>
+                </SelectContent>
+              </Select>
               <FieldDescription>{m.accounts_new_account_hint()}</FieldDescription>
             </Field>
           )}
@@ -268,13 +264,18 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
 
           <Field>
             <FieldLabel htmlFor="new-product-type">{m.label_product_type()}</FieldLabel>
-            <NativeSelect id="new-product-type" name="type" defaultValue="savings">
-              {productTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label()}
-                </option>
-              ))}
-            </NativeSelect>
+            <Select name="type" defaultValue="savings">
+              <SelectTrigger id="new-product-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {productTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
 
           <Field>
