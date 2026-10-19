@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '#/shared/ui/card'
 import { FormError } from '#/shared/ui/field'
+import { Section } from '#/shared/ui/page'
 import { disablePush, enablePush, hasPushSubscription, pushSupported } from './push-api'
 
 type PushState = 'checking' | 'unsupported' | 'denied' | 'off' | 'on'
 
 /** The one place the app asks for notification permission, and only when the user clicks. */
-export function PushCard() {
+export function PushSection() {
   const [state, setState] = useState<PushState>('checking')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string>()
@@ -43,20 +43,17 @@ export function PushCard() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">{m.settings_notifications()}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-3">
+    <Section index="04" label={m.settings_notifications()}>
+      <div className="grid justify-items-start gap-3">
         {state === 'denied' && <p className="text-sm text-muted-foreground">{m.push_denied()}</p>}
         {state === 'unsupported' && <p className="text-sm text-muted-foreground">{m.push_unsupported()}</p>}
         {(state === 'on' || state === 'off') && (
-          <Button variant="outline" className="w-fit" disabled={pending} onClick={() => void toggle()}>
+          <Button variant="outline" disabled={pending} onClick={() => void toggle()}>
             {state === 'on' ? m.push_disable() : m.push_enable()}
           </Button>
         )}
         <FormError message={error} />
-      </CardContent>
-    </Card>
+      </div>
+    </Section>
   )
 }

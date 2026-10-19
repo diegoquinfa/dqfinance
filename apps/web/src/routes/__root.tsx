@@ -37,7 +37,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         {children}
         {import.meta.env.DEV && (
           <TanStackDevtools
-            config={{ position: 'bottom-right' }}
+            config={{ position: 'middle-right' }}
             plugins={[
               { name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> },
               { name: 'Tanstack Query', render: <ReactQueryDevtoolsPanel /> },

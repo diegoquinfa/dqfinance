@@ -40,18 +40,18 @@ export function ConsentCard() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-xl">
+        <CardTitle>
           {m.consent_title({ client: clientName ?? m.consent_unknown_client(), app: m.app_name() })}
         </CardTitle>
         <CardDescription>{m.consent_description()}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ul className="grid gap-2 text-sm">
+        <ul className="divide-y divide-line border-y border-line text-sm">
           {scopes.map((scope) => (
-            <li key={scope} className="flex gap-2">
-              <span aria-hidden className="text-primary">
+            <li key={scope} className="flex gap-3 py-3 text-ink">
+              <span aria-hidden className="text-signal">
                 ✓
               </span>
               {scopeLabel(scope)!()}

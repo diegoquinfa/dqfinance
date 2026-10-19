@@ -24,9 +24,10 @@ export const listTransactionsInput = z.object({
 })
 
 // Currency of the card behind a charge: primaryAmount is expressed in it.
-const cardProduct = alias(product, 'card_product')
+export const cardProduct = alias(product, 'card_product')
 
-export async function listTransactions(db: Db, userId: string, locale: Locale, input: z.infer<typeof listTransactionsInput>) {
+/** The WHERE of a movement query. The query must left-join `card` on `transaction.cardId`. */
+export function transactionFilters(userId: string, input: Omit<z.infer<typeof listTransactionsInput>, 'limit'>) {
   const bySource =
     input.sourceType && input.sourceId
       ? input.sourceType === 'product'
@@ -35,6 +36,18 @@ export async function listTransactions(db: Db, userId: string, locale: Locale, i
         : eq(input.sourceType === 'card' ? transaction.cardId : transaction.cashWalletId, input.sourceId)
       : undefined
 
+  return and(
+    eq(transaction.userId, userId),
+    input.type ? eq(transaction.type, input.type) : undefined,
+    bySource,
+    input.categoryId ? eq(transaction.categoryId, input.categoryId) : undefined,
+    input.counterpartyId ? eq(transaction.counterpartyId, input.counterpartyId) : undefined,
+    input.from ? gte(transaction.occurredAt, new Date(input.from)) : undefined,
+    input.to ? lt(transaction.occurredAt, new Date(input.to)) : undefined,
+  )
+}
+
+export async function listTransactions(db: Db, userId: string, locale: Locale, input: z.infer<typeof listTransactionsInput>) {
   const rows = await db
     .select({
       transaction,
@@ -54,17 +67,7 @@ export async function listTransactions(db: Db, userId: string, locale: Locale, i
     .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
     .innerJoin(category, eq(category.id, transaction.categoryId))
     .leftJoin(counterparty, eq(counterparty.id, transaction.counterpartyId))
-    .where(
-      and(
-        eq(transaction.userId, userId),
-        input.type ? eq(transaction.type, input.type) : undefined,
-        bySource,
-        input.categoryId ? eq(transaction.categoryId, input.categoryId) : undefined,
-        input.counterpartyId ? eq(transaction.counterpartyId, input.counterpartyId) : undefined,
-        input.from ? gte(transaction.occurredAt, new Date(input.from)) : undefined,
-        input.to ? lt(transaction.occurredAt, new Date(input.to)) : undefined,
-      ),
-    )
+    .where(transactionFilters(userId, input))
     .orderBy(desc(transaction.occurredAt))
     .limit(input.limit ?? 50)
 

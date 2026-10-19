@@ -1,6 +1,9 @@
+import { Link } from '@tanstack/react-router'
+import type * as React from 'react'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
 import { EmptyState, ListSkeleton } from '#/shared/ui/field'
+import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { useBalances } from '../balances/balances-api'
 import {
   AddBankAccountDialog,
@@ -12,12 +15,58 @@ import {
   cardKinds,
   productTypes,
 } from './add-dialogs'
-import { AdjustBalanceDialog } from './adjust-balance-dialog'
 import { useAccounts } from './accounts-api'
 import { sourceKey, type SourceRef } from './sources'
 
 const typeLabel = (type: string) => productTypes.find((item) => item.value === type)?.label() ?? type
 const kindLabel = (kind: string) => cardKinds.find((item) => item.value === kind)?.label() ?? kind
+
+// Full width on mobile so the actions wrap below; beside them from sm up.
+const lineClass = 'flex min-w-0 basis-full items-baseline justify-between gap-4 sm:basis-0 sm:flex-1'
+
+/** A row that opens the source's detail page; the actions beside it stay outside the link. */
+function SourceLine({
+  to,
+  name,
+  badges,
+  amount,
+  actions,
+  nested = false,
+}: {
+  to?: SourceRef
+  name: React.ReactNode
+  badges: React.ReactNode
+  amount?: string
+  actions?: React.ReactNode
+  nested?: boolean
+}) {
+  const body = (
+    <>
+      <span className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+        {nested && (
+          <span aria-hidden className="text-faint">
+            ↳
+          </span>
+        )}
+        <span className="text-ink transition-transform duration-500 group-hover:translate-x-1">{name}</span>
+        {badges}
+      </span>
+      {amount && <span className="shrink-0 font-medium text-ink tabular-nums">{amount}</span>}
+    </>
+  )
+  return (
+    <li className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-4 ${nested ? 'pl-5' : ''}`}>
+      {to ? (
+        <Link to="/accounts/$type/$id" params={to} className={`group ${lineClass}`}>
+          {body}
+        </Link>
+      ) : (
+        <div className={lineClass}>{body}</div>
+      )}
+      {actions && <div className="flex items-center gap-4">{actions}</div>}
+    </li>
+  )
+}
 
 export function AccountsPage() {
   const accounts = useAccounts()
@@ -26,7 +75,7 @@ export function AccountsPage() {
   if (accounts.isPending || balances.isPending) return <ListSkeleton rows={5} />
   if (accounts.error) {
     return (
-      <p role="alert" className="text-sm text-destructive">
+      <p role="alert" className="py-10 text-sm text-destructive">
         {accounts.error.message}
       </p>
     )
@@ -36,150 +85,121 @@ export function AccountsPage() {
   const balanceOf = (ref: SourceRef) =>
     balances.data?.accounts.find((account) => sourceKey(account.ref) === sourceKey(ref))?.balance ?? 0
   const cardDebt = (id: string) => balances.data?.creditCards.find((card) => card.ref.id === id)
-  const cardCurrencies = (id: string, cardCurrency: string) => {
-    const debts = cardDebt(id)?.debts.map((debt) => debt.currency) ?? []
-    return [...new Set([cardCurrency, ...debts])]
-  }
+  const index = (position: number) => String(position + 1).padStart(2, '0')
 
   return (
-    <div className="grid gap-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{m.accounts_title()}</h1>
-        <div className="flex gap-2">
-          <AddBankDialog />
-          <AddCashWalletDialog />
-        </div>
-      </div>
+    <>
+      <PageHeader
+        title={m.accounts_title()}
+        actions={
+          <>
+            <AddBankDialog />
+            <AddCashWalletDialog />
+          </>
+        }
+      />
 
       {tree.banks.length === 0 && tree.cashWallets.length === 0 && (
         <EmptyState title={m.accounts_empty()} description={m.accounts_empty_description()} />
       )}
 
-      {tree.banks.map((bank) => (
-        <section key={bank.id} className="grid gap-4">
-          <div className="flex items-center justify-between gap-2 border-b pb-2">
-            <h2 className="font-semibold">{bank.name}</h2>
-            <AddBankAccountDialog bankId={bank.id} bankName={bank.name} />
-          </div>
+      {tree.banks.map((bank, position) => (
+        <Section
+          key={bank.id}
+          index={index(position)}
+          label={bank.name}
+          action={<AddBankAccountDialog bankId={bank.id} bankName={bank.name} />}
+        >
+          <div className="grid gap-8">
+            {bank.accounts.map((account) => (
+              <div key={account.id} className="grid gap-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h3 className="type-heading-sm font-medium text-ink">
+                    {account.name}
+                    {account.last4 && <span className="label-mono ml-3 text-muted-foreground">•••• {account.last4}</span>}
+                  </h3>
+                  <AddProductDialog bankAccountId={account.id} accountName={account.name} />
+                </div>
 
-          {bank.accounts.map((account) => (
-            <div key={account.id} className="grid gap-3 rounded-lg border p-4">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="font-medium">
-                  {account.name}
-                  {account.last4 && <span className="ml-2 text-sm text-muted-foreground">•••• {account.last4}</span>}
-                </h3>
-                <AddProductDialog bankAccountId={account.id} accountName={account.name} />
-              </div>
-
-              {account.products.map((product) => {
-                const ref: SourceRef = { type: 'product', id: product.id }
-                return (
-                  <div key={product.id} className="grid gap-3 rounded-md bg-muted/40 p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{product.name}</span>
-                        <TypeBadge>{typeLabel(product.type)}</TypeBadge>
-                        <TypeBadge>{product.currency}</TypeBadge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="tabular-nums">{formatMoney(balanceOf(ref), product.currency)}</span>
-                        <AdjustBalanceDialog
-                          ref={ref}
+                {account.products.length > 0 && (
+                  <ul className={rowsClass}>
+                    {account.products.flatMap((product) => {
+                      const ref: SourceRef = { type: 'product', id: product.id }
+                      return [
+                        <SourceLine
+                          key={product.id}
+                          to={ref}
                           name={product.name}
-                          currency={product.currency}
-                          currentBalance={balanceOf(ref)}
-                        />
-                        <AddCardDialog productId={product.id} productName={product.name} />
-                      </div>
-                    </div>
-
-                    {product.cards.length > 0 && (
-                      <ul className="grid gap-2 border-t pt-2">
-                        {product.cards.map((card) => {
-                          const cardRef: SourceRef = { type: 'card', id: card.id }
+                          badges={
+                            <>
+                              <TypeBadge>{typeLabel(product.type)}</TypeBadge>
+                              <TypeBadge>{product.currency}</TypeBadge>
+                            </>
+                          }
+                          amount={formatMoney(balanceOf(ref), product.currency)}
+                          actions={<AddCardDialog productId={product.id} productName={product.name} />}
+                        />,
+                        ...product.cards.map((card) => {
                           const debt = cardDebt(card.id)
+                          const credit = card.kind === 'credit'
                           return (
-                            <li key={card.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span>
+                            <SourceLine
+                              key={card.id}
+                              nested
+                              to={credit ? { type: 'card', id: card.id } : undefined}
+                              name={
+                                <>
                                   {card.name}
-                                  {card.last4 && <span className="ml-2 text-muted-foreground">•••• {card.last4}</span>}
-                                </span>
-                                <TypeBadge>{kindLabel(card.kind)}</TypeBadge>
-                                {card.creditLimit !== null && (
-                                  <span className="text-muted-foreground">
-                                    {m.accounts_card_limit({ amount: formatMoney(card.creditLimit, product.currency) })}
+                                  {card.last4 && <span className="label-mono ml-3 text-muted-foreground">•••• {card.last4}</span>}
+                                </>
+                              }
+                              badges={
+                                <>
+                                  <TypeBadge>{kindLabel(card.kind)}</TypeBadge>
+                                  <span className="label-mono text-muted-foreground">
+                                    {credit
+                                      ? card.creditLimit !== null &&
+                                        m.accounts_card_limit({ amount: formatMoney(card.creditLimit, product.currency) })
+                                      : m.accounts_spends_from({ product: product.name })}
                                   </span>
-                                )}
-                              </div>
-                              {card.kind === 'credit' ? (
-                                <div className="flex flex-wrap items-center gap-3">
-                                  <span className="tabular-nums">
-                                    {m.accounts_card_total({ amount: formatMoney(debt?.total ?? 0, product.currency) })}
-                                  </span>
-                                  {debt?.available !== null && debt !== undefined && (
-                                    <span className="text-muted-foreground tabular-nums">
-                                      {m.accounts_card_available({
-                                        amount: formatMoney(debt.available ?? 0, product.currency),
-                                      })}
-                                    </span>
-                                  )}
-                                  <AdjustBalanceDialog
-                                    ref={cardRef}
-                                    name={card.name}
-                                    currency={product.currency}
-                                    currentBalance={
-                                      debt?.debts.find((entry) => entry.currency === product.currency)?.amount ?? 0
-                                    }
-                                    debtCurrencies={cardCurrencies(card.id, product.currency)}
-                                  />
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground">
-                                  {m.accounts_spends_from({ product: product.name })}
-                                </span>
-                              )}
-                            </li>
+                                </>
+                              }
+                              amount={
+                                credit
+                                  ? m.accounts_card_total({ amount: formatMoney(debt?.total ?? 0, product.currency) })
+                                  : undefined
+                              }
+                            />
                           )
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </section>
+                        }),
+                      ]
+                    })}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
       ))}
 
       {tree.cashWallets.length > 0 && (
-        <section className="grid gap-3">
-          <h2 className="border-b pb-2 font-semibold">{m.label_cash()}</h2>
-          <ul className="grid gap-3">
+        <Section index={index(tree.banks.length)} label={m.label_cash()}>
+          <ul className={rowsClass}>
             {tree.cashWallets.map((wallet) => {
               const ref: SourceRef = { type: 'cash_wallet', id: wallet.id }
               return (
-                <li key={wallet.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-4">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{wallet.name}</span>
-                    <TypeBadge>{wallet.currency}</TypeBadge>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="tabular-nums">{formatMoney(balanceOf(ref), wallet.currency)}</span>
-                    <AdjustBalanceDialog
-                      ref={ref}
-                      name={wallet.name}
-                      currency={wallet.currency}
-                      currentBalance={balanceOf(ref)}
-                    />
-                  </div>
-                </li>
+                <SourceLine
+                  key={wallet.id}
+                  to={ref}
+                  name={wallet.name}
+                  badges={<TypeBadge>{wallet.currency}</TypeBadge>}
+                  amount={formatMoney(balanceOf(ref), wallet.currency)}
+                />
               )
             })}
           </ul>
-        </section>
+        </Section>
       )}
-    </div>
+    </>
   )
 }
