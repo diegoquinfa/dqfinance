@@ -37,9 +37,9 @@ All tables have `id` (text UUID, except where noted), `user_id` (FK → `user`, 
 | `user_currency` | (`user_id`, `code`) PK | The user's currencies; always includes `primary_currency`. |
 | `bank` | `name` | Colombian users pick from a catalog; others type the name. |
 | `bank_account` | `bank_id`, `name`, `last4?` | |
-| `product` | `bank_account_id`, `type` (`savings` \| `checking` \| `payroll` \| `investment` \| `other`), `name`, `currency` | A **source**. |
+| `product` | `bank_account_id`, `type` (`savings` \| `checking` \| `payroll` \| `investment` \| `other`), `name`, `currency`, `annual_rate_bps?` | A **source**. `annual_rate_bps` is the effective annual rate (E.A.) in basis points (10000 = 100%); it only feeds an estimate, never a balance. |
 | `cash_wallet` | `name`, `currency` | A **source**. Several allowed (COP wallet, USD wallet). |
-| `card` | `product_id`, `kind` (`debit` \| `credit`), `name`, `last4?`, `credit_limit_cents?`, `statement_day?`, `due_day?` | A **source**. Currency = its product's currency. |
+| `card` | `product_id`, `kind` (`debit` \| `credit`), `name`, `last4?`, `credit_limit_cents?`, `statement_day?`, `due_day?`, `brand?`, `interest_rate_bps?`, `interest_rate_period?`, `color?` | A **source**. Currency = its product's currency. `brand` is `visa` \| `mastercard` \| `amex` \| `diners` \| `other`; `interest_rate_period` is `monthly` (MV) or `annual` (EA), and the rate belongs to a credit card. `color` is presentation only. |
 | `category` | `name?`, `kind` (`expense` \| `income`), `system_key?` | System categories (`fx_loss`, `fx_gain`, `bank_fees`) have a key and no stored name; the name is translated on read. |
 | `counterparty` | `name`, `kind` (`person` \| `business`) | |
 | `transaction` | `type` (`income` \| `expense`), `amount_cents`, `currency`, **source** (`product_id?` \| `cash_wallet_id?` \| `card_id?`), `primary_amount_cents?`, `category_id`, `counterparty_id?`, `recurring_expense_id?`, `transfer_id?`, `description?`, `occurred_at` | `primary_amount_cents` only for a credit-card charge in a foreign currency. `transfer_id` links the fee and FX entries a transfer created. |
@@ -77,6 +77,10 @@ debt(C, k) = Σ expense − Σ income        (transactions on C in k)
 Card total in its own currency = debt in its currency + Σ over foreign currencies of their **outstanding cost basis**.
 
 **In transit** = Σ `sent_amount` of transfers with no `received_at`, shown per currency on the overview.
+
+**History.** The same rules, applied to a ledger seen from a date: `computeBalancesAt` drops every movement after it (a transfer's `sent_at` and `received_at` are two dates, so in-transit money stays at the origin), and `assetsAndLiabilities` sums the result per currency. Month ends are calendar month ends in UTC, and the current month's point is "now".
+
+**Yield estimate.** `balance × ((1 + rate)^(1/12) − 1)` a month and `balance × ((1 + rate)^(1/365) − 1)` a day, from `annual_rate_bps`. An estimate shown as "≈": the real interest arrives as an income or an adjustment (D2), never from this field.
 
 ## FX difference on card payments (D7)
 
@@ -125,13 +129,15 @@ difference        = sent_amount − released_basis
 | Tool | Purpose |
 | --- | --- |
 | `list_accounts` | Every source with its id, currency, and balance or debt |
+| `get_balance_history` | Month-end assets and card debt per currency, optionally for one source |
+| `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, brand, interest rate, and color |
 | `list_categories`, `list_contacts`, `create_contact` | Lookups needed to record movements |
 | `create_transaction`, `list_transactions` | Record and query income and expenses |
 | `create_transfer`, `mark_transfer_received` | Move money between the user's own sources |
 | `adjust_balance` | Set the real balance of a source |
 | `list_pending_recurring`, `confirm_recurring`, `skip_recurring` | Work the "to confirm" inbox |
 
-Setup (banks, accounts, products, cards) stays in the web app. Scopes: `finance:read`, `finance:write`.
+Banks, bank accounts, and cash wallets are set up in the web app only; products and cards are also reachable through the tools above. Scopes: `finance:read`, `finance:write`.
 
 ## Web screens
 

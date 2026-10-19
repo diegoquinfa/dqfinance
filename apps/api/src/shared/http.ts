@@ -18,6 +18,7 @@ export const ERROR_CODES = [
   'bank_not_found',
   'bank_account_not_found',
   'product_not_found',
+  'card_not_found',
   'category_not_found',
   'category_kind_mismatch',
   'counterparty_not_found',

@@ -7,8 +7,10 @@ Domain terms used in code, docs, and reviews. Code uses the English term; the Sp
 | **Bank** (Banco) | A financial institution the user has accounts with. |
 | **Bank account** (Cuenta bancaria) | The user's contract with a bank. Groups products. |
 | **Product** (Producto) | A savings, checking, payroll, or investment product inside a bank account. Holds money in one currency. A **source**. |
+| **Annual rate** (Tasa efectiva anual, E.A.) | The effective annual rate of a product, stored in basis points. Feeds an estimate of what the balance earns; never a balance. |
+| **Yield estimate** (Rendimiento estimado) | What a balance would earn in a month or a day at its annual rate. An "≈" figure, not money the user has. |
 | **Cash wallet** (Efectivo) | Physical money the user holds, in one currency. A **source**. |
-| **Card** (Tarjeta) | A debit card (spends from its product) or a credit card (has its own debt). A **source**. |
+| **Card** (Tarjeta) | A debit card (spends from its product) or a credit card (has its own debt). A **source**. Carries a brand, an interest rate with its period (MV = monthly, EA = annual), and a presentation color. |
 | **Source** (Fuente) | Where money moves from or to: a product, a cash wallet, or a card. Stored as three nullable foreign keys with exactly one set. |
 | **Balance** (Saldo) | Money in a product or cash wallet. Always computed from movements. |
 | **Debt** (Deuda) | What is owed on a credit card, per currency. Always computed. |
