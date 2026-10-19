@@ -6,6 +6,19 @@ People open the app to answer "where did my money go?" and "did I record that?".
 
 Tokens live in `apps/web/src/styles.css`. This file explains them. When the two disagree, fix whichever one is wrong in the same change.
 
+## Logo
+
+The mark is a **dq ligature**: `d` and `q` are mirror images (a bowl on the left, a stem on the right), so they share one square bowl and one stem that rises (the `d`) and drops (the `q`), like money in and out of a ledger column. The descender is the one `signal` touch; the rest is `ink`. In the lockup the ligature stands in for "dq" and "finance" follows in Geist Medium, `muted-foreground`, so the word reads in two tones like the page titles.
+
+| File (`apps/web/public/`) | Use |
+| --- | --- |
+| `logo.svg` | Lockup, tight bounds, transparent. Top bar and the signed-out layout (`h-7`). |
+| `logo-mark.svg` | The ligature alone on `canvas`, 512 px. Avatars, social, store icons. |
+| `favicon.svg` | The mark at 32 px with a heavier stroke so the counter survives at 16 px. |
+| `apple-touch-icon.png`, `icon-512.png` | Raster exports of `logo-mark.svg`. |
+
+Rules: square corners, never rounded or outlined; only on `canvas` or `raised` (on `paper` use the mark with its own `canvas` square); never recolor the descender or tint the bowl; keep clear space of one bowl width around it. The wordmark is outlined paths from Geist Medium (no font dependency). The stem is symmetric: it rises above the x-height as far as it drops below the baseline.
+
 ## Principles for financial tracking
 
 1. **Numbers first.** The amount is the largest, highest-contrast element of its block. Use `tabular-nums` everywhere digits stack.
