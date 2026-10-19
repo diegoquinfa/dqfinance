@@ -23,6 +23,7 @@
   "error_transfer_not_found": "That transfer doesn't exist.",
   "error_transfer_already_received": "That transfer was already received.",
   "error_recurring_not_found": "That recurring expense doesn't exist.",
+  "error_push_not_configured": "Push notifications aren't set up on this server.",
   "error_network": "Can't reach the server at {url}. Check that the API is running and try again.",
   "error_generic": "Something went wrong. Try again.",
   "error_load": "Could not load this. Try again.",
