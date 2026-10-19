@@ -26,6 +26,7 @@ Status: approved 2026-10-18. Terms are defined in [GLOSSARY.md](../../GLOSSARY.m
 | D11 | Recurring expenses **remind and wait for confirmation**; they never create transactions on their own. | No records of things that did not happen; variable bills get the real amount. |
 | D12 | The user's **currencies** (chosen in the onboarding wizard) limit every currency picker. | A user in Colombia does not scroll through 300 currencies. |
 | D13 | i18n lives in one shared package (`packages/i18n`, Paraglide) used by the API and the web. | One message catalog; the API translates errors and system category names. |
+| D14 | A **pocket** is a product with `type = 'pocket'` and a `parent_product_id`: the product it sets money aside from. Its rules: the parent is a non-pocket product of the same user, the same bank account and the same currency, one level only; cards cannot belong to a pocket; a product with pockets cannot become a pocket, and a pocket's type cannot change. Every product also has a `yield_payout` (`daily` \| `monthly`), how often its interest is paid. | Colombian accounts let people set money aside inside one account ("home services", "transport"), each with its own effective annual rate. |
 
 ## Data model
 
@@ -37,7 +38,7 @@ All tables have `id` (text UUID, except where noted), `user_id` (FK → `user`, 
 | `user_currency` | (`user_id`, `code`) PK | The user's currencies; always includes `primary_currency`. |
 | `bank` | `name` | Colombian users pick from a catalog; others type the name. |
 | `bank_account` | `bank_id`, `name`, `last4?` | |
-| `product` | `bank_account_id`, `type` (`savings` \| `checking` \| `payroll` \| `investment` \| `other`), `name`, `currency`, `annual_rate_bps?` | A **source**. `annual_rate_bps` is the effective annual rate (E.A.) in basis points (10000 = 100%); it only feeds an estimate, never a balance. |
+| `product` | `bank_account_id`, `type` (`savings` \| `checking` \| `payroll` \| `investment` \| `other` \| `pocket`), `name`, `currency`, `annual_rate_bps?`, `parent_product_id?`, `yield_payout?` | A **source**. `annual_rate_bps` is the effective annual rate (E.A.) in basis points (10000 = 100%); it only feeds an estimate, never a balance. A **pocket** (`type = 'pocket'`) sets money aside inside its `parent_product_id`: same bank account, same currency, one level (D14). `yield_payout` is `daily` \| `monthly`, how often the interest is paid. |
 | `cash_wallet` | `name`, `currency` | A **source**. Several allowed (COP wallet, USD wallet). |
 | `card` | `product_id`, `kind` (`debit` \| `credit`), `name`, `last4?`, `credit_limit_cents?`, `statement_day?`, `due_day?`, `brand?`, `interest_rate_bps?`, `interest_rate_period?`, `color?` | A **source**. Currency = its product's currency. `brand` is `visa` \| `mastercard` \| `amex` \| `diners` \| `other`; `interest_rate_period` is `monthly` (MV) or `annual` (EA), and the rate belongs to a credit card. `color` is presentation only. |
 | `category` | `name?`, `kind` (`expense` \| `income`), `system_key?` | System categories (`fx_loss`, `fx_gain`, `bank_fees`, `other_expense`, `other_income`) have a key and no stored name; the name is translated on read. An import row without a category is booked in `other_expense` / `other_income`. |
@@ -146,7 +147,7 @@ A file attached to a source: contract, terms, or fee table. PDF or a common imag
 | --- | --- |
 | `list_accounts` | Every source with its id, currency, and balance or debt |
 | `get_balance_history` | Month-end assets and card debt per currency, optionally for one source |
-| `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, brand, interest rate, and color |
+| `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, the yield payout, the parent product of a pocket, brand, interest rate, and color |
 | `list_categories`, `list_contacts`, `create_contact` | Lookups needed to record movements |
 | `create_transaction`, `list_transactions`, `summarize_transactions` | Record, query and total income and expenses |
 | `create_transfer`, `list_transfers`, `mark_transfer_received` | Move money between the user's own sources |
