@@ -10,6 +10,9 @@ import { Spinner } from '#/shared/ui/spinner'
 import { Badge } from '#/shared/ui/badge'
 import { toast } from 'sonner'
 import { useSettings } from '../settings/settings-api'
+import type { CardBrand, CardColor } from './card-face'
+import { CardDetailsFields } from './card-fields'
+import { percentToBps } from './rates'
 import { suggestedBanks } from './suggested-banks'
 import {
   useCreateBank,
@@ -50,7 +53,17 @@ function CurrencySelect({ id, defaultValue, label }: { id: string; defaultValue:
   )
 }
 
-function SubmitRow({ close, pending, error }: { close: () => void; pending: boolean; error?: string }) {
+export function SubmitRow({
+  close,
+  pending,
+  error,
+  label = m.action_create(),
+}: {
+  close: () => void
+  pending: boolean
+  error?: string
+  label?: string
+}) {
   return (
     <>
       <FieldError>{error}</FieldError>
@@ -60,7 +73,7 @@ function SubmitRow({ close, pending, error }: { close: () => void; pending: bool
         </Button>
         <Button type="submit" disabled={pending}>
           {pending && <Spinner data-icon="inline-start" />}
-          {m.action_create()}
+          {label}
         </Button>
       </div>
     </>
@@ -210,12 +223,14 @@ export function AddProductDialog({ bankAccountId, accountName }: { bankAccountId
           onSubmit={(event) => {
             event.preventDefault()
             const form = new FormData(event.currentTarget)
+            const rate = String(form.get('annualRate')).trim()
             create.mutate(
               {
                 bankAccountId,
                 name: String(form.get('name')),
                 type: String(form.get('type')) as ProductInput['type'],
                 currency: String(form.get('currency')) as never,
+                annualRateBps: rate ? percentToBps(Number(rate)) : undefined,
               },
               {
                 onSuccess: () => {
@@ -242,6 +257,11 @@ export function AddProductDialog({ bankAccountId, accountName }: { bankAccountId
               </NativeSelect>
             </Field>
             <CurrencySelect id="product-currency" label={m.label_currency()} defaultValue="COP" />
+            <Field>
+              <FieldLabel htmlFor="product-rate">{m.product_annual_rate()}</FieldLabel>
+              <Input id="product-rate" name="annualRate" type="number" min="0" step="0.01" inputMode="decimal" />
+              <FieldDescription>{m.product_annual_rate_hint()}</FieldDescription>
+            </Field>
             <SubmitRow close={close} pending={create.isPending} error={create.error?.message} />
           </FieldGroup>
         </form>
@@ -268,6 +288,8 @@ export function AddCardDialog({ productId, productName }: { productId: string; p
             const limit = String(form.get('limit'))
             const statementDay = String(form.get('statementDay'))
             const dueDay = String(form.get('dueDay'))
+            const rate = String(form.get('interestRate')).trim()
+            const brand = String(form.get('brand'))
             create.mutate(
               {
                 productId,
@@ -277,6 +299,10 @@ export function AddCardDialog({ productId, productName }: { productId: string; p
                 creditLimit: isCredit && limit ? Number(limit) : undefined,
                 statementDay: isCredit && statementDay ? Number(statementDay) : undefined,
                 dueDay: isCredit && dueDay ? Number(dueDay) : undefined,
+                brand: brand ? (brand as CardBrand) : undefined,
+                interestRateBps: isCredit && rate ? percentToBps(Number(rate)) : undefined,
+                interestRatePeriod: isCredit && rate ? (String(form.get('interestRatePeriod')) as 'monthly' | 'annual') : undefined,
+                color: String(form.get('color')) as CardColor,
               },
               {
                 onSuccess: () => {
@@ -311,25 +337,7 @@ export function AddCardDialog({ productId, productName }: { productId: string; p
               <FieldLabel htmlFor="card-last4">{`${m.label_last4()} (${m.label_optional()})`}</FieldLabel>
               <Input id="card-last4" name="last4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
             </Field>
-            {isCredit && (
-              <>
-                <Field>
-                  <FieldLabel htmlFor="card-limit">{m.label_limit()}</FieldLabel>
-                  <Input id="card-limit" name="limit" type="number" min="0.01" step="0.01" inputMode="decimal" />
-                  <FieldDescription>{m.accounts_credit_only_hint()}</FieldDescription>
-                </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field>
-                    <FieldLabel htmlFor="card-statement-day">{m.label_statement_day()}</FieldLabel>
-                    <Input id="card-statement-day" name="statementDay" type="number" min="1" max="31" />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="card-due-day">{m.label_due_day()}</FieldLabel>
-                    <Input id="card-due-day" name="dueDay" type="number" min="1" max="31" />
-                  </Field>
-                </div>
-              </>
-            )}
+            <CardDetailsFields idPrefix="card" kind={kind} />
             <SubmitRow close={close} pending={create.isPending} error={create.error?.message} />
           </FieldGroup>
         </form>

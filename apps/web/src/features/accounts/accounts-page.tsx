@@ -17,6 +17,7 @@ import {
   productTypes,
 } from './add-dialogs'
 import { useAccounts } from './accounts-api'
+import { brandLabel } from './card-face'
 import { sourceKey, type SourceRef } from './sources'
 
 const typeLabel = (type: string) => productTypes.find((item) => item.value === type)?.label() ?? type
@@ -162,6 +163,7 @@ export function AccountsPage() {
                               badges={
                                 <>
                                   <TypeBadge>{kindLabel(card.kind)}</TypeBadge>
+                                  {card.brand && <TypeBadge>{brandLabel(card.brand)}</TypeBadge>}
                                   <span className="label-mono text-muted-foreground">
                                     {credit
                                       ? card.creditLimit !== null &&
