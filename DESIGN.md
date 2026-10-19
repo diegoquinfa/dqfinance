@@ -108,6 +108,8 @@ Checklist for every added component:
 | `PageHeader`, `Section`, `Eyebrow`, `FocusLayout` | `shared/ui/page.tsx`: the page h1, the rail sections, the `// 0X` label, and the signed-out layout (two-tone statement + panel). |
 | `TransactionRow` | `features/transactions`: description in `ink`, mono metadata (`date / source / category`), the signed amount on the right. Every movement list uses it. |
 | `Chart` | `shared/ui/chart.tsx` wraps Recharts (the only chart dependency). Lines only, `ink` for assets and `muted-foreground` for liabilities, a `line` grid, mono ticks, no area fills, no lilac, no animation. The tooltip is a square hairline panel with `formatMoney`; the region carries an `aria-label` and the same points sit in an `sr-only` table beside it. |
+| `Table` | Data with more than two columns, like the statement import preview: mono headers, hairline rows, no box, no zebra. |
+| `Textarea` | Pasted statement rows: filled `surface`, mono, grows with what it holds. |
 | `CardFace` | `features/accounts/card-face.tsx`: the 1.586 square-cornered face on a product's card page, with its color, brand (`label-mono`) and masked last 4. |
 
 States: hover changes tone or moves a row title 4px right, never size. Focus is a 1px `signal` outline with a 4px offset (global); the amount field shows focus on its bottom line. Disabled is `opacity-50`.
@@ -123,8 +125,9 @@ States: hover changes tone or moves a row title 4px right, never size. Focus is 
 | `/accounts` | One section per bank: bank accounts, products as rows that open their detail, cards nested with `↳`; then cash. Add actions as `link` buttons. On mobile the add actions open the pages below; from `lg` the dialogs stay next to them. |
 | `/accounts/new` | The full-page create form: back link, title, and Create at the top and at the end. The opening balance is the large first field with the currency beside it, then bank (existing or new), bank account (existing or new, last 4 optional), product name, type and annual rate. The opening balance is recorded as an adjustment dated today (D2), then the new product's detail opens. |
 | `/accounts/new-card` | The card as a page: the live card face at the top, then kind, product, name, last 4, brand, interest rate with MV / EA, color and the credit details. A credit card opens its own detail, a debit card its product. |
-| `/accounts/$type/$id` | A product, cash wallet or credit card: back link, bank, name, balance (or debt and available credit), a credit card's face, "Adjust balance", edit, income / expenses / net for the last 6 or 12 months with the same chart for that source, a product's yield (rate, "≈ per month" and "≈ per day"), its costs (the recurring expenses paid with it, with "Add cost"), and its recent movements with "View all". |
-| `/transactions` | Filters (type, source, date range) and the movement list. The filters live in the URL, so a link can preselect a source. |
+| `/accounts/$type/$id` | A product, cash wallet or credit card: back link, bank, name, balance (or debt and available credit), a credit card's face, "Adjust balance", edit, income / expenses / net for the last 6 or 12 months with the same chart for that source, a product's yield (rate, "≈ per month" and "≈ per day"), its costs (the recurring expenses paid with it, with "Add cost"), its recent movements with "View all", and its documents (contract, terms, fee table) with upload, download and delete. |
+| `/transactions` | Filters (type, source, date range) and the movement list. The filters live in the URL, so a link can preselect a source. "Import" opens the statement import. |
+| `/transactions/import` | A CSV statement: source, the pasted rows or a chosen .csv file, the column map, then the dry-run preview as a table, duplicates marked and left out, and "Import N movements". PDFs and screenshots are imported by asking the AI assistant. |
 | `/transfers` | Transfers with a derived type tag, fee and FX notes, an "in transit" tag, and "Mark received". |
 | `/recurring` | "Due now" with an editable amount, Confirm and Skip, then the full schedule. |
 | `/contacts` | Search, then people and businesses as sections. |

@@ -45,6 +45,9 @@ const tabs = [
   { to: '/recurring', label: m.nav_recurring, icon: Repeat },
 ] as const
 
+// The menu carries what has no tab: importing a statement is a task, not a destination.
+const menuLinks = [...links, { to: '/transactions/import', label: m.transactions_import }] as const
+
 function AppLayout() {
   const { data: session, isPending } = authClient.useSession()
   const settings = useSettings({ enabled: Boolean(session) })
@@ -155,7 +158,7 @@ function MenuDialog({ name, email }: { name: string; email: string }) {
           </div>
           <nav aria-label={m.nav_main()} className="container-page flex-1 overflow-y-auto py-6">
             <ul className="divide-y divide-line border-y border-line">
-              {links.map((link, index) => (
+              {menuLinks.map((link, index) => (
                 <li key={link.to}>
                   <Link
                     to={link.to}
