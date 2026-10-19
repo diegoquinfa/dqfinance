@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { AdjustBalanceDialog } from '#/features/accounts/adjust-balance-dialog'
-import type { SourceRef } from '#/features/accounts/sources'
+import { sourceKey, type SourceRef } from '#/features/accounts/sources'
+import { SourceCosts } from '#/features/recurring-expenses/recurring-page'
 import { TransactionRow } from '#/features/transactions/transaction-row'
 import { useTransactions } from '#/features/transactions/transactions-api'
 import { m } from '#/shared/i18n'
@@ -13,6 +14,7 @@ import { Eyebrow, Section, rowsClass } from '#/shared/ui/page'
 import { Skeleton } from '#/shared/ui/skeleton'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { useBalances } from './balances-api'
+import { ViewAll } from './overview-page'
 import { PeriodTotals } from './period-totals'
 
 function BackToAccounts() {
@@ -130,7 +132,13 @@ export function SourcePage({ type, id }: SourceRef) {
         />
       </Section>
 
-      <Section index="02" label={m.overview_recent()}>
+      <SourceCosts sourceRef={ref} index="02" />
+
+      <Section
+        index="03"
+        label={m.overview_recent()}
+        action={<ViewAll to="/transactions" search={{ source: sourceKey(ref) }} />}
+      >
         {recent.isPending ? (
           <ListSkeleton rows={4} />
         ) : recent.error ? (

@@ -19,7 +19,7 @@ export function OnboardingWizard() {
   const complete = useCompleteOnboarding()
   const [step, setStep] = useState<1 | 2>(1)
   const [country, setCountry] = useState(() => (typeof navigator === 'undefined' ? '' : (browserCountry() ?? '')))
-  const [locale, setLocale] = useState<Locale>(currentLocale())
+  const [locale, setLocale] = useState<Locale>(() => currentLocale())
   const [timezone] = useState(() =>
     typeof Intl === 'undefined' ? 'UTC' : Intl.DateTimeFormat().resolvedOptions().timeZone,
   )

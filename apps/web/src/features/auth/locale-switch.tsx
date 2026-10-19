@@ -28,10 +28,13 @@ export function LocaleSwitch({
           setPending(true)
           try {
             await persist?.(next)
-            switchLocale(next)
-          } finally {
+          } catch {
+            // The save failed, so the language stays as it was; keep the select usable.
             setPending(false)
+            return
           }
+          // Switching reloads the page, so it happens once the preference is stored.
+          switchLocale(next)
         }}
       >
         {Object.entries(localeNames).map(([code, name]) => (

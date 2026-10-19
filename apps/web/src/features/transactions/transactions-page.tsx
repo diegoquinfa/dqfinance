@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useSources } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { m } from '#/shared/i18n'
@@ -16,12 +16,18 @@ import { useTransactions, type NewTransaction } from './transactions-api'
 type TypeFilter = NewTransaction['type'] | 'all'
 
 export function TransactionsPage() {
-  const [type, setType] = useState<TypeFilter>('all')
-  const [sourceKey, setSourceKey] = useState('')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
+  // Filters are search params (see routes/_app/transactions.tsx), so they survive a reload.
+  const search = useSearch({ from: '/_app/transactions' })
+  const navigate = useNavigate()
+  const type = search.type ?? 'all'
+  const sourceKey = search.source ?? ''
+  const from = search.from ?? ''
+  const to = search.to ?? ''
   const { sources } = useSources()
   const selected = sources.find((source) => source.key === sourceKey)
+
+  const setFilters = (patch: Partial<typeof search>) =>
+    void navigate({ to: '/transactions', search: (previous) => ({ ...previous, ...patch }), replace: true })
 
   const transactions = useTransactions({
     limit: 100,
@@ -45,7 +51,7 @@ export function TransactionsPage() {
           className="w-full sm:col-span-2 lg:col-span-1"
           aria-label={m.label_kind()}
           value={type}
-          onValueChange={(value) => setType(value as TypeFilter)}
+          onValueChange={(value) => setFilters({ type: value as TypeFilter })}
         >
           <ToggleGroupItem value="all">{m.transactions_all_types()}</ToggleGroupItem>
           <ToggleGroupItem value="expense">{m.label_expense()}</ToggleGroupItem>
@@ -56,16 +62,21 @@ export function TransactionsPage() {
           label={m.label_source()}
           options={sources}
           value={sourceKey}
-          onChange={setSourceKey}
+          onChange={(key) => setFilters({ source: key })}
           className="sm:col-span-2 lg:col-span-1"
         />
         <Field>
           <FieldLabel htmlFor="filter-from">{m.label_from()}</FieldLabel>
-          <Input id="filter-from" type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+          <Input
+            id="filter-from"
+            type="date"
+            value={from}
+            onChange={(event) => setFilters({ from: event.target.value })}
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="filter-to">{m.label_to()}</FieldLabel>
-          <Input id="filter-to" type="date" value={to} onChange={(event) => setTo(event.target.value)} />
+          <Input id="filter-to" type="date" value={to} onChange={(event) => setFilters({ to: event.target.value })} />
         </Field>
       </section>
 

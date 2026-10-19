@@ -9,7 +9,17 @@ import { usePushUpdates } from '#/features/settings/push-api'
 import { NewTransactionDialog } from '#/features/transactions/new-transaction-dialog'
 import { ApiError } from '#/shared/api'
 import { currentLocale, m, switchLocale } from '#/shared/i18n'
+import { Avatar, AvatarFallback } from '#/shared/ui/avatar'
 import { Button } from '#/shared/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '#/shared/ui/dropdown-menu'
 
 // Shell + guard for every signed-in page. The session lives on the API origin, so it is checked client-side.
 export const Route = createFileRoute('/_app')({
@@ -82,7 +92,8 @@ function AppLayout() {
                 </Button>
               }
             />
-            <MenuDialog email={session.user.email} />
+            <MenuDialog name={session.user.name} email={session.user.email} />
+            <ProfileMenu name={session.user.name} email={session.user.email} />
           </div>
         </div>
       </header>
@@ -127,7 +138,7 @@ function AppLayout() {
 }
 
 /** Full-screen menu with large numbered links, below the xl breakpoint. */
-function MenuDialog({ email }: { email: string }) {
+function MenuDialog({ name, email }: { name: string; email: string }) {
   const [open, setOpen] = useState(false)
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
@@ -163,7 +174,10 @@ function MenuDialog({ email }: { email: string }) {
             </ul>
           </nav>
           <div className="container-page flex shrink-0 flex-wrap items-center justify-between gap-4 border-t border-line py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-            <p className="label-mono truncate text-muted-foreground">{email}</p>
+            <div className="grid gap-1">
+              <p className="label-mono truncate text-ink">{name}</p>
+              <p className="label-mono truncate text-muted-foreground">{email}</p>
+            </div>
             <button type="button" className="label-mono link-draw text-ink" onClick={() => void authClient.signOut()}>
               {m.action_sign_out()}
             </button>
@@ -171,5 +185,49 @@ function MenuDialog({ email }: { email: string }) {
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
+  )
+}
+
+/** "Ada Lovelace" to "AL"; the email is the fallback when the provider gave no name. */
+function initials(name: string, email: string) {
+  return (name || email)
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]!.toUpperCase())
+    .join('')
+}
+
+/** From xl up the account is the avatar: name, Settings, Sign out. Below, the full-screen menu. */
+function ProfileMenu({ name, email }: { name: string; email: string }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="hidden text-muted-foreground transition-colors hover:text-ink xl:block"
+        >
+          <Avatar className="size-9">
+            <AvatarFallback>{initials(name, email)}</AvatarFallback>
+          </Avatar>
+          <span className="sr-only">{m.nav_profile()}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel className="grid gap-1">
+          <span className="truncate text-ink">{name}</span>
+          <span className="truncate">{email}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link to="/settings">{m.nav_settings()}</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onSelect={() => void authClient.signOut()}>
+            {m.action_sign_out()}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
