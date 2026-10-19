@@ -42,6 +42,7 @@ Rules:
 
 - Contrast lives in a few points: the primary button, the big numbers, small lilac marks. Never lilac backgrounds, icons, or resting buttons.
 - Every text pair passes WCAG AA. `faint` is never used for text a person must read.
+- **Card faces are the only exception**, and the only non-token colors in the app. The API stores a color name (`ink`, `signal`, `sand`, `moss`, `clay`, `ocean`) and `features/accounts/card-face.tsx` maps it once to a fixed dark palette. Nothing else takes a raw color.
 
 ## Typography
 
@@ -106,6 +107,8 @@ Checklist for every added component:
 | `Toaster` (sonner) | Mounted once in the root route. A successful create confirms with `toast.success(...)`; never for reads. |
 | `PageHeader`, `Section`, `Eyebrow`, `FocusLayout` | `shared/ui/page.tsx`: the page h1, the rail sections, the `// 0X` label, and the signed-out layout (two-tone statement + panel). |
 | `TransactionRow` | `features/transactions`: description in `ink`, mono metadata (`date / source / category`), the signed amount on the right. Every movement list uses it. |
+| `Chart` | `shared/ui/chart.tsx` wraps Recharts (the only chart dependency). Lines only, `ink` for assets and `muted-foreground` for liabilities, a `line` grid, mono ticks, no area fills, no lilac, no animation. The tooltip is a square hairline panel with `formatMoney`; the region carries an `aria-label` and the same points sit in an `sr-only` table beside it. |
+| `CardFace` | `features/accounts/card-face.tsx`: the 1.586 square-cornered face on a product's card page, with its color, brand (`label-mono`) and masked last 4. |
 
 States: hover changes tone or moves a row title 4px right, never size. Focus is a 1px `signal` outline with a 4px offset (global); the amount field shows focus on its bottom line. Disabled is `opacity-50`.
 
@@ -116,9 +119,9 @@ States: hover changes tone or moves a row title 4px right, never size. Focus is 
 | `/sign-in` | Two-tone statement and the sign-in panel. Also the OAuth login page for MCP clients. Language picker inside the panel. |
 | `/consent` | OAuth consent: the agent's name, then each permission as a row. Deny is `outline`, Allow is primary. |
 | `/onboarding` | Two steps (country / language / timezone, then currencies) in the same layout as sign-in. |
-| `/overview` | 01 total balance (display size, primary currency) beside the period block: Week / Month / Year with previous and next, then Spent and Received (summed by `GET /api/transactions/summary`). 02 net worth per currency (assets, card debt, net). 03 accounts, 04 credit cards (rows open the source), 05 to confirm, 06 recent movements, 07 in transit. |
+| `/overview` | 01 total balance (display size, primary currency) beside the period block: Week / Month / Year with previous and next, then Spent and Received (summed by `GET /api/transactions/summary`). 02 net worth per currency (assets, card debt, net), then the month-end assets and liabilities chart with 3M / 12M. 03 accounts, 04 credit cards (rows open the source), 05 to confirm, 06 recent movements, 07 in transit. |
 | `/accounts` | One section per bank: bank accounts, products as rows that open their detail, cards nested with `↳`; then cash. Add actions as `link` buttons. |
-| `/accounts/$type/$id` | A product, cash wallet or credit card: back link, bank, name, balance (or debt and available credit), "Adjust balance", income / expenses / net for the last 6 or 12 months, its costs (the recurring expenses paid with it, with "Add cost"), and its recent movements with "View all". |
+| `/accounts/$type/$id` | A product, cash wallet or credit card: back link, bank, name, balance (or debt and available credit), a credit card's face, "Adjust balance", edit, income / expenses / net for the last 6 or 12 months with the same chart for that source, a product's yield (rate, "≈ per month" and "≈ per day"), its costs (the recurring expenses paid with it, with "Add cost"), and its recent movements with "View all". |
 | `/transactions` | Filters (type, source, date range) and the movement list. The filters live in the URL, so a link can preselect a source. |
 | `/transfers` | Transfers with a derived type tag, fee and FX notes, an "in transit" tag, and "Mark received". |
 | `/recurring` | "Due now" with an editable amount, Confirm and Skip, then the full schedule. |
