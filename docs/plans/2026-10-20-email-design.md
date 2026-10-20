@@ -29,7 +29,7 @@ Unknown addresses get the same HTTP response and the same page copy as known one
 
 ## Web
 
-- `/sign-in` is sign-in only. Link to `/sign-up`. Forgot-password link only when a public `GET` reports email enabled; otherwise one line that reset is not configured.
+- `/sign-in` is sign-in only. Link to `/sign-up`. Forgot-password link only when `GET /api/auth-config` reports `passwordReset`; otherwise no link.
 - `/sign-up` collects name, email, password, confirm password.
 - `/forgot-password` and `/reset-password` follow the sign-in route (`ssr: false`).
 - Settings change-password also repeats the new password.

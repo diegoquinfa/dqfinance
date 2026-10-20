@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { authClient } from '#/features/auth/auth-client'
+import { MIN_PASSWORD_LENGTH, passwordProblem, passwordProblemMessage } from '#/features/auth/password-rule'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
@@ -12,20 +13,30 @@ import { Spinner } from '#/shared/ui/spinner'
 export function PasswordSection() {
   const [error, setError] = useState<string>()
   const [pending, setPending] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+
+  const problem = passwordProblem(newPassword, confirmPassword)
+  const repeatError = confirmPassword && problem ? passwordProblemMessage(problem) : undefined
+  const ready = newPassword.length >= MIN_PASSWORD_LENGTH && newPassword === confirmPassword
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!ready) return
     const formElement = event.currentTarget
     const form = new FormData(formElement)
     setPending(true)
     setError(undefined)
     let result
     try {
-      result = await authClient.changePassword({
+      // `confirmPassword` is not part of Better Auth's type, but the server checks it before the route runs.
+      const body = {
         currentPassword: String(form.get('currentPassword')),
-        newPassword: String(form.get('newPassword')),
+        newPassword,
+        confirmPassword,
         revokeOtherSessions: true,
-      })
+      }
+      result = await authClient.changePassword(body)
     } catch {
       setPending(false)
       return setError(m.error_network({ url: location.origin }))
@@ -33,6 +44,8 @@ export function PasswordSection() {
     setPending(false)
     if (result.error) return setError(result.error.message ?? m.error_generic())
     formElement.reset()
+    setNewPassword('')
+    setConfirmPassword('')
     toast.success(m.toast_password_changed())
   }
 
@@ -46,11 +59,35 @@ export function PasswordSection() {
           </Field>
           <Field>
             <FieldLabel htmlFor="newPassword">{m.label_new_password()}</FieldLabel>
-            <Input id="newPassword" name="newPassword" type="password" minLength={8} autoComplete="new-password" required />
+            <Input
+              id="newPassword"
+              name="newPassword"
+              type="password"
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              required
+            />
             <FieldDescription>{m.password_change_note()}</FieldDescription>
           </Field>
+          <Field data-invalid={Boolean(repeatError)}>
+            <FieldLabel htmlFor="confirmPassword">{m.label_repeat_password()}</FieldLabel>
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              aria-invalid={Boolean(repeatError)}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+            />
+            {repeatError && <FieldError>{repeatError}</FieldError>}
+          </Field>
           <FieldError>{error}</FieldError>
-          <Button type="submit" variant="outline" disabled={pending} className="justify-self-start">
+          <Button type="submit" variant="outline" disabled={pending || !ready} className="justify-self-start">
             {pending && <Spinner data-icon="inline-start" />}
             {m.action_change_password()}
           </Button>

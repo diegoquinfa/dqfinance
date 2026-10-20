@@ -9,6 +9,8 @@ export async function connectSmtpSocket(options: {
   port: number
   secureTransport: 'on' | 'off'
 }): Promise<SmtpSocket> {
+  // @ts-ignore - 'cloudflare:sockets' exists only in the Workers runtime, and the web app
+  // compiles this file without the Workers types.
   const { connect } = await import('cloudflare:sockets')
   const socket = connect(
     { hostname: options.host, port: options.port },
@@ -17,6 +19,7 @@ export async function connectSmtpSocket(options: {
   return wrap(socket)
 }
 
+// @ts-ignore - the socket type comes from the Workers types, which the web app's program lacks.
 function wrap(socket: Socket): SmtpSocket {
   const reader = socket.readable.getReader()
   const writer = socket.writable.getWriter()

@@ -1,5 +1,7 @@
+import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { api, unwrap } from '#/shared/api'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/shared/ui/card'
@@ -8,15 +10,20 @@ import { Input } from '#/shared/ui/input'
 import { Separator } from '#/shared/ui/separator'
 import { Spinner } from '#/shared/ui/spinner'
 import { authClient, isOAuthFlow } from './auth-client'
+import { AuthLink } from './auth-link'
 import { LocaleSwitch } from './locale-switch'
+import { MIN_PASSWORD_LENGTH } from './password-rule'
 
 export function SignInForm() {
   const navigate = useNavigate()
   const { refetch: refetchSession } = authClient.useSession()
-  const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in')
   const [error, setError] = useState<string>()
   const [pending, setPending] = useState(false)
-  const isSignUp = mode === 'sign-up'
+  // The reset link is only worth offering when the server can send one.
+  const { data: config } = useQuery({
+    queryKey: ['auth-config'],
+    queryFn: async () => await unwrap(api.api['auth-config'].$get()),
+  })
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -27,9 +34,7 @@ export function SignInForm() {
     setError(undefined)
     let result
     try {
-      result = isSignUp
-        ? await authClient.signUp.email({ email, password, name: String(form.get('name')) })
-        : await authClient.signIn.email({ email, password })
+      result = await authClient.signIn.email({ email, password })
     } catch {
       setPending(false)
       return setError(m.error_network({ url: location.origin }))
@@ -49,27 +54,15 @@ export function SignInForm() {
     <Card>
       <CardHeader>
         <CardTitle>
-          {isSignUp ? (
-            m.auth_sign_up_title()
-          ) : (
-            <>
-              {m.auth_sign_in_title()}{' '}
-              {/* The bowl (51 of 85 units) matches the cap height and its bottom (17 units) drops below the baseline. */}
-              <img src="/logo.svg" alt={m.app_name()} className="inline-block h-[1.2em] w-auto align-[-0.24em]" />
-            </>
-          )}
+          {m.auth_sign_in_title()}{' '}
+          {/* The bowl (51 of 85 units) matches the cap height and its bottom (17 units) drops below the baseline. */}
+          <img src="/logo.svg" alt={m.app_name()} className="inline-block h-[1.2em] w-auto align-[-0.24em]" />
         </CardTitle>
         {isOAuthFlow() && <CardDescription>{m.auth_oauth_notice()}</CardDescription>}
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit}>
           <FieldGroup>
-            {isSignUp && (
-              <Field>
-                <FieldLabel htmlFor="name">{m.label_name()}</FieldLabel>
-                <Input id="name" name="name" autoComplete="name" required />
-              </Field>
-            )}
             <Field>
               <FieldLabel htmlFor="email">{m.label_email()}</FieldLabel>
               <Input id="email" name="email" type="email" autoComplete="email" required />
@@ -80,29 +73,18 @@ export function SignInForm() {
                 id="password"
                 name="password"
                 type="password"
-                minLength={8}
-                autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                minLength={MIN_PASSWORD_LENGTH}
+                autoComplete="current-password"
                 required
               />
             </Field>
             <FieldError>{error}</FieldError>
             <Button type="submit" disabled={pending}>
               {pending && <Spinner data-icon="inline-start" />}
-              {pending
-                ? isSignUp
-                  ? m.auth_pending_sign_up()
-                  : m.auth_pending_sign_in()
-                : isSignUp
-                  ? m.auth_submit_sign_up()
-                  : m.auth_submit_sign_in()}
+              {pending ? m.auth_pending_sign_in() : m.auth_submit_sign_in()}
             </Button>
-            <button
-              type="button"
-              className="label-mono link-draw self-start text-muted-foreground hover:text-ink"
-              onClick={() => setMode(isSignUp ? 'sign-in' : 'sign-up')}
-            >
-              {isSignUp ? m.auth_switch_to_sign_in() : m.auth_switch_to_sign_up()}
-            </button>
+            <AuthLink to="/sign-up">{m.auth_link_sign_up()}</AuthLink>
+            {config?.passwordReset && <AuthLink to="/forgot-password">{m.auth_link_forgot_password()}</AuthLink>}
             <Separator />
             <LocaleSwitch id="sign-in-language" />
           </FieldGroup>
