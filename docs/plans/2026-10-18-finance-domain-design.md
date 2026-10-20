@@ -150,6 +150,7 @@ A file attached to a source: contract, terms, or fee table. PDF or a common imag
 | `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, the yield payout, the parent product of a pocket, brand, interest rate, and color |
 | `list_categories`, `list_contacts`, `create_contact` | Lookups needed to record movements |
 | `create_transaction`, `list_transactions`, `summarize_transactions` | Record, query and total income and expenses |
+| `update_transaction`, `delete_transaction` | Correct or remove a movement; the fee and FX entries of a transfer belong to it and cannot change on their own |
 | `create_transfer`, `list_transfers`, `mark_transfer_received` | Move money between the user's own sources |
 | `adjust_balance` | Set the real balance of a source |
 | `list_pending_recurring`, `confirm_recurring`, `skip_recurring` | Work the "to confirm" inbox |

@@ -49,6 +49,8 @@ export async function listRecurringExpenses(
     .leftJoin(product, eq(product.id, recurringExpense.productId))
     .leftJoin(cashWallet, eq(cashWallet.id, recurringExpense.cashWalletId))
     .leftJoin(card, eq(card.id, recurringExpense.cardId))
+    // The product behind a card, to read the bank account it belongs to.
+    .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
     .innerJoin(category, eq(category.id, recurringExpense.categoryId))
     .leftJoin(counterparty, eq(counterparty.id, recurringExpense.counterpartyId))
     .leftJoin(sourceAccount, eq(sourceAccount.id, product.bankAccountId))
