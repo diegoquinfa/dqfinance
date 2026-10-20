@@ -24,9 +24,6 @@ export const listTransactionsInput = z.object({
   limit: z.number().int().min(1).max(200).optional().describe('Defaults to 50'),
 })
 
-// Currency of the card behind a charge: primaryAmount is expressed in it.
-export { cardProduct } from '../accounts/card-currency'
-
 // The bank behind a source: the product's own bank account, and the one of a card's product.
 const sourceAccount = alias(bankAccount, 'source_account')
 const sourceBank = alias(bank, 'source_bank')

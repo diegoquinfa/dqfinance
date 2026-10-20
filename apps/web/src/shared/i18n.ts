@@ -6,8 +6,6 @@ export const m = messages
 
 export type Locale = (typeof locales)[number]
 
-export const isLocale = (value: string): value is Locale => locales.includes(value as Locale)
-
 /** The active locale. Server rendering has no cookie, so it falls back to the base locale. */
 export function currentLocale(): Locale {
   try {

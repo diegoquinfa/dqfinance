@@ -18,9 +18,6 @@ export function formatMoney(amount: number, currency: string, locale: Locale = c
 export const formatSignedAmount = (type: 'income' | 'expense', amount: number, currency: string) =>
   `${type === 'income' ? '+' : '−'}${formatMoney(amount, currency)}`
 
-export const currencyName = (code: string, locale: Locale = currentLocale()) =>
-  new Intl.DisplayNames([locale], { type: 'currency' }).of(code) ?? code
-
 // Intl formatters are expensive to build and a chart builds one per tick.
 const compactFormats = new Map<string, Intl.NumberFormat>()
 
