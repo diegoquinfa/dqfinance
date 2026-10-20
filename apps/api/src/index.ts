@@ -4,6 +4,7 @@ import type { AppEnv } from './app-env'
 import { createDb, schema } from './db'
 import { accountsRoutes } from './features/accounts/accounts.routes'
 import { createAuth } from './features/auth/auth'
+import { authConfigRoutes } from './features/auth/auth-config.routes'
 import { calendarRoutes } from './features/calendar/calendar.routes'
 import { balanceAdjustmentsRoutes } from './features/balance-adjustments/balance-adjustments.routes'
 import { balancesRoutes } from './features/balances/balances.routes'
@@ -32,6 +33,8 @@ const app = new Hono<AppEnv>()
   })
   // Better Auth serves sign-in, OAuth 2.1 endpoints, JWKS and the RFC 8414 / RFC 9728 discovery documents.
   .on(['GET', 'POST'], ['/api/auth/*', '/.well-known/*'], (c) => c.var.auth.handler(c.req.raw))
+  // Public flags the web reads before anyone signs in.
+  .route('/api/auth-config', authConfigRoutes)
   .route('/api/settings', settingsRoutes)
   .route('/api/onboarding', onboardingRoutes)
   .route('/api/accounts', accountsRoutes)

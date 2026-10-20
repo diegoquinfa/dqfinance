@@ -4,7 +4,10 @@ What each route holds. The design system itself (tokens, components, rules) is i
 
 | Route | What it is |
 | --- | --- |
-| `/sign-in` | Two-tone statement and the sign-in panel. Also the OAuth login page for MCP clients. Language picker inside the panel. |
+| `/sign-in` | Two-tone statement and the sign-in panel: email and password, a link to create an account, and a "forgot your password" link only when the server can send a reset link. Also the OAuth login page for MCP clients, whose signed query travels with the links to the other pages. Language picker inside the panel. |
+| `/sign-up` | The sign-up panel: name, email, password and its repeat, which the client checks before sending. It creates the account, signs the user in, and continues an OAuth flow when there is one. |
+| `/forgot-password` | The reset panel: an email address, then the same answer whether or not the address has an account. |
+| `/reset-password` | The new password and its repeat, then a link back to sign in. Without a good token it says the link expired and offers a new one. |
 | `/consent` | OAuth consent: the agent's name, then each permission as a row. Deny is `outline`, Allow is primary. |
 | `/onboarding` | Two steps (country / language / timezone, then currencies) in the same layout as sign-in. |
 | `/overview` | 01 total balance (display size, primary currency) beside the period block: Week / Month / Year with previous and next, then Spent and Received (summed by `GET /api/transactions/summary`). 02 net worth per currency (assets, card debt, net), then the month-end assets and liabilities chart with 3M / 12M. 03 accounts, 04 credit cards (rows open the source), 05 to confirm, 06 recent movements, 07 in transit. |
