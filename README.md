@@ -57,7 +57,7 @@ Inspect it with `npx @modelcontextprotocol/inspector`. Uploading and downloading
 
 **With the button:** it copies this repo to your GitHub account, creates the D1 database and R2 bucket, asks for `BETTER_AUTH_SECRET`, then runs `pnpm run build` and `pnpm run deploy` (migrations, then deploy). Every push to your copy deploys again.
 
-**By hand:** `wrangler d1 create dqfinance` and put the id in `wrangler.jsonc`, `wrangler secret put BETTER_AUTH_SECRET`, then `pnpm build && pnpm run deploy`. Use `pnpm run deploy`: `pnpm deploy` is a built-in pnpm command.
+**By hand:** `wrangler d1 create dqfinance-db` (no id to copy: wrangler finds the database by name), `wrangler secret put BETTER_AUTH_SECRET`, then `pnpm build && pnpm run deploy`. Use `pnpm run deploy`: `pnpm deploy` is a built-in pnpm command.
 
 **Email (optional):** transactional email stays off until you set `EMAIL_FROM` plus one provider's secrets: `RESEND_API_KEY` (Resend), `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (Cloudflare Email Service over REST), or `SMTP_HOST`, `SMTP_USER` and `SMTP_PASSWORD` (SMTP, port 465 by default). `EMAIL_PROVIDER=cloudflare|resend|smtp` forces one; without it the first configured provider wins. The same values go in `.dev.vars` locally.
 
