@@ -10,6 +10,8 @@ import { balanceAdjustmentsRoutes } from './features/balance-adjustments/balance
 import { balancesRoutes } from './features/balances/balances.routes'
 import { categoriesRoutes } from './features/categories/categories.routes'
 import { counterpartiesRoutes } from './features/counterparties/counterparties.routes'
+import { demoRoutes } from './features/demo/demo.routes'
+import { moveGuestData } from './features/demo/move-guest-data'
 import { documentsRoutes } from './features/documents/documents.routes'
 import { mcpRoutes } from './features/mcp/mcp.routes'
 import { onboardingRoutes } from './features/onboarding/onboarding.routes'
@@ -27,7 +29,13 @@ const app = new Hono<AppEnv>()
     // hang when a request awaits I/O that belongs to another request.
     const db = createDb(c.env.DB)
     c.set('db', db)
-    c.set('auth', createAuth(c.env, new URL(c.req.url).origin, drizzleAdapter(db, { provider: 'sqlite', schema })))
+    c.set(
+      'auth',
+      createAuth(c.env, new URL(c.req.url).origin, drizzleAdapter(db, { provider: 'sqlite', schema }), (from, to) =>
+        // A guest that signs up keeps what it recorded: the ledger moves to the new account.
+        moveGuestData(db, from, to),
+      ),
+    )
     c.set('locale', resolveLocale(c.req.header('accept-language')))
     await next()
   })
@@ -48,6 +56,7 @@ const app = new Hono<AppEnv>()
   .route('/api/recurring-expenses', recurringExpensesRoutes)
   .route('/api/calendar', calendarRoutes)
   .route('/api/push-subscriptions', pushRoutes)
+  .route('/api/demo', demoRoutes)
   .route('/mcp', mcpRoutes)
   .onError(onError)
 

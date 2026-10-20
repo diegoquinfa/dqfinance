@@ -25,6 +25,21 @@ apps/api  /mcp
 - **Better Auth** (`@better-auth/mcp`) is the OAuth 2.1 authorization server: discovery, DCR, authorize, token, JWKS, and token verification.
 - **TanStack AI** (`@tanstack/ai-mcp/server`) is only the MCP protocol layer and never sees raw tokens.
 
+## Guests
+
+A **guest** is a user with no email the person owns: it explores the app, but it never hands its
+ledger to an agent. Two layers keep it away from the tools:
+
+1. **No token is issued.** The authorization endpoint refuses an anonymous session, so the agent
+   never gets an access token. The refusal is a plain `403` (`GUEST_MCP_DENIED`) and not a scope
+   challenge: a guest cannot fix it by granting a scope, and a challenge would send the agent
+   through consent again for nothing. The rule lives in `auth.ts` (`AUTHORIZE_PATH`).
+2. **`/mcp` refuses it anyway.** Every request looks up the user behind the token's `sub` and
+   answers `403` when the user is anonymous or gone (`mcp/guest-rule.ts`). This also covers a
+   token issued before the guest signed up, whose `sub` points to a user that no longer exists.
+
+The consent page refuses too, so the agent's author sees why instead of a mystery `403`.
+
 ## Writing a tool
 
 - Read the user from `ctx.context.userId` (type `McpContext`).

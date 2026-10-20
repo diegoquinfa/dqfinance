@@ -17,18 +17,21 @@ Folders whose name says what they own are not listed below.
 ### API (`apps/api/src/features/`)
 
 - `onboarding/`: the wizard's single write (settings, currencies, categories, cash wallet).
+- `demo/`: the demo ledger a guest finds when it signs in. `demo-ledger.ts` (pure) is the plan — the months, the movements and the transfers; `seed-demo.ts` writes it in one batch; `move-guest-data.ts` moves a guest's ledger to the account it becomes when it signs up.
 - `accounts/`: banks, bank accounts, products, cash wallets, and cards. `source.ts` is the one place for where money is: ownership checks, currency, and the three-nullable-FK shape. `product-yield.ts` (pure) estimates what a product's balance earns from its annual rate.
 - `transfers/`: also fees, the in-transit state, and FX settlement.
 - `documents/`: files attached to a source (contract, terms, fee table) in R2. `document-rules.ts` (pure) holds the accepted types and the size limit; upload and download stay in the web app, since agents cannot carry binary.
 - `balances/`: `compute-balances.ts` (pure) is the one place for every balance, debt, cost basis, in-transit rule, and the as-of-date history. Also owns the list tools (`list_accounts`, `get_balance_history`).
 - `calendar/`: per day of the user's timezone, what moved and which recurring expenses fall due. `calendar-days.ts` (pure) does the day grouping and the projection.
-- `mcp/`: the MCP server; collects every feature's tools and guards `/mcp`.
+- `mcp/`: the MCP server; collects every feature's tools and guards `/mcp`. `guest-rule.ts` (pure) keeps a guest away from the tools.
 
 Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rules.
 
 ### Web (`apps/web/src/features/`)
 
-- `auth/`: also the OAuth consent card.
+- `auth/`: also the OAuth consent card, and the anonymous client that signs a guest in.
+- `landing/`: the signed-out home at `/`.
+- `demo/`: the "Try the demo" button and the seed call.
 - `settings/`: also manages categories; `categories/` holds only the query hooks.
 - `accounts/`: also the adjust-balance dialog and the source picker other forms reuse.
 - `balances/`: the overview and the source detail page (`/accounts/$type/$id`).
@@ -44,9 +47,12 @@ A feature imports only from features earlier in this order:
 ```
 categories → settings → accounts → documents → counterparties → transactions
            → recurring-expenses → balances → balance-adjustments → transfers → calendar
+           → demo
 ```
 
 `auth/` is a foundation in both apps (the API's `mcp/` and `push/` too), outside the order: any feature may import it.
+
+The API's `demo/` writes the rows of every feature's tables, so it sits last; the composition root (`index.ts`) wires its guest handoff, which keeps `auth/` from importing a feature.
 
 Four dependencies the order cannot express, the first two long-standing:
 

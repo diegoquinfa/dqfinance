@@ -32,3 +32,6 @@ Domain terms used in code, docs, and reviews. Code uses the English term; the Sp
 | **Recurring expense** (Gasto recurrente) | A repeating expense that appears in the "to confirm" inbox when due. |
 | **User currencies** (Monedas) | Currencies the user chose in onboarding; they limit every currency picker. |
 | **Primary currency** (Moneda principal) | The user's main currency, chosen in onboarding. |
+| **Guest** (Invitado) | A user with no email the person owns, created by the "Try the demo" button. Explores the app with the demo ledger; cannot connect an AI agent. Becomes a real account when it signs up, and keeps what it recorded. |
+| **Demo ledger** (Demo) | The sample data a guest finds: six months of movements, a bank with two products, a cash wallet, a credit card, contacts, and three recurring expenses. Fixed, so every guest sees the same numbers. |
+| **Landing** | The signed-out home at `/`: the promise, the feature list, the real screens, and the way in. |
