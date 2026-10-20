@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { Db } from '../../db'
 import type { Locale } from '../../shared/locale'
 import { CATEGORY_KINDS, category } from './category.schema'
-import { categoryName } from './system-categories'
+import { toCategory } from './category-payload'
 
 export const listCategoriesInput = z.object({
   kind: z.enum(CATEGORY_KINDS).optional(),
@@ -24,6 +24,6 @@ export async function listCategories(db: Db, userId: string, locale: Locale, inp
     )
     .orderBy(asc(category.createdAt))
   return rows
-    .map((row) => ({ id: row.id, kind: row.kind, name: categoryName(row, locale), system: row.systemKey !== null }))
+    .map((row) => toCategory(row, locale))
     .sort((a, b) => a.name.localeCompare(b.name, locale))
 }
