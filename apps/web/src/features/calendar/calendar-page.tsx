@@ -18,14 +18,23 @@ import { monthGrid, monthTotals, shiftDay } from './calendar-month'
 
 type Due = Calendar['due'][number]
 
+// Intl formatters are expensive to build and the grid renders on every month change.
+const formatters = new Map<string, Intl.DateTimeFormat>()
+const formatter = (options: Intl.DateTimeFormatOptions) => {
+  const key = `${currentLocale()}/${JSON.stringify(options)}`
+  let cached = formatters.get(key)
+  if (!cached) {
+    cached = new Intl.DateTimeFormat(currentLocale(), options)
+    formatters.set(key, cached)
+  }
+  return cached
+}
+
 // 2024-01-01 is a Monday: seven days from it name the weekdays in the user's language.
 const weekdays = (weekday: 'narrow' | 'short') =>
-  Array.from({ length: 7 }, (_, i) =>
-    new Intl.DateTimeFormat(currentLocale(), { weekday }).format(new Date(2024, 0, 1 + i)),
-  )
+  Array.from({ length: 7 }, (_, i) => formatter({ weekday }).format(new Date(2024, 0, 1 + i)))
 
-const monthLabel = (from: string) =>
-  new Intl.DateTimeFormat(currentLocale(), { month: 'long', year: 'numeric' }).format(new Date(`${from}T12:00`))
+const monthLabel = (from: string) => formatter({ month: 'long', year: 'numeric' }).format(new Date(`${from}T12:00`))
 
 /** A month as a grid: what was spent and received each day, and the recurring expenses due. */
 export function CalendarPage() {
