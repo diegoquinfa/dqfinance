@@ -48,7 +48,7 @@ Honest limits the workers reported; none blocks the shipped work.
 - **Statement import has no foreign-currency card rows.** Each row uses its source's currency; a card charge in another currency is not representable.
 - **History and duplicate days are UTC.** `GET /api/balances/history` month ends and import duplicate detection do not use the user's timezone.
 - **Documents have no MCP upload or download.** Agents can only `list_documents`; the binary stays in the web app.
-- **The bank-fees category is matched by its localized name on the web.** `list_categories` exposes no `systemKey`, so the match depends on the catalog.
+- **The bank-fees category is matched by its localized name on the web.** `list_categories` exposes no `systemKey`, so the match depends on the catalog. — done: `list_categories` returns `systemKey` and the web matches `bank_fees` by key.
 - **Chart animation is off unconditionally.** No reduced-motion check; the chart simply does not animate.
 
 ## Steps

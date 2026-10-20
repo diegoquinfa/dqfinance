@@ -67,7 +67,7 @@ function NewRecurringForm({
   const isCreditCard = source?.cardKind === 'credit'
   const chargeCurrency = currency || source?.currency || ''
   const pickableCategories = (categories.data ?? []).filter(
-    (category) => !category.system || category.id === defaultCategoryId,
+    (category) => !category.systemKey || category.id === defaultCategoryId,
   )
   const initialCategoryId = defaultCategoryId ?? pickableCategories[0]?.id
 
@@ -380,9 +380,7 @@ function confirmOrSkipError(...errors: (Error | null)[]) {
 export function SourceCosts({ sourceRef, index }: { sourceRef: SourceRef; index: string }) {
   const all = useRecurringExpenses(false)
   const categories = useCategories('expense', true)
-  // shortcut: the categories API hides the system key, so bank fees are matched by their
-  // localized name; upgrade when list_categories returns systemKey.
-  const bankFees = (categories.data ?? []).find((category) => category.name === m.category_bank_fees())
+  const bankFees = (categories.data ?? []).find((category) => category.systemKey === 'bank_fees')
   const costs = (all.data ?? []).filter(
     (item) => item.source.type === sourceRef.type && item.source.id === sourceRef.id,
   )
