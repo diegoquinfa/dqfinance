@@ -2,7 +2,27 @@
 
 Feedback from real users, kept next to the plans so it can shape the Later list. Newest first.
 
-## 2026-10-20 · Kriz911 (Discord)
+## 2026-10-20 · Kriz911 (Discord), web visit
+
+Seen as a visitor without an account, so only the sign-in and sign-up screens.
+
+What worked:
+
+- The dark look is polished, and the tagline "Tu dinero, registrado por ti o por tu asistente de IA" sells the idea
+  in one sentence.
+
+Problems:
+
+1. **Broken logo on sign-in.** The "Inicia sesión" card shows a broken image icon before "FINANCE". It loads fine
+   on sign-up, so the image path in the sign-in component is probably wrong.
+2. **Nothing to see before signing up.** No screenshots and no feature list. For a finance app, where trust is
+   everything, a curious visitor leaves without creating an account. A few screenshots or feature bullets on the
+   sign-in screen would help.
+3. **No footer, privacy or terms links** on either screen. With money data involved, they add credibility.
+
+Asks to be told when there is a demo or guest mode, to test it in depth.
+
+## 2026-10-20 · Kriz911 (Discord), first message
 
 What worked:
 
