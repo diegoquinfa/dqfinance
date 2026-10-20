@@ -59,4 +59,6 @@ Inspect it with `npx @modelcontextprotocol/inspector`. Uploading and downloading
 
 **By hand:** `wrangler d1 create dqfinance` and put the id in `wrangler.jsonc`, `wrangler secret put BETTER_AUTH_SECRET`, then `pnpm build && pnpm run deploy`. Use `pnpm run deploy`: `pnpm deploy` is a built-in pnpm command.
 
+**Email (optional):** transactional email stays off until you set `EMAIL_FROM` plus one provider's secrets: `RESEND_API_KEY` (Resend), `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (Cloudflare Email Service over REST), or `SMTP_HOST`, `SMTP_USER` and `SMTP_PASSWORD` (SMTP, port 465 by default). `EMAIL_PROVIDER=cloudflare|resend|smtp` forces one; without it the first configured provider wins. The same values go in `.dev.vars` locally.
+
 **Custom domain:** add it in the dashboard (Worker → Settings → Domains & Routes). Keep `routes` out of `wrangler.jsonc`: a deploy replaces dashboard routes with the ones in the file. The auth issuer and the MCP URL follow whichever hostname a request arrives on, so there is nothing else to configure.

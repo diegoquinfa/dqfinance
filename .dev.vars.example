@@ -5,3 +5,16 @@ BETTER_AUTH_SECRET=change-me-to-a-32-byte-random-secret
 VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
 VAPID_SUBJECT=
+
+# Transactional email: optional, leave every value empty to turn email off.
+# EMAIL_PROVIDER picks one provider (cloudflare | resend | smtp); empty picks the first configured one.
+# EMAIL_FROM is required by every provider. SMTP_PORT defaults to 465.
+EMAIL_PROVIDER=
+EMAIL_FROM=
+RESEND_API_KEY=
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_API_TOKEN=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASSWORD=
