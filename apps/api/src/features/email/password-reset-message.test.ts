@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { escapeHtml, passwordResetMessage } from './password-reset-message.ts'
+import { passwordResetMessage } from './password-reset-message.ts'
 
-const url = 'https://app.test/api/auth/reset-password/abc123?callbackURL=https%3A%2F%2Fapp.test%2Freset-password'
+const url = 'https://app.test/api/auth/reset-password/abc123?callbackURL=https%3A%2F%2Fapp.test%2Freset-password&next=%2Faccounts'
 
 test('the message carries the link in both bodies', () => {
   const message = passwordResetMessage('en', url)
   assert.ok(message.text.includes(url))
-  assert.ok(message.html.includes(escapeHtml(url)))
+  // The html escapes the link, the text version keeps it clickable as it is.
+  assert.ok(message.html.includes(url.replace('&', '&amp;')))
+  assert.ok(!message.html.includes(url))
 })
 
 test('each locale has its own subject and body', () => {
