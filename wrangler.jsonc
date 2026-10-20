@@ -24,6 +24,10 @@
       "bucket_name": "dqfinance-documents"
     }
   ],
+  // Cloudflare Email Service binding, unrestricted. It sends only when EMAIL_FROM is set and no
+  // other provider is configured, because this file is shared by every deployment. The sender
+  // domain must be onboarded in Email Service -> Email Sending.
+  "send_email": [{ "name": "EMAIL" }],
   "observability": {
     "enabled": true
   },

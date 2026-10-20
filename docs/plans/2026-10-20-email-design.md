@@ -8,12 +8,12 @@ One sender, picked at request time from secrets. Nothing is required.
 
 | Provider | When it is selected | How it sends |
 | --- | --- | --- |
-| Cloudflare binding | `env.EMAIL.send` exists, and `EMAIL_PROVIDER` is unset or `cloudflare` | Workers Email Service `send()` ([Workers API](https://developers.cloudflare.com/email-service/api/send-emails/workers-api/), updated 2026-10-15) |
-| Cloudflare REST | account id + API token, provider `cloudflare` or no earlier match | `POST /client/v4/accounts/{account_id}/email/sending/send` ([REST](https://developers.cloudflare.com/email-service/api/send-emails/rest-api/), 2026-10-15) |
 | Resend | `RESEND_API_KEY`, provider `resend` or no earlier match | `POST https://api.resend.com/emails` |
 | SMTP | `SMTP_HOST` + user + password + `EMAIL_FROM`, provider `smtp` or no earlier match | `cloudflare:sockets`. Port 465 implicit TLS. Port 587 STARTTLS. AUTH PLAIN |
+| Cloudflare REST | account id + API token, provider `cloudflare` or no earlier match | `POST /client/v4/accounts/{account_id}/email/sending/send` ([REST](https://developers.cloudflare.com/email-service/api/send-emails/rest-api/), 2026-10-15) |
+| Cloudflare binding | `env.EMAIL.send` exists, provider `cloudflare` or no earlier match | Workers Email Service `send()` ([Workers API](https://developers.cloudflare.com/email-service/api/send-emails/workers-api/), updated 2026-10-15) |
 
-`EMAIL_FROM` is required for all of them. The `send_email` binding is not declared in `wrangler.jsonc`: the file is shared by every deployment, and it is unverified whether a Deploy-button install without Email Service survives it. A binding added in the dashboard does not help either: the wrangler file is the source of truth, so a deploy may drop it. Use the REST token; secrets survive deploys.
+`EMAIL_FROM` is required for all of them. The `send_email` binding is declared in `wrangler.jsonc` (as `EMAIL`), so a deploy cannot drop it. That file is shared by every deployment, so the binding exists everywhere: it is the fallback with the lowest priority, and a Resend key, an SMTP config or a Cloudflare REST token all win over it. Without `EMAIL_FROM` email is off even with the binding. The sender domain must be onboarded under *Email Service → Email Sending*.
 
 Cloudflare Email Service (docs 2026-10-15) can send to any recipient only after a domain is onboarded. Before that, only verified destination addresses work. SMTP on Cloudflare's own host (`smtp.mx.cloudflare.net:465`, user `api_token`) is just the SMTP provider pointed at that host; we do not special-case it.
 

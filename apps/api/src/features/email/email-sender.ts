@@ -69,29 +69,39 @@ export function emailSenderFrom(env: EmailEnv, connect: SmtpConnector = connectS
     if (provider === 'smtp') return smtpSender(config, from, connect)
     return null
   }
-  // No explicit provider: the first complete configuration wins.
-  if (config.EMAIL?.send) return cloudflareSender(config, from)
+  // No explicit provider: the first complete configuration wins. The binding is last: it is
+  // declared in wrangler.jsonc, so it exists in every deployment and must not shadow a provider
+  // someone configured on purpose.
   if (config.RESEND_API_KEY) return resendSender(config, from)
   if (config.SMTP_HOST && config.SMTP_USER && config.SMTP_PASSWORD) return smtpSender(config, from, connect)
-  if (config.CLOUDFLARE_ACCOUNT_ID && config.CLOUDFLARE_API_TOKEN) return cloudflareSender(config, from)
+  if (config.CLOUDFLARE_ACCOUNT_ID && config.CLOUDFLARE_API_TOKEN) return cloudflareRestSender(config, from)
+  const binding = config.EMAIL
+  if (binding?.send) return cloudflareBindingSender(binding, from)
   return null
 }
 
+/** An explicit `cloudflare` provider: the binding when it exists, the REST API otherwise. */
 function cloudflareSender(env: EmailEnv, from: string): EmailSender | null {
   const binding = env.EMAIL
-  if (binding?.send) {
-    return {
-      send: async (message) => {
-        await binding.send({
-          to: message.to,
-          from,
-          subject: message.subject,
-          text: message.text,
-          html: message.html,
-        })
-      },
-    }
+  if (binding?.send) return cloudflareBindingSender(binding, from)
+  return cloudflareRestSender(env, from)
+}
+
+function cloudflareBindingSender(binding: EmailBinding, from: string): EmailSender {
+  return {
+    send: async (message) => {
+      await binding.send({
+        to: message.to,
+        from,
+        subject: message.subject,
+        text: message.text,
+        html: message.html,
+      })
+    },
   }
+}
+
+function cloudflareRestSender(env: EmailEnv, from: string): EmailSender | null {
   const accountId = env.CLOUDFLARE_ACCOUNT_ID
   const token = env.CLOUDFLARE_API_TOKEN
   if (!accountId || !token) return null

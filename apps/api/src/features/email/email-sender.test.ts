@@ -59,6 +59,15 @@ const smtpReplies = [
   '221 bye',
 ]
 
+/** A binding that records what it was asked to send. */
+function recordingBinding(sent: string[]): EmailBinding {
+  return {
+    send: async (message) => {
+      sent.push(`${message.from} -> ${message.to}`)
+    },
+  }
+}
+
 test('no secrets means no sender', () => {
   assert.equal(emailSenderFrom({}), null)
 })
@@ -73,19 +82,78 @@ test('EMAIL_FROM is required for every provider', () => {
   assert.equal(emailSenderFrom({ RESEND_API_KEY: 'key' }), null)
   assert.equal(emailSenderFrom({ ...smtpEnv, EMAIL_FROM: undefined }), null)
   assert.equal(emailSenderFrom({ CLOUDFLARE_ACCOUNT_ID: 'id', CLOUDFLARE_API_TOKEN: 'token' }), null)
+  assert.equal(emailSenderFrom({ EMAIL: recordingBinding([]) }), null)
 })
 
-test('the binding beats a resend key', async () => {
+test('a resend key beats the binding', async () => {
   const sent: string[] = []
-  const binding: EmailBinding = {
-    send: async (message) => {
-      sent.push(`${message.from} -> ${message.to}`)
-    },
-  }
   const fetcher = fakeFetch()
   fetcher.install(() => new Response('{}', { status: 200 }))
   try {
-    const sender = emailSenderFrom({ EMAIL_FROM: 'a@b.c', RESEND_API_KEY: 'key', EMAIL: binding })
+    const sender = emailSenderFrom({
+      EMAIL_FROM: 'a@b.c',
+      RESEND_API_KEY: 'key',
+      EMAIL: recordingBinding(sent),
+    })
+    assert.ok(sender)
+    await sender.send({ to: 'to@example.com', subject: 'Hi', text: 'body' })
+  } finally {
+    fetcher.restore()
+  }
+  assert.deepEqual(sent, [])
+  assert.equal(fetcher.calls[0]?.url, 'https://api.resend.com/emails')
+})
+
+test('the cloudflare rest token beats the binding', async () => {
+  const sent: string[] = []
+  const fetcher = fakeFetch()
+  fetcher.install(() => new Response('{"success":true}', { status: 200 }))
+  try {
+    const sender = emailSenderFrom({
+      EMAIL_FROM: 'a@b.c',
+      CLOUDFLARE_ACCOUNT_ID: 'id',
+      CLOUDFLARE_API_TOKEN: 'token',
+      EMAIL: recordingBinding(sent),
+    })
+    assert.ok(sender)
+    await sender.send({ to: 'to@example.com', subject: 'Hi', text: 'body' })
+  } finally {
+    fetcher.restore()
+  }
+  assert.deepEqual(sent, [])
+  assert.equal(
+    fetcher.calls[0]?.url,
+    'https://api.cloudflare.com/client/v4/accounts/id/email/sending/send',
+  )
+})
+
+test('the binding alone sends through the binding', async () => {
+  const sent: string[] = []
+  const fetcher = fakeFetch()
+  fetcher.install(() => new Response('{}', { status: 200 }))
+  try {
+    const sender = emailSenderFrom({ EMAIL_FROM: 'a@b.c', EMAIL: recordingBinding(sent) })
+    assert.ok(sender)
+    await sender.send({ to: 'to@example.com', subject: 'Hi', text: 'body' })
+  } finally {
+    fetcher.restore()
+  }
+  assert.deepEqual(sent, ['a@b.c -> to@example.com'])
+  assert.equal(fetcher.calls.length, 0)
+})
+
+test('an explicit cloudflare provider uses the binding over the rest token', async () => {
+  const sent: string[] = []
+  const fetcher = fakeFetch()
+  fetcher.install(() => new Response('{"success":true}', { status: 200 }))
+  try {
+    const sender = emailSenderFrom({
+      EMAIL_FROM: 'a@b.c',
+      EMAIL_PROVIDER: 'cloudflare',
+      CLOUDFLARE_ACCOUNT_ID: 'id',
+      CLOUDFLARE_API_TOKEN: 'token',
+      EMAIL: recordingBinding(sent),
+    })
     assert.ok(sender)
     await sender.send({ to: 'to@example.com', subject: 'Hi', text: 'body' })
   } finally {
