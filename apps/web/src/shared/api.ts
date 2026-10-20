@@ -1,10 +1,12 @@
 import type { AppType } from '@dqfinance/api/app-type'
 import { hc } from 'hono/client'
-import { API_URL } from './config'
 import { currentLocale, m } from './i18n'
 
-/** One client for the whole app: cookies for the session, and the locale for translated responses. */
-export const api = hc<AppType>(API_URL, {
+/**
+ * One client for the whole app: cookies for the session, and the locale for translated responses.
+ * The API shares this origin, and every call runs in the browser (`ssr: false`), so paths stay relative.
+ */
+export const api = hc<AppType>('/', {
   init: { credentials: 'include' },
   headers: () => ({ 'accept-language': currentLocale() }),
 })
@@ -30,7 +32,7 @@ async function apiFailure(response: { status: number; json?(): Promise<unknown> 
   return new ApiError(code ?? 'internal', message ?? m.error_generic(undefined, { locale: currentLocale() }), response.status)
 }
 
-const networkError = () => new ApiError('network', m.error_network({ url: API_URL }, { locale: currentLocale() }), 0)
+const networkError = () => new ApiError('network', m.error_network({ url: location.origin }, { locale: currentLocale() }), 0)
 
 /**
  * Awaits an API call and returns its body, turning failures into ApiError with the API's

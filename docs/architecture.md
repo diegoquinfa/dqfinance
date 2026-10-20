@@ -2,8 +2,10 @@
 
 ## Workspaces
 
-- `apps/api`: REST API, OAuth 2.1 authorization server, and the MCP server at `/mcp`, on Cloudflare Workers (Hono, D1 + Drizzle). MCP wiring: [mcp.md](./mcp.md).
-- `apps/web`: the web app, plus the OAuth sign-in and consent pages (TanStack Start).
+- `apps/api`: REST API, OAuth 2.1 authorization server, and the MCP server at `/mcp` (Hono, D1 + Drizzle). A library, not a Worker of its own. MCP wiring: [mcp.md](./mcp.md).
+- `apps/web`: the web app, plus the OAuth sign-in and consent pages (TanStack Start). It is the one Cloudflare Worker: `src/server.ts` hands `/api/*`, `/.well-known/*` and `/mcp` to `apps/api` and the rest to TanStack Start, so both share one origin and the session cookie is first-party.
+
+The Worker's `wrangler.jsonc` sits at the repo root, where the Deploy to Cloudflare button reads it; the Vite plugin points at it with `configPath`. Run `wrangler` from `apps/web` with an explicit `-c`: Wrangler ignores the build's redirected config when the user config lives in another directory.
 - `packages/i18n`: the one message catalog both apps use (Paraglide).
 
 ## Vertical slices

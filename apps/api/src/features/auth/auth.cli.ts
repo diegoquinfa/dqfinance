@@ -3,10 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { createAuth } from './auth'
 
 export const auth = createAuth(
-  {
-    BETTER_AUTH_URL: 'http://localhost:8787',
-    WEB_URL: 'http://localhost:3000',
-    BETTER_AUTH_SECRET: 'schema-generation-only',
-  } as CloudflareBindings,
+  { BETTER_AUTH_SECRET: 'schema-generation-only' } as CloudflareBindings,
+  'http://localhost:3000',
   drizzleAdapter({}, { provider: 'sqlite' }),
 )

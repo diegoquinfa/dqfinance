@@ -10,7 +10,8 @@
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "pnpm run build && wrangler deploy",
+    "deploy": "wrangler d1 migrations apply DB --remote -c ../../wrangler.jsonc && wrangler deploy -c dist/server/wrangler.json",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local -c ../../wrangler.jsonc --persist-to .wrangler/state",
     "check-types": "tsr generate && tsc --noEmit",
     "test": "node --test \"src/**/*.test.ts\""
   },

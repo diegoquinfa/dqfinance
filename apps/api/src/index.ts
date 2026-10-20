@@ -1,6 +1,5 @@
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
 import type { AppEnv } from './app-env'
 import { createDb, schema } from './db'
 import { accountsRoutes } from './features/accounts/accounts.routes'
@@ -27,11 +26,10 @@ const app = new Hono<AppEnv>()
     // hang when a request awaits I/O that belongs to another request.
     const db = createDb(c.env.DB)
     c.set('db', db)
-    c.set('auth', createAuth(c.env, drizzleAdapter(db, { provider: 'sqlite', schema })))
+    c.set('auth', createAuth(c.env, new URL(c.req.url).origin, drizzleAdapter(db, { provider: 'sqlite', schema })))
     c.set('locale', resolveLocale(c.req.header('accept-language')))
     await next()
   })
-  .use('/api/*', (c, next) => cors({ origin: c.env.WEB_URL, credentials: true })(c, next))
   // Better Auth serves sign-in, OAuth 2.1 endpoints, JWKS and the RFC 8414 / RFC 9728 discovery documents.
   .on(['GET', 'POST'], ['/api/auth/*', '/.well-known/*'], (c) => c.var.auth.handler(c.req.raw))
   .route('/api/settings', settingsRoutes)

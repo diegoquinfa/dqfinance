@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      // The bundle holds apps/api (which has no build task to hash) and reads the root wrangler.jsonc.
+      "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/wrangler.jsonc", "$TURBO_ROOT$/apps/api/src/**"]
+    }
+  }
+}

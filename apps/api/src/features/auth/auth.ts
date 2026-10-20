@@ -5,25 +5,25 @@ import { jwt } from 'better-auth/plugins'
 // /mcp requires all of them, so per-feature scopes would add nothing yet; split them when tools check scopes individually.
 export const MCP_SCOPES = ['finance:read', 'finance:write'] as const
 
-export const mcpResource = (env: CloudflareBindings) => `${env.BETTER_AUTH_URL}/mcp`
+export const mcpResource = (origin: string) => `${origin}/mcp`
 
-// Built per request: Workers only expose bindings and vars inside the request scope.
-export function createAuth(env: CloudflareBindings, database: BetterAuthOptions['database']) {
+// Built per request: Workers only expose bindings inside the request scope. `origin` is the
+// request's: the web app and the API share it, and Cloudflare only routes hostnames bound to this Worker.
+export function createAuth(env: CloudflareBindings, origin: string, database: BetterAuthOptions['database']) {
   return betterAuth({
-    baseURL: env.BETTER_AUTH_URL,
+    baseURL: origin,
     basePath: '/api/auth',
     secret: env.BETTER_AUTH_SECRET,
     database,
-    trustedOrigins: [env.WEB_URL],
     emailAndPassword: { enabled: true },
     // The OAuth provider issues tokens through /oauth2/token; the session JWT endpoint is not needed.
     disabledPaths: ['/token'],
     plugins: [
       jwt(),
       mcp({
-        loginPage: `${env.WEB_URL}/sign-in`,
-        consentPage: `${env.WEB_URL}/consent`,
-        resource: mcpResource(env),
+        loginPage: `${origin}/sign-in`,
+        consentPage: `${origin}/consent`,
+        resource: mcpResource(origin),
         scopes: ['openid', 'profile', 'email', 'offline_access', ...MCP_SCOPES],
         // shortcut: DCR instead of CIMD because @better-auth/cimd ships only a Node transport;
         // switch to cimd() once a Workers-safe fetchClientMetadataResource exists.

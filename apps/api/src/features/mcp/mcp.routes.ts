@@ -43,6 +43,6 @@ export const mcpRoutes = new Hono<AppEnv>().all('/', (c) =>
       const push = pushConfigFrom(c.env)
       return mcpServer.handle(request, { context: { db: c.var.db, userId: claims.sub, locale, push } })
     },
-    { resource: mcpResource(c.env), requiredScopes: MCP_SCOPES },
+    { resource: mcpResource(new URL(c.req.url).origin), requiredScopes: MCP_SCOPES },
   )(c.req.raw),
 )
