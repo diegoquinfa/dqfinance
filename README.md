@@ -63,13 +63,13 @@ Inspect it with `npx @modelcontextprotocol/inspector`. Uploading and downloading
 
 | Provider | Secrets, plus `EMAIL_FROM` (for example `DQFinance <no-reply@example.com>`) |
 | --- | --- |
-| Cloudflare Email Service | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` |
+| Cloudflare Email Service | the `EMAIL` binding (already in `wrangler.jsonc`): only `EMAIL_FROM`; or REST with `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` |
 | Resend | `RESEND_API_KEY` |
 | Any SMTP server | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_PORT` (default 465) |
 
-`EMAIL_PROVIDER=cloudflare|resend|smtp` forces one; without it the first complete configuration wins. An incomplete one turns email off rather than failing.
+`EMAIL_PROVIDER=cloudflare|resend|smtp` forces one; without it the first complete configuration wins, in this order: Resend, SMTP, Cloudflare REST, then the `EMAIL` binding. An incomplete one turns email off rather than failing.
 
-- **Cloudflare:** the domain must use Cloudflare DNS, sending to any recipient needs Workers Paid, and the domain must be onboarded under *Email Service → Email Sending* (it adds the SPF and DKIM records). The API token needs only *Email Sending: Edit*. Email Sending is in beta.
+- **Cloudflare:** the domain must use Cloudflare DNS, sending to any recipient needs Workers Paid, and the domain must be onboarded under *Email Service → Email Sending* (it adds the SPF and DKIM records). The API token (REST only) needs only *Email Sending: Edit*. Email Sending is in beta.
 - **Resend:** verify the `EMAIL_FROM` domain in Resend.
 - **SMTP:** port 465 (implicit TLS) or 587 (STARTTLS); Workers cannot open port 25. Authentication is `AUTH PLAIN`, one recipient per message.
 
