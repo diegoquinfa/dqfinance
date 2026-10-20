@@ -33,6 +33,7 @@ const links = [
   { to: '/accounts', label: m.nav_accounts },
   { to: '/transfers', label: m.nav_transfers },
   { to: '/recurring', label: m.nav_recurring },
+  { to: '/calendar', label: m.nav_calendar },
   { to: '/contacts', label: m.nav_contacts },
   { to: '/settings', label: m.nav_settings },
 ] as const
