@@ -1,6 +1,7 @@
 import { formatDate } from '#/shared/dates'
 import { m } from '#/shared/i18n'
 import { formatMoney, formatSignedAmount } from '#/shared/money'
+import { sourceLabel } from './source-label'
 import type { Transaction } from './transactions-api'
 
 /** One movement: what and when on the left, the amount on the right. Used by every movement list. */
@@ -40,7 +41,7 @@ export function TransactionRow({
             <span aria-hidden className="mx-2 text-faint">
               /
             </span>
-            {transaction.source.name}
+            {sourceLabel(transaction.source)}
           </>
         )}
         <span aria-hidden className="mx-2 text-faint">

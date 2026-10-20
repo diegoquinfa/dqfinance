@@ -1,10 +1,11 @@
 import { and, desc, eq, gte, lt, or } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/sqlite-core'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { isoDate } from '../../shared/dates'
 import type { Locale } from '../../shared/locale'
 import { fromCents } from '../../shared/money'
-import { card, cashWallet, product } from '../accounts/account.schema'
+import { bank, bankAccount, card, cashWallet, product } from '../accounts/account.schema'
 import { cardProduct } from '../accounts/card-currency'
 import { SOURCE_TYPES, sourceRefOf } from '../accounts/source'
 import { category } from '../categories/category.schema'
@@ -25,6 +26,12 @@ export const listTransactionsInput = z.object({
 
 // Currency of the card behind a charge: primaryAmount is expressed in it.
 export { cardProduct } from '../accounts/card-currency'
+
+// The bank behind a source: the product's own bank account, and the one of a card's product.
+const sourceAccount = alias(bankAccount, 'source_account')
+const sourceBank = alias(bank, 'source_bank')
+const cardAccount = alias(bankAccount, 'card_account')
+const cardBank = alias(bank, 'card_bank')
 
 /** The WHERE of a movement query. The query must left-join `card` on `transaction.cardId`. */
 export function transactionFilters(userId: string, input: Omit<z.infer<typeof listTransactionsInput>, 'limit'>) {
@@ -59,6 +66,10 @@ export async function listTransactions(db: Db, userId: string, locale: Locale, i
       counterpartyName: counterparty.name,
       counterpartyKind: counterparty.kind,
       cardCurrency: cardProduct.currency,
+      sourceBankName: sourceBank.name,
+      sourceLast4: sourceAccount.last4,
+      cardBankName: cardBank.name,
+      cardLast4: card.last4,
     })
     .from(transaction)
     .leftJoin(product, eq(product.id, transaction.productId))
@@ -67,6 +78,10 @@ export async function listTransactions(db: Db, userId: string, locale: Locale, i
     .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
     .innerJoin(category, eq(category.id, transaction.categoryId))
     .leftJoin(counterparty, eq(counterparty.id, transaction.counterpartyId))
+    .leftJoin(sourceAccount, eq(sourceAccount.id, product.bankAccountId))
+    .leftJoin(sourceBank, eq(sourceBank.id, sourceAccount.bankId))
+    .leftJoin(cardAccount, eq(cardAccount.id, cardProduct.bankAccountId))
+    .leftJoin(cardBank, eq(cardBank.id, cardAccount.bankId))
     .where(transactionFilters(userId, input))
     .orderBy(desc(transaction.occurredAt))
     .limit(input.limit ?? 50)
@@ -79,7 +94,13 @@ export async function listTransactions(db: Db, userId: string, locale: Locale, i
     primaryAmount: t.primaryAmountCents === null ? null : fromCents(t.primaryAmountCents),
     // The card's own currency; the charge currency is `currency`.
     primaryCurrency: t.primaryAmountCents === null ? null : (joined.cardCurrency ?? t.currency),
-    source: { ...sourceRefOf(t), name: joined.productName ?? joined.walletName ?? joined.cardName ?? '' },
+    source: {
+      ...sourceRefOf(t),
+      name: joined.productName ?? joined.walletName ?? joined.cardName ?? '',
+      // The bank the money moved in: null for a cash wallet, which has none.
+      bankName: t.productId ? joined.sourceBankName : t.cardId ? joined.cardBankName : null,
+      last4: t.productId ? joined.sourceLast4 : t.cardId ? joined.cardLast4 : null,
+    },
     category: {
       id: t.categoryId,
       name: categoryName({ name: joined.categoryName, systemKey: joined.categorySystemKey }, locale),
