@@ -15,6 +15,7 @@ import { CodeCombobox } from '#/shared/ui/code-combobox'
 import { Spinner } from '#/shared/ui/spinner'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { toast } from 'sonner'
+import { PasswordSection } from './password-section'
 import { PushSection } from './push-section'
 import { useSettings, useUpdateSettings } from './settings-api'
 
@@ -182,7 +183,9 @@ export function SettingsPage() {
 
       <PushSection />
 
-      <Section index="05" label={m.settings_session()}>
+      <PasswordSection />
+
+      <Section index="06" label={m.settings_session()}>
         <Button variant="outline" onClick={() => void authClient.signOut()}>
           {m.action_sign_out()}
         </Button>
