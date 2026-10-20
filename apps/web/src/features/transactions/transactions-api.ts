@@ -5,6 +5,7 @@ import { api, unwrap } from '#/shared/api'
 export type Transaction = InferResponseType<typeof api.api.transactions.$get, 200>[number]
 export type NewTransaction = InferRequestType<typeof api.api.transactions.$post>['json']
 export type TransactionFilters = InferRequestType<typeof api.api.transactions.$get>['query']
+export type TransactionPatch = InferRequestType<(typeof api.api.transactions)[':id']['$patch']>['json']
 
 export const transactionsQuery = (filters: TransactionFilters = { limit: 20 }) =>
   queryOptions({
@@ -40,6 +41,23 @@ export function useCreateTransaction() {
   const invalidate = useInvalidateTransactions()
   return useMutation({
     mutationFn: async (json: NewTransaction) => unwrap(api.api.transactions.$post({ json })),
+    onSuccess: invalidate,
+  })
+}
+
+export function useUpdateTransaction() {
+  const invalidate = useInvalidateTransactions()
+  return useMutation({
+    mutationFn: async ({ id, json }: { id: string; json: TransactionPatch }) =>
+      unwrap(api.api.transactions[':id'].$patch({ param: { id }, json })),
+    onSuccess: invalidate,
+  })
+}
+
+export function useDeleteTransaction() {
+  const invalidate = useInvalidateTransactions()
+  return useMutation({
+    mutationFn: async (id: string) => unwrap(api.api.transactions[':id'].$delete({ param: { id } })),
     onSuccess: invalidate,
   })
 }

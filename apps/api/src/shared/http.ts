@@ -39,6 +39,8 @@ export const ERROR_CODES = [
   'pocket_currency_mismatch',
   'pocket_type_locked',
   'card_on_pocket',
+  'transaction_not_found',
+  'transaction_from_transfer',
 ] as const
 
 export type ErrorCode = (typeof ERROR_CODES)[number]
