@@ -9,8 +9,8 @@ MCP client (Claude, Cursor, …)
    │ 1. POST /mcp without a token → 401 + WWW-Authenticate: resource_metadata=…/.well-known/oauth-protected-resource/mcp
    │ 2. discovers the authorization server (/.well-known/oauth-authorization-server/api/auth)
    │ 3. registers itself (DCR: /api/auth/oauth2/register)
-   │ 4. authorization code + PKCE → user signs in at WEB_URL/sign-in, approves at WEB_URL/consent
-   │ 5. receives a JWT access token, audience-bound to BETTER_AUTH_URL/mcp
+   │ 4. authorization code + PKCE → user signs in at <origin>/sign-in, approves at <origin>/consent
+   │ 5. receives a JWT access token, audience-bound to <origin>/mcp
    ▼
 apps/api  /mcp
    requireMcpAuth (Better Auth)   verifies signature (JWKS), issuer, audience, expiry, required scopes
@@ -34,6 +34,7 @@ apps/api  /mcp
 
 ## Gotchas
 
+- **Origin:** `<origin>` is the request's, passed to `createAuth` and `mcpResource`. Each hostname the Worker answers on is its own issuer, so a token from one does not work on another.
 - **Workers:** create the auth instance per request with `createAuth`, never at module scope. Better Auth starts D1 I/O on init, and a Worker hangs when a request awaits I/O that belongs to another request.
 - **DCR is a shortcut:** `@better-auth/cimd` ships only a Node transport. Switch to `cimd()` once there is a Workers-safe `fetchClientMetadataResource`.
 
