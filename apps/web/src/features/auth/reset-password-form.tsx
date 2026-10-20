@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useSearch } from '@tanstack/react-router'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '#/shared/ui/card'
@@ -12,10 +13,9 @@ import { LocaleSwitch } from './locale-switch'
 import { MIN_PASSWORD_LENGTH, passwordProblem, passwordProblemMessage } from './password-rule'
 
 export function ResetPasswordForm() {
-  const params = new URLSearchParams(window.location.search)
-  const token = params.get('token')
+  const { token, error: linkError } = useSearch({ from: '/reset-password' })
   // Better Auth sends the user back with `?error=INVALID_TOKEN` when the link is no longer good.
-  const expired = !token || params.has('error')
+  const expired = !token || linkError !== undefined
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string>()
