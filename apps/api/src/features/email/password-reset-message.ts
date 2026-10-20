@@ -17,7 +17,7 @@ const HTML_ESCAPES: Record<string, string> = {
 }
 
 /** Escapes the one part of the message that comes from outside: the link. */
-export function escapeHtml(value: string): string {
+function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => HTML_ESCAPES[character] ?? character)
 }
 

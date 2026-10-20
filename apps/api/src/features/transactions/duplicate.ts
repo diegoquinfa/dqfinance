@@ -7,7 +7,7 @@ export type MovementFingerprint = {
 }
 
 /** Calendar day in UTC, matching the days the API stores (occurred_at is a timestamp). */
-export const calendarDay = (at: Date) => at.toISOString().slice(0, 10)
+const calendarDay = (at: Date) => at.toISOString().slice(0, 10)
 
 const signature = (m: MovementFingerprint) => `${m.type}|${m.amountCents}|${calendarDay(m.occurredAt)}`
 

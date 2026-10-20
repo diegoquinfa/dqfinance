@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
+import { Autocomplete, AutocompleteItem, ComboboxContent, ComboboxInput, ComboboxList } from '#/shared/ui/combobox'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { Label } from '#/shared/ui/label'
@@ -20,7 +21,6 @@ import {
   type ProductInput,
 } from './accounts-api'
 import { productTypes } from './add-dialogs'
-import { BankNameInput } from './bank-name-input'
 import { percentToBps } from './rates'
 import { suggestedBanks } from './suggested-banks'
 
@@ -215,13 +215,26 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="new-bank">{m.label_bank()}</FieldLabel>
-            <BankNameInput
-              id="new-bank"
+            {/* A bank's name: free text, with the country's known banks suggested as the user types. */}
+            <Autocomplete
+              items={suggestions}
               name="bankName"
-              suggestions={suggestions}
+              required
               value={bankText ?? preselectedBank?.name ?? ''}
               onValueChange={setBankText}
-            />
+            >
+              <ComboboxInput id="new-bank" showTrigger={false} maxLength={80} />
+              {/* Like a datalist, nothing shows when no suggestion matches. */}
+              <ComboboxContent className="data-empty:hidden">
+                <ComboboxList>
+                  {(bank: string) => (
+                    <AutocompleteItem key={bank} value={bank}>
+                      {bank}
+                    </AutocompleteItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Autocomplete>
             <FieldDescription>
               {!text
                 ? m.accounts_new_bank_hint()

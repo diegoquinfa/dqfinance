@@ -2,8 +2,8 @@ import { and, asc, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import type { Locale } from '../../shared/locale'
+import { categoryName } from './category-display'
 import { CATEGORY_KINDS, category } from './category.schema'
-import { toCategory } from './category-payload'
 
 export const listCategoriesInput = z.object({
   kind: z.enum(CATEGORY_KINDS).optional(),
@@ -24,6 +24,8 @@ export async function listCategories(db: Db, userId: string, locale: Locale, inp
     )
     .orderBy(asc(category.createdAt))
   return rows
-    .map((row) => toCategory(row, locale))
+    // The system key identifies the categories booked automatically, so a caller can match them by
+    // key instead of by their translated name.
+    .map((row) => ({ id: row.id, kind: row.kind, name: categoryName(row, locale), systemKey: row.systemKey }))
     .sort((a, b) => a.name.localeCompare(b.name, locale))
 }

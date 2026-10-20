@@ -6,7 +6,7 @@ const countryCodes =
     ' ',
   )
 
-export const countryLabel = (code: string, locale: Locale = currentLocale()) =>
+const countryLabel = (code: string, locale: Locale = currentLocale()) =>
   new Intl.DisplayNames([locale], { type: 'region' }).of(code.toUpperCase()) ?? code
 
 export const countriesByLabel = (locale: Locale = currentLocale()) =>
@@ -27,7 +27,7 @@ export function browserCountry(): string | null {
   }
 }
 
-export const currencyCodes = () => Intl.supportedValuesOf('currency')
+const currencyCodes = () => Intl.supportedValuesOf('currency')
 
 export const currencyLabel = (code: string, locale: Locale = currentLocale()) =>
   `${code} · ${new Intl.DisplayNames([locale], { type: 'currency' }).of(code) ?? code}`

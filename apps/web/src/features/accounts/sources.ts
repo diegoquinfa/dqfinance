@@ -102,6 +102,3 @@ export const cashAndProducts = (sources: SourceOption[]) => sources.filter((s) =
 /** Products, cash wallets, and credit cards: destinations for a transfer. */
 export const transferDestinations = (sources: SourceOption[]) =>
   sources.filter((s) => s.ref.type !== 'card' || s.cardKind === 'credit')
-
-/** Every source: cards included, for recording a movement. */
-export const allSources = (sources: SourceOption[]) => sources

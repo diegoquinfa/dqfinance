@@ -8,8 +8,6 @@ export const SYSTEM_CATEGORY_KEYS = ['fx_loss', 'fx_gain', 'bank_fees', 'other_e
 
 export type SystemCategoryKey = (typeof SYSTEM_CATEGORY_KEYS)[number]
 
-export type CategoryKind = (typeof CATEGORY_KINDS)[number]
-
 export const category = sqliteTable(
   'category',
   {
