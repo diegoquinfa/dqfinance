@@ -5,20 +5,36 @@ import { sendPush } from '../push/send-push'
 import {
   confirmRecurringExpense,
   confirmRecurringExpenseInput,
+  deleteRecurringExpense,
   skipRecurringExpense,
   skipRecurringExpenseInput,
 } from './confirm-recurring-expense'
-import { listRecurringExpenses } from './list-recurring-expenses'
+import { createRecurringExpense, createRecurringExpenseInput } from './create-recurring-expense'
+import { listRecurringExpenses, listRecurringExpensesInput } from './list-recurring-expenses'
 
 export const recurringExpenseTools = [
   toolDefinition({
-    name: 'list_pending_recurring',
-    description: "Recurring expenses that are due (the user's 'to confirm' inbox). Ask the user before confirming each one.",
-    inputSchema: z.object({}),
+    name: 'list_recurring',
+    description:
+      "The user's recurring expenses (subscriptions, bills). pending: true returns only the due ones, the 'to confirm' inbox; ask the user before confirming each one.",
+    inputSchema: listRecurringExpensesInput,
     metadata: { annotations: { readOnlyHint: true } },
-  }).server<McpContext>(async (_input, ctx) => ({
-    pending: await listRecurringExpenses(ctx.context.db, ctx.context.userId, ctx.context.locale, { pending: true }),
+  }).server<McpContext>(async (input, ctx) => ({
+    recurring: await listRecurringExpenses(ctx.context.db, ctx.context.userId, ctx.context.locale, input),
   })),
+
+  toolDefinition({
+    name: 'create_recurring',
+    description:
+      'Track a subscription or bill that repeats. It records nothing now: each due date appears in the inbox to confirm or skip.',
+    inputSchema: createRecurringExpenseInput,
+  }).server<McpContext>((input, ctx) => createRecurringExpense(ctx.context.db, ctx.context.userId, input)),
+
+  toolDefinition({
+    name: 'delete_recurring',
+    description: 'Stop tracking a recurring expense. Expenses already confirmed from it stay in the history.',
+    inputSchema: z.object({ id: z.string().min(1) }),
+  }).server<McpContext>((input, ctx) => deleteRecurringExpense(ctx.context.db, ctx.context.userId, input.id)),
 
   toolDefinition({
     name: 'confirm_recurring',

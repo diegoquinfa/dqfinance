@@ -145,19 +145,24 @@ A file attached to a source: contract, terms, or fee table. PDF or a common imag
 
 | Tool | Purpose |
 | --- | --- |
+| `get_settings` | The user's country, language, timezone and enabled currencies; read-only |
 | `list_accounts` | Every source with its id, currency, and balance or debt |
 | `get_balance_history` | Month-end assets and card debt per currency, optionally for one source |
+| `create_bank`, `create_bank_account`, `create_cash_wallet` | A bank and an account in it, or a cash wallet, so an agent can set up a source end to end |
 | `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, the yield payout, the parent product of a pocket, brand, interest rate, and color |
-| `list_categories`, `list_contacts`, `create_contact` | Lookups needed to record movements |
+| `list_categories`, `create_category` | Categories to record movements with; `includeSystem` adds the FX-difference and fee ones |
+| `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `delete_contact` | Contacts, and one contact's totals by category and month |
 | `create_transaction`, `list_transactions`, `summarize_transactions` | Record, query and total income and expenses |
 | `update_transaction`, `delete_transaction` | Correct or remove a movement; the fee and FX entries of a transfer belong to it and cannot change on their own |
 | `create_transfer`, `list_transfers`, `mark_transfer_received` | Move money between the user's own sources |
-| `adjust_balance` | Set the real balance of a source |
-| `list_pending_recurring`, `confirm_recurring`, `skip_recurring` | Work the "to confirm" inbox |
+| `adjust_balance`, `list_balance_adjustments` | Set the real balance of a source; the last 100 corrections |
+| `list_recurring`, `create_recurring`, `delete_recurring` | Manage subscriptions and bills; `pending: true` is the "to confirm" inbox |
+| `confirm_recurring`, `skip_recurring` | Work the "to confirm" inbox |
+| `get_calendar` | Per day of the user's timezone, what moved and what falls due (up to 62 days) |
 | `import_transactions` | Record a whole statement at once, with a dry-run preview and duplicate detection |
-| `list_documents` | The files attached to the user's sources |
+| `list_documents`, `delete_document` | The files attached to the user's sources, and removing one |
 
-Banks, bank accounts, and cash wallets are set up in the web app only; products and cards are also reachable through the tools above. Scopes: `finance:read`, `finance:write`.
+Onboarding, changing settings, and uploading or downloading files stay in the web app; every other write is also reachable through the tools above. Scopes: `finance:read`, `finance:write`.
 
 ## Web screens
 

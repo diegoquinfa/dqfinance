@@ -1,13 +1,36 @@
 import { toolDefinition } from '@tanstack/ai'
 import { z } from 'zod'
 import type { McpContext } from '../mcp/mcp-context'
+import { createBank, createBankInput } from './create-bank'
+import { createBankAccount, createBankAccountInput } from './create-bank-account'
 import { createCard, createCardInput } from './create-card'
+import { createCashWallet, createCashWalletInput } from './create-cash-wallet'
 import { createProduct, createProductInput } from './create-product'
 import { updateCard, updateCardInput } from './update-card'
 import { updateProduct, updateProductInput } from './update-product'
 
 // Setup lives in the web app, but the same fields are reachable by an agent (design → MCP tools).
 export const accountTools = [
+  toolDefinition({
+    name: 'create_bank',
+    description:
+      "Add a bank the user holds accounts at. Check list_accounts first so the same bank is not added twice.",
+    inputSchema: createBankInput,
+  }).server<McpContext>(async (input, ctx) => createBank(ctx.context.db, ctx.context.userId, input)),
+
+  toolDefinition({
+    name: 'create_bank_account',
+    description:
+      "Add an account to one of the user's banks, with optional last4. It holds no money itself: add a product to it with create_product.",
+    inputSchema: createBankAccountInput,
+  }).server<McpContext>(async (input, ctx) => createBankAccount(ctx.context.db, ctx.context.userId, input)),
+
+  toolDefinition({
+    name: 'create_cash_wallet',
+    description: 'Add a cash wallet in one of the currencies the user has enabled. Set its balance with adjust_balance.',
+    inputSchema: createCashWalletInput,
+  }).server<McpContext>(async (input, ctx) => createCashWallet(ctx.context.db, ctx.context.userId, input)),
+
   toolDefinition({
     name: 'create_product',
     description:

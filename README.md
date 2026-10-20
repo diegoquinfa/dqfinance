@@ -28,17 +28,21 @@ Point any MCP client that supports remote servers with OAuth at `http://localhos
 
 | Tool | What it does |
 | --- | --- |
+| `get_settings` | Country, language, timezone and enabled currencies (read-only) |
 | `list_accounts`, `get_balance_history` | Every source with its id, balance or card debt; month-end assets and debt |
-| `list_categories`, `list_contacts`, `create_contact` | Lookups needed to record something |
-| `create_transaction`, `list_transactions`, `summarize_transactions` | Income and expenses, and totals for a period |
-| `create_transfer`, `list_transfers`, `mark_transfer_received` | Moving your own money; card payments and in-transit transfers |
-| `adjust_balance` | Set the real balance of an account, cash wallet or card |
-| `list_pending_recurring`, `confirm_recurring`, `skip_recurring` | The "to confirm" inbox |
+| `create_bank`, `create_bank_account`, `create_cash_wallet` | Banks, their accounts, and cash wallets, so an agent can set up a source end to end |
 | `create_product`, `update_product`, `create_card`, `update_card` | Bank products and cards, including annual rate, brand and color |
+| `list_categories`, `create_category` | Categories, including the system ones on request |
+| `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `delete_contact` | People and businesses, and where the money with one went |
+| `create_transaction`, `list_transactions`, `summarize_transactions`, `update_transaction`, `delete_transaction` | Income and expenses, and totals for a period |
 | `import_transactions` | A whole statement at once, with a dry-run preview and duplicate detection |
-| `list_documents` | The files attached to a source |
+| `create_transfer`, `list_transfers`, `mark_transfer_received` | Moving your own money; card payments and in-transit transfers |
+| `adjust_balance`, `list_balance_adjustments` | Set the real balance of a source, and the corrections made so far |
+| `list_recurring`, `create_recurring`, `delete_recurring`, `confirm_recurring`, `skip_recurring` | Subscriptions and bills, and the "to confirm" inbox |
+| `get_calendar` | Day by day: what moved and what falls due |
+| `list_documents`, `delete_document` | The files attached to a source |
 
-Inspect it with `npx @modelcontextprotocol/inspector`. Banks, bank accounts and cash wallets stay in the web app; products and cards are also reachable through the tools above.
+Inspect it with `npx @modelcontextprotocol/inspector`. Uploading and downloading files, onboarding, and changing settings stay in the web app.
 
 ## Common tasks
 
