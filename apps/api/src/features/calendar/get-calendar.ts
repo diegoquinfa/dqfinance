@@ -27,21 +27,23 @@ export const getCalendarInput = z
  * expenses due. Transfers and adjustments are not movements, so they never count (D3).
  */
 export async function getCalendar(db: Db, userId: string, locale: Locale, input: z.infer<typeof getCalendarInput>) {
-  const { timezone } = await requireSettings(db, userId)
-  // The movement filter takes UTC days; one day of margin each side covers any timezone offset.
-  const rows = await db
-    .select({
-      type: transaction.type,
-      currency: movementCurrency,
-      cents: movementAmount,
-      occurredAt: transaction.occurredAt,
-    })
-    .from(transaction)
-    .leftJoin(card, eq(card.id, transaction.cardId))
-    .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
-    .where(transactionFilters(userId, { from: shiftDay(input.from, -1), to: shiftDay(input.to, 1) }))
+  const [{ timezone }, rows, recurring] = await Promise.all([
+    requireSettings(db, userId),
+    // The movement filter takes UTC days; one day of margin each side covers any timezone offset.
+    db
+      .select({
+        type: transaction.type,
+        currency: movementCurrency,
+        cents: movementAmount,
+        occurredAt: transaction.occurredAt,
+      })
+      .from(transaction)
+      .leftJoin(card, eq(card.id, transaction.cardId))
+      .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
+      .where(transactionFilters(userId, { from: shiftDay(input.from, -1), to: shiftDay(input.to, 1) })),
+    listRecurringExpenses(db, userId, locale),
+  ])
 
-  const recurring = await listRecurringExpenses(db, userId, locale)
   const due = recurring
     .filter((item) => item.active)
     .flatMap((item) => projectDueDates(item, input.from, input.to).map((day) => ({ day, ...item })))
