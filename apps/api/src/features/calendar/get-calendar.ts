@@ -15,8 +15,8 @@ const MAX_DAYS = 62
 
 export const getCalendarInput = z
   .object({
-    from: isoDate.describe('Inclusive start date, YYYY-MM-DD, in the user timezone'),
-    to: isoDate.describe('Exclusive end date, YYYY-MM-DD, in the user timezone'),
+    from: isoDate.describe('Inclusive start date, YYYY-MM-DD, user timezone'),
+    to: isoDate.describe('Exclusive end date, YYYY-MM-DD, user timezone'),
   })
   .refine(({ from, to }) => from < to && to <= shiftDay(from, MAX_DAYS), {
     message: `from must be before to, at most ${MAX_DAYS} days apart`,

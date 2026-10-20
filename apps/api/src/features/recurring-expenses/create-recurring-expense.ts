@@ -13,13 +13,13 @@ import { FREQUENCIES, recurringExpense } from './recurring-expense.schema'
 
 export const createRecurringExpenseInput = z.object({
   name: z.string().trim().min(1).max(80),
-  amount: moneyAmount.describe('Expected amount; it can be changed when confirming each occurrence'),
+  amount: moneyAmount.describe('Expected decimal amount (not cents); it can change at each confirmation'),
   source: sourceRef,
   currency: currencyCode.optional().describe('Credit cards only, as in create_transaction'),
   categoryId: z.string().min(1),
   counterpartyId: z.string().min(1).optional(),
   frequency: z.enum(FREQUENCIES),
-  startsOn: isoDate.optional().describe("First due date, YYYY-MM-DD; defaults to today in the user's timezone"),
+  startsOn: isoDate.optional().describe("First due date, YYYY-MM-DD; defaults to today (user timezone)"),
 })
 
 export async function createRecurringExpense(db: Db, userId: string, input: z.infer<typeof createRecurringExpenseInput>) {

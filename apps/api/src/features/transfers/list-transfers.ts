@@ -10,7 +10,7 @@ import { transferType, TRANSFER_TYPES } from './transfer-type'
 import { transfer } from './transfer.schema'
 
 export const listTransfersInput = z.object({
-  inTransit: z.boolean().optional().describe('Only transfers that have not arrived yet'),
+  inTransit: z.boolean().optional().describe('Only transfers not yet arrived'),
   type: z.enum(TRANSFER_TYPES).optional(),
   limit: z.number().int().min(1).max(200).optional().describe('Defaults to 50'),
 })

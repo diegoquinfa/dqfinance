@@ -13,7 +13,7 @@ export const transactionTools = [
   toolDefinition({
     name: 'create_transaction',
     description:
-      'Record an income or expense on one of the user\'s sources. Not for moving money between the user\'s own accounts: use create_transfer for that.',
+      "Record an income or expense on one of the user's sources. Not for moving money between their own sources: use create_transfer.",
     inputSchema: createTransactionInput,
   }).server<McpContext>(async (input, ctx) => {
     const created = await createTransaction(ctx.context.db, ctx.context.userId, input)
@@ -24,7 +24,7 @@ export const transactionTools = [
   toolDefinition({
     name: 'import_transactions',
     description:
-      "Record many movements of one source from a bank statement or card statement. Parse the PDF, screenshot or video yourself and send one row per movement with its type, amount, date (YYYY-MM-DD) and description; leave categoryId out when you cannot tell the category. Rows that look like a movement already recorded there (same source, type, amount, calendar day and description) are skipped. Call it with dryRun true first, show the user the preview of what would be created and skipped, and call it again with dryRun false only after they agree.",
+      'Record many movements of one source from a statement. Parse the PDF, screenshot or video yourself, one row per movement; omit categoryId when unsure. Rows matching an existing movement (same source, type, amount, day, description) are skipped. Call with dryRun true, show the user the preview, then dryRun false after they agree.',
     inputSchema: importTransactionsInput,
   }).server<McpContext>(async (input, ctx) => {
     const imported = await importTransactions(ctx.context.db, ctx.context.userId, ctx.context.locale, input)
@@ -46,7 +46,7 @@ export const transactionTools = [
   toolDefinition({
     name: 'summarize_transactions',
     description:
-      'Total income and expense per currency for the same filters as list_transactions, summed in the database. Use it to total a period instead of paging through list_transactions.',
+      'Total income and expense per currency for the same filters as list_transactions. Use it instead of paging through list_transactions.',
     inputSchema: summarizeTransactionsInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({
@@ -56,14 +56,14 @@ export const transactionTools = [
   toolDefinition({
     name: 'update_transaction',
     description:
-      "Change an income or expense. Send only the fields to change; null removes the contact or the description. A new source charges in its own currency unless you send currency. Movements a transfer created (they have a transferId) cannot be changed.",
+      'Change an income or expense: send only the fields to change; null clears the contact or description. Transfer movements cannot be changed.',
     inputSchema: updateTransactionToolInput,
   }).server<McpContext>(async ({ id, ...input }, ctx) => updateTransaction(ctx.context.db, ctx.context.userId, id, input)),
 
   toolDefinition({
     name: 'delete_transaction',
     description:
-      'Delete an income or expense recorded by mistake. Confirm with the user first. Movements a transfer created cannot be deleted.',
+      'Delete an income or expense recorded by mistake. Confirm with the user first. Transfer movements cannot be deleted.',
     inputSchema: deleteTransactionInput,
     metadata: { annotations: { destructiveHint: true } },
   }).server<McpContext>((input, ctx) => deleteTransaction(ctx.context.db, ctx.context.userId, input.id)),

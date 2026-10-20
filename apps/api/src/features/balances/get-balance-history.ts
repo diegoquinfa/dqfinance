@@ -13,8 +13,8 @@ export const balanceHistoryInput = z
       .min(1)
       .max(24)
       .optional()
-      .describe('How many month-end points to return, ending with the current month. Defaults to 3.'),
-    sourceType: z.enum(SOURCE_TYPES).optional().describe('Limit the history to one source; use with sourceId'),
+      .describe('How many month-end points to return, ending with the current month. Default 3.'),
+    sourceType: z.enum(SOURCE_TYPES).optional().describe('One source only; use with sourceId'),
     sourceId: z.string().min(1).optional(),
   })
   .refine((input) => Boolean(input.sourceType) === Boolean(input.sourceId), {

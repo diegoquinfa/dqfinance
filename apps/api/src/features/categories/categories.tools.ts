@@ -7,7 +7,7 @@ export const categoryTools = [
   toolDefinition({
     name: 'list_categories',
     description:
-      'List the categories available for transactions. Use their ids in create_transaction. includeSystem adds the ones booked automatically (FX difference, bank fees), to explain those lines.',
+      'List the categories for transactions and their ids (used in create_transaction). includeSystem adds the ones booked automatically (FX difference, bank fees).',
     inputSchema: listCategoriesInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({
@@ -16,7 +16,7 @@ export const categoryTools = [
 
   toolDefinition({
     name: 'create_category',
-    description: 'Add an income or expense category. Check list_categories first so the same one is not added twice.',
+    description: 'Add an income or expense category. Check list_categories first to avoid duplicates.',
     inputSchema: createCategoryInput,
   }).server<McpContext>((input, ctx) => createCategory(ctx.context.db, ctx.context.userId, input)),
 ] as const

@@ -15,7 +15,7 @@ import { TRANSACTION_TYPES, transaction } from './transaction.schema'
 
 export const listTransactionsInput = z.object({
   type: z.enum(TRANSACTION_TYPES).optional(),
-  sourceType: z.enum(SOURCE_TYPES).optional().describe('Filter by source; use together with sourceId'),
+  sourceType: z.enum(SOURCE_TYPES).optional().describe('Filter by source; use with sourceId'),
   sourceId: z.string().optional(),
   categoryId: z.string().optional(),
   counterpartyId: z.string().optional(),

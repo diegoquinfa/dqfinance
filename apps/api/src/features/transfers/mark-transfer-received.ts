@@ -7,7 +7,7 @@ import { transfer } from './transfer.schema'
 
 export const markTransferReceivedInput = z.object({
   id: z.string().min(1),
-  receivedAt: isoDateTime.optional().describe('When the money arrived; defaults to now'),
+  receivedAt: isoDateTime.optional().describe('Arrival time; defaults to now'),
 })
 
 export async function markTransferReceived(db: Db, userId: string, input: z.infer<typeof markTransferReceivedInput>) {

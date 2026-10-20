@@ -9,11 +9,11 @@ import { getBalances } from '../balances/get-balances'
 import { balanceAdjustment } from './balance-adjustment.schema'
 
 export const adjustBalanceInput = z.object({
-  source: sourceRef.describe('A product, a cash wallet, or a credit card'),
+  source: sourceRef.describe('A product, cash wallet or credit card'),
   observedBalance: z
     .number()
     .multipleOf(0.01)
-    .describe('The real balance right now. For a credit card: the debt owed in `currency` (positive).'),
+    .describe('Real balance now (decimal, not cents); for a credit card the debt owed in `currency` (positive)'),
   currency: currencyCode.optional().describe("Credit cards only: which debt currency (defaults to the card's)"),
   note: z.string().trim().max(200).optional(),
   adjustedAt: isoDateTime.optional(),

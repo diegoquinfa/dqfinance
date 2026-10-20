@@ -6,7 +6,7 @@ export const calendarTools = [
   toolDefinition({
     name: 'get_calendar',
     description:
-      "Day by day in the user's timezone, for up to 62 days: what was spent and received per currency, and which recurring expenses fall due. Transfers and balance adjustments are not counted.",
+      "Day by day in the user's timezone, up to 62 days: amounts spent and received per currency, and recurring expenses falling due. Transfers and adjustments are not counted.",
     inputSchema: getCalendarInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>((input, ctx) => getCalendar(ctx.context.db, ctx.context.userId, ctx.context.locale, input)),

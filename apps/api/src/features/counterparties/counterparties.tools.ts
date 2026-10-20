@@ -11,7 +11,7 @@ export const counterpartyTools = [
   toolDefinition({
     name: 'list_contacts',
     description:
-      'List the people and businesses money went to or came from, with what was spent and received per currency. Use their ids as counterpartyId.',
+      'List the people and businesses money went to or came from, with amounts per currency. Their ids are the counterpartyId.',
     inputSchema: listCounterpartiesInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({
@@ -20,8 +20,7 @@ export const counterpartyTools = [
 
   toolDefinition({
     name: 'get_contact',
-    description:
-      'One contact in full for a period: totals per currency, what the money went to by category, and month by month.',
+    description: 'One contact in full for a period: totals per currency, spending by category, and month by month.',
     inputSchema: getCounterpartyInput.extend({ id: z.string().min(1) }),
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(({ id, ...input }, ctx) =>
