@@ -12,12 +12,14 @@ The mark is a **dq ligature**: `d` and `q` are mirror images (a bowl on the left
 
 | File (`apps/web/public/`) | Use |
 | --- | --- |
-| `logo.svg` | Lockup, tight bounds, transparent. Top bar and the signed-out layout (`h-7`); on `/sign-in` it sits inline in the panel title instead ("Sign in to [logo]"). |
+| `logo.svg` | Lockup, tight bounds, transparent. Top bar and the signed-out layout (`h-7`); on `/sign-in` it sits inline in the panel title instead ("Sign in to [logo]"), also at `h-7`. |
 | `logo-mark.svg` | The ligature alone on `canvas`, 512 px. Avatars, social, store icons. |
 | `favicon.svg` | The mark at 32 px with a heavier stroke so the counter survives at 16 px. |
 | `apple-touch-icon.png`, `icon-512.png` | Raster exports of `logo-mark.svg`. |
 
 Rules: square corners, never rounded or outlined; only on `canvas` or `raised` (on `paper` use the mark with its own `canvas` square); never recolor the descender or tint the bowl; keep clear space of one bowl width around it. The wordmark is outlined paths from Geist Mono Medium (no font dependency); a sans "finance" read as generic next to the constructed mark. The stem is symmetric: it rises above the x-height as far as it drops below the baseline.
+
+The lockup never goes below `h-7`. The bowl is a hairline outline, so under about 20 px wide the counter closes up and the mark reads as a missing image; `favicon.svg` is the variant for sizes the lockup cannot reach.
 
 ## Principles for financial tracking
 

@@ -56,7 +56,7 @@ export function SignInForm() {
         <CardTitle>
           {m.auth_sign_in_title()}{' '}
           {/* The bowl (51 of 85 units) matches the cap height and its bottom (17 units) drops below the baseline. */}
-          <img src="/logo.svg" alt={m.app_name()} className="inline-block h-[1.2em] w-auto align-[-0.24em]" />
+          <img src="/logo.svg" alt={m.app_name()} className="inline-block h-7 w-auto align-[-0.3em]" />
         </CardTitle>
         {isOAuthFlow() && <CardDescription>{m.auth_oauth_notice()}</CardDescription>}
       </CardHeader>
