@@ -143,6 +143,20 @@ transfers, recurring, the calendar, contacts and settings.
 
 Quiet and useful. `--ease-out-expo` (`cubic-bezier(0.16, 1, 0.3, 1)`), 300-600ms, only `transform`, `opacity` and color. Underlines draw left to right; row titles and arrows shift in their direction; dialogs fade and rise. Skeletons pulse. A 3.5 % film grain sits in a fixed, inert layer. `prefers-reduced-motion` stops every transition and animation.
 
+**The landing is the one exception.** It sells the app, so it performs, still in the same tokens and still only `transform`, `opacity` and color (`features/landing`):
+
+- `LedgerField`: a canvas of square `ink` dots behind the hero and the closing call to action, breathing with a slow wave, lit around the cursor, crossed now and then by a `signal` pulse along a row or column. It pauses off screen and in a hidden tab; with reduced motion it draws one still frame.
+- The hero's words rise out of their own line (`animate-word`), and the rest of it follows (`animate-rise`).
+- `LiveLedger`: movements arrive and the total eases to its new sum, so the hero shows that a balance is computed.
+- `AgentChat`: a scripted conversation in an assistant's own app (Grok, Claude, ChatGPT, Gemini, switchable), with the real tool names; a `signal` dot crosses the MCP line while a tool runs. It always says it is the assistant's app, never a DQFinance chatbot.
+- `ScrollStatement`: "How it works" is one `type-title` paragraph whose words go from 16 % to full `ink` as it scrolls past, instead of numbered columns.
+- `ConnectSteps`: the three steps to connect an assistant as a timeline a `signal` node walks down; each step shows what happens there (the address typing in, the real consent permissions ticking, the connection) instead of a paragraph.
+- `FeatureGrid`: the features as a ruled grid (lines between cells, never boxes), each with a small looping drawing in `ink`, `soft` and one `signal` touch, a title and one line. The drawings loop with `alternate` and end built, so reduced motion leaves them whole.
+- `OpenSource`: the pitch, the stack as badges, "Deploy to Cloudflare" and a terminal typing the deploy by hand from the README.
+- `Reveal` lifts each block the first time it scrolls into view; the screens follow the scroll (`ScreensShowcase`: the tabs and the screenshot pin to the viewport inside a taller track, the scroll through it picks the tab, and the tab's top line fills in `signal` with it); a 1px `signal` line under the top bar follows the scroll where scroll timelines exist.
+
+No dependency: CSS keyframes in `styles.css`, `IntersectionObserver` and one canvas.
+
 ## Language
 
 The app is bilingual (English and Spanish) from the first screen. The catalog is `packages/i18n`, and every visible string comes from it, so a new string missing from `messages/en.json` or `messages/es.json` breaks the type check. Use a hyphen `-` in visible text; no em or en dashes.

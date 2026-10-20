@@ -152,6 +152,113 @@
   }
 }
 
+/*
+ * Landing motion. The landing is the one page allowed to perform; the app stays quiet.
+ * Everything moves only transform and opacity, and the global reduced-motion rule below stops it.
+ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+@keyframes word-rise {
+  from {
+    transform: translateY(110%);
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+/* A dot crossing its parent's width: the parent is the line, so 100% is the line's length. */
+@keyframes travel {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes travel-y {
+  to {
+    transform: translateY(100%);
+  }
+}
+/*
+ * The feature drawings loop with `alternate`: they build up, hold, and take themselves apart.
+ * The last frame is the built state, so reduced motion (one iteration) leaves the drawing whole.
+ */
+@keyframes hold-in {
+  0%,
+  15% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  40%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes hold-draw {
+  0%,
+  35% {
+    transform: scaleX(0);
+  }
+  65%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@utility animate-rise {
+  animation: rise 900ms var(--ease-out-expo) both;
+}
+@utility animate-word {
+  animation: word-rise 1100ms var(--ease-out-expo) both;
+}
+@utility animate-hold-in {
+  animation: hold-in 2.6s var(--ease-out-expo) infinite alternate both;
+}
+@utility animate-hold-draw {
+  animation: hold-draw 2.6s var(--ease-out-expo) infinite alternate both;
+  transform-origin: left;
+}
+@utility animate-blink {
+  animation: blink 1s steps(1) infinite;
+}
+/* Content rises into place the first time it scrolls into view (`Reveal`). */
+@utility reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 1000ms var(--ease-out-expo),
+    transform 1000ms var(--ease-out-expo);
+  &[data-shown] {
+    opacity: 1;
+    transform: none;
+  }
+  @media (scripting: none) {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* A 1px line that fills with the page scroll, where the browser supports scroll timelines. */
+@utility scroll-progress {
+  transform: scaleX(0);
+  transform-origin: left;
+  @supports (animation-timeline: scroll()) {
+    animation: grow-x linear both;
+    animation-timeline: scroll(root);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-signal;
