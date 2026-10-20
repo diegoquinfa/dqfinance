@@ -59,6 +59,18 @@ Inspect it with `npx @modelcontextprotocol/inspector`. Uploading and downloading
 
 **By hand:** `wrangler d1 create dqfinance-db` (no id to copy: wrangler finds the database by name), `wrangler secret put BETTER_AUTH_SECRET`, then `pnpm build && pnpm run deploy`. Use `pnpm run deploy`: `pnpm deploy` is a built-in pnpm command.
 
-**Email (optional):** transactional email stays off until you set `EMAIL_FROM` plus one provider's secrets: `RESEND_API_KEY` (Resend), `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (Cloudflare Email Service over REST), or `SMTP_HOST`, `SMTP_USER` and `SMTP_PASSWORD` (SMTP, port 465 by default). `EMAIL_PROVIDER=cloudflare|resend|smtp` forces one; without it the first configured provider wins. The same values go in `.dev.vars` locally.
+**Email (optional):** only the password-reset email exists. Each deployment picks its provider with its own secrets (`wrangler secret put`, or `.dev.vars` locally). With none, the "forgot password" link is hidden and everything else works.
+
+| Provider | Secrets, plus `EMAIL_FROM` (for example `DQFinance <no-reply@example.com>`) |
+| --- | --- |
+| Cloudflare Email Service | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` |
+| Resend | `RESEND_API_KEY` |
+| Any SMTP server | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_PORT` (default 465) |
+
+`EMAIL_PROVIDER=cloudflare|resend|smtp` forces one; without it the first complete configuration wins. An incomplete one turns email off rather than failing.
+
+- **Cloudflare:** the domain must use Cloudflare DNS, sending to any recipient needs Workers Paid, and the domain must be onboarded under *Email Service → Email Sending* (it adds the SPF and DKIM records). The API token needs only *Email Sending: Edit*. Email Sending is in beta.
+- **Resend:** verify the `EMAIL_FROM` domain in Resend.
+- **SMTP:** port 465 (implicit TLS) or 587 (STARTTLS); Workers cannot open port 25. Authentication is `AUTH PLAIN`, one recipient per message.
 
 **Custom domain:** add it in the dashboard (Worker → Settings → Domains & Routes). Keep `routes` out of `wrangler.jsonc`: a deploy replaces dashboard routes with the ones in the file. The auth issuer and the MCP URL follow whichever hostname a request arrives on, so there is nothing else to configure.

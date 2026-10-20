@@ -13,7 +13,7 @@ One sender, picked at request time from secrets. Nothing is required.
 | Resend | `RESEND_API_KEY`, provider `resend` or no earlier match | `POST https://api.resend.com/emails` |
 | SMTP | `SMTP_HOST` + user + password + `EMAIL_FROM`, provider `smtp` or no earlier match | `cloudflare:sockets`. Port 465 implicit TLS. Port 587 STARTTLS. AUTH PLAIN |
 
-`EMAIL_FROM` is required for all of them. The binding is not declared in `wrangler.jsonc`: that file stays uncommitted (real D1 id), and a required binding would break a Deploy-button install that has no Email Service domain. The owner adds `send_email` in the dashboard or uses the REST token.
+`EMAIL_FROM` is required for all of them. The `send_email` binding is not declared in `wrangler.jsonc`: the file is shared by every deployment, and it is unverified whether a Deploy-button install without Email Service survives it. A binding added in the dashboard does not help either: the wrangler file is the source of truth, so a deploy may drop it. Use the REST token; secrets survive deploys.
 
 Cloudflare Email Service (docs 2026-10-15) can send to any recipient only after a domain is onboarded. Before that, only verified destination addresses work. SMTP on Cloudflare's own host (`smtp.mx.cloudflare.net:465`, user `api_token`) is just the SMTP provider pointed at that host; we do not special-case it.
 
