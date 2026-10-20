@@ -5,6 +5,7 @@ import type { AppEnv } from './app-env'
 import { createDb, schema } from './db'
 import { accountsRoutes } from './features/accounts/accounts.routes'
 import { createAuth } from './features/auth/auth'
+import { calendarRoutes } from './features/calendar/calendar.routes'
 import { balanceAdjustmentsRoutes } from './features/balance-adjustments/balance-adjustments.routes'
 import { balancesRoutes } from './features/balances/balances.routes'
 import { categoriesRoutes } from './features/categories/categories.routes'
@@ -44,6 +45,7 @@ const app = new Hono<AppEnv>()
   .route('/api/documents', documentsRoutes)
   .route('/api/balance-adjustments', balanceAdjustmentsRoutes)
   .route('/api/recurring-expenses', recurringExpensesRoutes)
+  .route('/api/calendar', calendarRoutes)
   .route('/api/push-subscriptions', pushRoutes)
   .route('/mcp', mcpRoutes)
   .onError(onError)

@@ -15,6 +15,7 @@ import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
+import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppContactsRouteImport } from './routes/_app/contacts'
 import { Route as AppOverviewRouteImport } from './routes/_app/overview'
 import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
@@ -55,6 +56,11 @@ const SignInRoute = SignInRouteImport.update({
 const AppAccountsRoute = AppAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
 const AppContactsRoute = AppContactsRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/sign-in': typeof SignInRoute
   '/accounts': typeof AppAccountsRoute
+  '/calendar': typeof AppCalendarRoute
   '/contacts': typeof AppContactsRoute
   '/overview': typeof AppOverviewRoute
   '/recurring': typeof AppRecurringRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/sign-in': typeof SignInRoute
   '/accounts': typeof AppAccountsRoute
+  '/calendar': typeof AppCalendarRoute
   '/contacts': typeof AppContactsRoute
   '/overview': typeof AppOverviewRoute
   '/recurring': typeof AppRecurringRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/sign-in': typeof SignInRoute
   '/_app/accounts': typeof AppAccountsRoute
+  '/_app/calendar': typeof AppCalendarRoute
   '/_app/contacts': typeof AppContactsRoute
   '/_app/overview': typeof AppOverviewRoute
   '/_app/recurring': typeof AppRecurringRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/sign-in'
     | '/accounts'
+    | '/calendar'
     | '/contacts'
     | '/overview'
     | '/recurring'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/sign-in'
     | '/accounts'
+    | '/calendar'
     | '/contacts'
     | '/overview'
     | '/recurring'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/sign-in'
     | '/_app/accounts'
+    | '/_app/calendar'
     | '/_app/contacts'
     | '/_app/overview'
     | '/_app/recurring'
@@ -288,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts'
       fullPath: '/accounts'
       preLoaderRoute: typeof AppAccountsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/calendar': {
+      id: '/_app/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/contacts': {
@@ -379,6 +398,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAccountsRoute: typeof AppAccountsRoute
+  AppCalendarRoute: typeof AppCalendarRoute
   AppContactsRoute: typeof AppContactsRoute
   AppOverviewRoute: typeof AppOverviewRoute
   AppRecurringRoute: typeof AppRecurringRoute
@@ -395,6 +415,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountsRoute: AppAccountsRoute,
+  AppCalendarRoute: AppCalendarRoute,
   AppContactsRoute: AppContactsRoute,
   AppOverviewRoute: AppOverviewRoute,
   AppRecurringRoute: AppRecurringRoute,
