@@ -1,0 +1,107 @@
+<!doctype html>
+<!--
+  The Open Graph image (apps/web/public/og.png).
+
+  To rebuild it: copy this file to apps/web/public/og.html, run `pnpm dev`, open
+  http://localhost:3000/og.html, capture the first 1200x630 pixels of the viewport, and save
+  the capture as apps/web/public/og.png. The screenshot on the right is a real capture of the
+  app (apps/web/public/screens/overview.png), so it only tells the truth if the demo data is
+  still the demo data.
+-->
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>DQFinance</title>
+    <style>
+      @import url('/node_modules/@fontsource-variable/geist/index.css');
+      @import url('/node_modules/@fontsource-variable/geist-mono/index.css');
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+      }
+      body {
+        background: #0a0a0a;
+        color: #f0f0ec;
+        font-family: 'Geist Variable', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        position: relative;
+      }
+      /* Film grain, 3.5 %. Same as the app. */
+      body::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0.035;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+      .frame {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 1fr 500px;
+        align-items: center;
+        padding: 0 64px;
+        gap: 48px;
+      }
+      .lockup {
+        height: 48px;
+        width: auto;
+        display: block;
+      }
+      h1 {
+        margin-top: 36px;
+        font-size: 50px;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        font-weight: 500;
+      }
+      .muted {
+        color: #8b8b84;
+      }
+      .foot {
+        position: absolute;
+        left: 64px;
+        bottom: 52px;
+        font-family: 'Geist Mono Variable', ui-monospace, monospace;
+        font-size: 14px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #6f6f68;
+      }
+      .shot {
+        position: relative;
+        width: 500px;
+        height: 630px;
+        overflow: hidden;
+        border-left: 1px solid #232323;
+      }
+      .shot img {
+        position: absolute;
+        left: -127px;
+        top: 0;
+        width: 1080px;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div>
+        <img class="lockup" src="/logo.svg" alt="DQFinance" />
+        <h1>
+          Tu dinero,<br />
+          <span class="muted">registrado por ti o por tu asistente de IA.</span>
+        </h1>
+      </div>
+      <div class="shot"><img src="/screens/overview.png" alt="" /></div>
+    </div>
+    <p class="foot">github.com/diegoquinfa/dqfinance</p>
+  </body>
+</html>

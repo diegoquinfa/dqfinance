@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '#/shared/ui/card'
@@ -24,6 +25,9 @@ export function ConsentCard() {
   const [clientName, setClientName] = useState<string>()
   const [error, setError] = useState<string>()
   const [pending, setPending] = useState(false)
+  // A guest may explore the app, but it never hands its ledger to an agent.
+  const { data: session } = authClient.useSession()
+  const isGuest = Boolean(session?.user.isAnonymous)
 
   useEffect(() => {
     void authClient.oauth2.publicClient({ query: { client_id: clientId } }).then(({ data }) => {
@@ -37,6 +41,25 @@ export function ConsentCard() {
     const { error } = await authClient.oauth2.consent({ accept })
     setPending(false)
     if (error) setError(error.message ?? m.error_generic())
+  }
+
+  if (isGuest) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{m.consent_guest_title()}</CardTitle>
+          <CardDescription>{m.guest_mcp_denied()}</CardDescription>
+        </CardHeader>
+        <CardFooter className="justify-end gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/sign-up">{m.auth_link_sign_up()}</Link>
+          </Button>
+          <Button asChild>
+            <Link to="/">{m.action_back()}</Link>
+          </Button>
+        </CardFooter>
+      </Card>
+    )
   }
 
   return (

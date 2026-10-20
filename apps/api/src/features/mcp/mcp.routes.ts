@@ -1,6 +1,7 @@
 import { requireMcpAuth } from '@better-auth/mcp'
 import { createMCPServer } from '@tanstack/ai-mcp/server'
 import { Hono } from 'hono'
+import * as m from '@dqfinance/i18n/messages'
 import type { AppEnv } from '../../app-env'
 import { MCP_SCOPES, mcpResource } from '../auth/auth'
 import { accountTools } from '../accounts/accounts.tools'
@@ -16,6 +17,7 @@ import { getSettings } from '../settings/get-settings'
 import { settingTools } from '../settings/settings.tools'
 import { transactionTools } from '../transactions/transactions.tools'
 import { transferTools } from '../transfers/transfers.tools'
+import { guestBlocksMcp } from './guest-access'
 
 // Each feature contributes its tools here.
 const mcpServer = createMCPServer({
@@ -41,6 +43,13 @@ export const mcpRoutes = new Hono<AppEnv>().all('/', (c) =>
     c.var.auth,
     async (request, claims) => {
       if (!claims.sub) return Response.json({ error: 'invalid_token' }, { status: 401 })
+      // A guest may not reach the tools: it explores the app, it does not hand it to an agent.
+      if (await guestBlocksMcp(c.var.db, claims.sub)) {
+        return Response.json(
+          { error: 'forbidden', error_description: m.guest_mcp_denied() },
+          { status: 403 },
+        )
+      }
       // Agents get system category names in the user's saved language.
       const locale = (await getSettings(c.var.db, claims.sub))?.locale ?? 'en'
       // Only the VAPID values and the documents bucket cross into tool context; the rest of c.env holds auth secrets.

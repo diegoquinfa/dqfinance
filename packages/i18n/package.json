@@ -4,7 +4,8 @@
   "type": "module",
   "exports": {
     "./messages": "./src/paraglide/messages.js",
-    "./runtime": "./src/paraglide/runtime.js"
+    "./runtime": "./src/paraglide/runtime.js",
+    "./server": "./src/paraglide/server.js"
   },
   "scripts": {
     "build": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy cookie preferredLanguage baseLocale --output-structure locale-modules --silent"
