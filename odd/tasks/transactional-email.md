@@ -57,12 +57,13 @@ Feature branch `feat/transactional-email`. Strategy `exception-ok`: the user for
 
 ## Tasks
 
-- [ ] T1 Design note in `docs/plans/2026-10-20-email-design.md`. Route: inline. Trigger: one known file.
-- [ ] T2 Email transport + tests. Route: delegated writer. Trigger: multi-file write.
-- [ ] T3 Wire reset into Better Auth, public enabled flag, i18n bodies. Route: delegated writer.
-- [ ] T4 `/sign-up`, `/forgot-password`, `/reset-password`, confirm password. Route: delegated writer.
-- [ ] T5 Expose `systemKey` and match bank fees by it. Route: delegated writer.
-- [ ] T6 Deletion-test pass (`codebase-design`). Route: delegated read-only, then a writer only for deletions that pass the test.
+- [x] T1 Design note in `docs/plans/2026-10-20-email-design.md`. Route: inline. Trigger: one known file. Commit `16e5a98`.
+- [x] T2 Email transport + tests. Route: delegated writer. Trigger: multi-file write. Commit `5affbca`. Independent verify found 4 SMTP defects (251/252, UTF-8 AUTH, untrimmed secrets, non-ASCII headers); fixed and re-verified, 19/19 tests.
+- [x] T3 Wire reset into Better Auth, public enabled flag, i18n bodies, server-side confirm password on sign-up, change-password and reset. Route: delegated writer. Commit `287e0cc` (with T4: the server check would break the old sign-up form alone).
+- [x] T4 `/sign-up`, `/forgot-password`, `/reset-password`, confirm password. Route: delegated writer. Commit `287e0cc`; react-doctor fixes `f0ff079`. Parent fix: forgot-password shows real errors (network, 429); only success is uniform. Independent verify: no blocking defects. Gate green.
+- [x] T5 Expose `systemKey` and match bank fees by it. Route: delegated writer. Commit `6739152`. `system` replaced (one caller), payload size flat.
+- [x] T5b Shrink MCP `tools/list` (fixed context cost the user cares about) by shortening descriptions, without dropping units or formats. Route: delegated writer. Commit `447ed5a`: 23,975 → 22,647 chars. First attempt rejected and reverted: a publish-time description overlay module (duplicated text, casts) for the same 6%. Rationale: handoff 2026-10-20 "MCP context ideas not done"; only the fixed cost matters to the user.
+- [x] T6 Deletion-test pass (`codebase-design`). Route: two read-only explorers (API, web), then one writer. Commit `f60500b`: +45/−105. Deleted or inlined: cardProduct re-export, findOwnedDocument, toCategory (+ its test), BankNameInput, allSources, currencyName, isLocale; un-exported escapeHtml, calendarDay, countryLabel, currencyCodes. Kept on purpose: smtp-sockets adapter (code would move, not vanish), expiredPushStatus (pure-rule-in-own-file standard), CalendarPeriod (low confidence), vendored shared/ui primitives (FieldLegend, FieldSet, Toggle, SelectSeparator unused but vendored).
 
 ## Checks
 
@@ -70,8 +71,8 @@ Focused `node --test` per unit. Closure: `pnpm check-types && pnpm test && pnpm 
 
 ## Progress
 
-Branch not created yet. No source commits.
+Branch `feat/transactional-email`. T1 `16e5a98`, T2 `5affbca`, T3+T4 `287e0cc`, `f0ff079`, T5 `6739152`, T5b `447ed5a`, T6 `f60500b`. Not run: browser pass and a real email send (needs a deployed provider). `wrangler.jsonc` remains unstaged.
 
 ## Next
 
-Write the design note, branch, then T2.
+All tasks done. Left for the owner: push the branch / open a PR; decide `wrangler.jsonc`; set one provider's secrets and try a real reset end to end; browser pass on /sign-up, /forgot-password, /reset-password and change-password.
