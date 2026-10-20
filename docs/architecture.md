@@ -19,6 +19,7 @@ Folders whose name says what they own are not listed below.
 - `transfers/`: also fees, the in-transit state, and FX settlement.
 - `documents/`: files attached to a source (contract, terms, fee table) in R2. `document-rules.ts` (pure) holds the accepted types and the size limit; upload and download stay in the web app, since agents cannot carry binary.
 - `balances/`: `compute-balances.ts` (pure) is the one place for every balance, debt, cost basis, in-transit rule, and the as-of-date history. Also owns the list tools (`list_accounts`, `get_balance_history`).
+- `calendar/`: per day of the user's timezone, what moved and which recurring expenses fall due. `calendar-days.ts` (pure) does the day grouping and the projection.
 - `mcp/`: the MCP server; collects every feature's tools and guards `/mcp`.
 
 Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rules.
@@ -40,7 +41,7 @@ A feature imports only from features earlier in this order:
 
 ```
 categories → settings → accounts → documents → counterparties → transactions
-           → recurring-expenses → balances → balance-adjustments → transfers
+           → recurring-expenses → balances → balance-adjustments → transfers → calendar
 ```
 
 `auth/` is a foundation in both apps (the API's `mcp/` and `push/` too), outside the order: any feature may import it.
