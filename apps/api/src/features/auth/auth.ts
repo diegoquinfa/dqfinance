@@ -1,8 +1,8 @@
 import { mcp } from '@better-auth/mcp'
 import * as m from '@dqfinance/i18n/messages'
 import { betterAuth, type BetterAuthOptions } from 'better-auth'
-import { APIError, createAuthMiddleware } from 'better-auth/api'
-import { jwt } from 'better-auth/plugins'
+import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
+import { anonymous, jwt } from 'better-auth/plugins'
 import { resolveLocale } from '../../shared/locale.ts'
 import { emailSenderFrom, type EmailEnv } from '../email/email-sender.ts'
 import { passwordResetMessage } from '../email/password-reset-message.ts'
@@ -15,6 +15,9 @@ export const mcpResource = (origin: string) => `${origin}/mcp`
 
 /** The page the reset link lands on; the web reads the token from its query. */
 const RESET_PASSWORD_PATH = '/reset-password'
+
+/** The OAuth endpoint that hands an access token to an agent. A guest never gets one. */
+const AUTHORIZE_PATH = '/oauth2/authorize'
 
 /** The field each route repeats: sign-up repeats the password, the others the new one. */
 const CONFIRMED_PASSWORD_FIELD = {
@@ -39,12 +42,19 @@ const CONFIRM_PROBLEM_MESSAGE = {
 
 /**
  * Runs before every Better Auth endpoint, on the raw body.
+ * - a guest may not authorize an agent: no access token is issued for a guest session;
  * - the repeated password is checked here, so a client that skips the field still fails;
  * - a reset request without a target gets the page the link must land on.
  * Better Auth's own body schemas drop `confirmPassword` afterwards, and sign-up never stores it.
  */
 function beforeEndpoint(origin: string) {
   return createAuthMiddleware(async (ctx) => {
+    if (ctx.path === AUTHORIZE_PATH) {
+      const session = await getSessionFromCtx(ctx, { disableRefresh: true })
+      if (session?.user.isAnonymous) {
+        throw APIError.from('FORBIDDEN', { code: 'GUEST_MCP_DENIED', message: m.guest_mcp_denied() })
+      }
+    }
     if (ctx.path === '/request-password-reset') {
       if (ctx.body?.redirectTo) return
       return { context: { body: { ...ctx.body, redirectTo: `${origin}${RESET_PASSWORD_PATH}` } } }
@@ -71,6 +81,8 @@ export function createAuth(
   env: CloudflareBindings & EmailEnv,
   origin: string,
   database: BetterAuthOptions['database'],
+  /** Moves a guest's ledger to the account the guest becomes when it signs up. */
+  onGuestLink?: (fromUserId: string, toUserId: string) => Promise<void>,
 ) {
   const sender = emailSenderFrom(env)
   return betterAuth({
@@ -106,6 +118,15 @@ export function createAuth(
     disabledPaths: ['/token'],
     plugins: [
       jwt(),
+      // A guest: a real user with no email the person owns, so the app can be explored.
+      // The plugin deletes that user when the guest signs up, after moving its ledger over.
+      anonymous({
+        generateName: (ctx) =>
+          m.guest_name({}, { locale: resolveLocale(ctx.request?.headers.get('accept-language')) }),
+        onLinkAccount: async ({ anonymousUser, newUser }) => {
+          await onGuestLink?.(anonymousUser.user.id, newUser.user.id)
+        },
+      }),
       mcp({
         loginPage: `${origin}/sign-in`,
         consentPage: `${origin}/consent`,

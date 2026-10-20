@@ -6,6 +6,7 @@ import type { Locale } from '#/shared/i18n'
 import { authClient } from '#/features/auth/auth-client'
 import { useSettings } from '#/features/settings/settings-api'
 import { usePushUpdates } from '#/features/settings/push-api'
+import { useSeedDemo } from '#/features/demo/demo-api'
 import { NewTransactionDialog } from '#/features/transactions/new-transaction-dialog'
 import { ApiError } from '#/shared/api'
 import { currentLocale, m, switchLocale } from '#/shared/i18n'
@@ -53,18 +54,30 @@ function AppLayout() {
   const { data: session, isPending } = authClient.useSession()
   const settings = useSettings({ enabled: Boolean(session) })
   usePushUpdates(Boolean(session))
+  // A guest is a user with no email the person owns: it explores the app, it cannot connect an agent.
+  const isGuest = Boolean(session?.user.isAnonymous)
+  const seed = useSeedDemo()
+  const { mutate: seedDemo } = seed
 
   // The user's saved language wins over the browser's, once per change.
   useEffect(() => {
     if (settings.data && settings.data.locale !== currentLocale()) switchLocale(settings.data.locale as Locale)
   }, [settings.data])
 
+  // A guest with no ledger gets the demo, not the wizard.
+  useEffect(() => {
+    if (!isGuest) return
+    if (settings.isPending || settings.isFetching || settings.data) return
+    if (seed.isPending) return
+    seedDemo()
+  }, [isGuest, settings.isPending, settings.isFetching, settings.data, seed.isPending, seedDemo])
+
   if (isPending || (session && settings.isPending)) return <div className="min-h-dvh" aria-busy="true" />
   if (!session) return <Navigate to="/sign-in" />
   if (settings.error instanceof ApiError && settings.error.status === 401) return <Navigate to="/sign-in" />
   // Only decide "needs onboarding" once the answer is settled: right after onboarding the cache still
   // holds the previous null while the invalidation refetches.
-  if (!settings.isPending && !settings.isFetching && !settings.data) return <Navigate to="/onboarding" />
+  if (!settings.isPending && !settings.isFetching && !settings.data && !isGuest) return <Navigate to="/onboarding" />
 
   return (
     <div className="min-h-dvh">
@@ -101,6 +114,17 @@ function AppLayout() {
           </div>
         </div>
       </header>
+
+      {isGuest && (
+        <div className="border-b border-line bg-surface">
+          <div className="container-page flex flex-wrap items-center justify-between gap-3 py-3">
+            <p className="text-sm text-muted-foreground">{m.guest_banner()}</p>
+            <Link to="/sign-up" className="label-mono link-draw text-ink">
+              {m.auth_link_sign_up()}
+            </Link>
+          </div>
+        </div>
+      )}
 
       <main id="main" className="container-page pb-32 lg:pb-24">
         <Outlet />

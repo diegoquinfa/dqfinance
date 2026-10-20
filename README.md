@@ -7,7 +7,7 @@ Personal finance tracker with an OAuth-protected MCP server, so AI agents can re
 One Cloudflare Worker serves both apps from one origin:
 
 - `apps/api` — Hono REST API, Better Auth (OAuth 2.1 authorization server), MCP server at `/mcp`, D1 + Drizzle. Mounted on `/api/*`, `/.well-known/*` and `/mcp`.
-- `apps/web` — the Worker itself (`src/server.ts`), a TanStack Start app: sign-in and consent, onboarding, overview, accounts with a source detail page, movements (with CSV import), transfers, recurring, contacts, settings, and per-account documents.
+- `apps/web` — the Worker itself (`src/server.ts`), a TanStack Start app: the landing page, sign-in and consent, onboarding, overview, accounts with a source detail page, movements (with CSV import), transfers, recurring, contacts, settings, and per-account documents.
 
 Agent rules: [AGENTS.md](./AGENTS.md). Architecture: [docs/architecture.md](./docs/architecture.md). Conventions: [CODING_STANDARDS.md](./CODING_STANDARDS.md). UI rules: [DESIGN.md](./DESIGN.md).
 
@@ -21,6 +21,8 @@ pnpm dev                         # http://localhost:3000
 ```
 
 Open http://localhost:3000, create an account, and follow the setup wizard: country, language, and the currencies you use. It creates your categories and a cash wallet ("Wallet"), then you add your banks, accounts, products and cards under **Accounts**.
+
+Without an account you can try the app: the landing page's **Try the demo** signs you in as a guest and fills it with six months of sample data. A guest cannot connect an AI agent over MCP, and keeps what it recorded when it signs up for real.
 
 ## Connect an agent
 

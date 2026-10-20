@@ -22,6 +22,17 @@ Problems:
 
 Asks to be told when there is a demo or guest mode, to test it in depth.
 
+**Answered on 2026-10-20**, in [the landing and guest plan](./2026-10-20-landing-and-guest.md):
+
+1. The path was never wrong: the lockup is fine, but the sign-in title drew it at `1.2em` (about 14 px wide), where
+   the dq ligature's hollow bowl closes up and reads as a missing image. The sign-up screen draws the same lockup at
+   `h-7`, which is why only the sign-in screen looked broken. It now draws it at `h-7` too.
+2. There is a landing at `/`: the promise, six features, and real screenshots of the app.
+3. The landing has a footer with the repository, the README and the license. No privacy or terms pages: the
+   project's answer to those is the open source code itself.
+4. There is a guest mode: the "Try the demo" button signs a visitor in as a guest and fills the app with six months
+   of sample data. A guest cannot connect an AI agent over MCP.
+
 ## 2026-10-20 · Kriz911 (Discord), first message
 
 What worked:
