@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 import { m } from '#/shared/i18n'
 import { Button } from '#/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/shared/ui/card'
@@ -7,13 +7,15 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { Separator } from '#/shared/ui/separator'
 import { Spinner } from '#/shared/ui/spinner'
-import { authClient, isOAuthFlow } from './auth-client'
+import { authClient, isOAuthFlow, isOAuthSearch } from './auth-client'
 import { AuthLink } from './auth-link'
 import { LocaleSwitch } from './locale-switch'
 import { MIN_PASSWORD_LENGTH, passwordProblem, passwordProblemMessage } from './password-rule'
 
 export function SignUpForm() {
   const navigate = useNavigate()
+  const { searchStr } = useLocation()
+  const oauthFlow = isOAuthSearch(searchStr)
   const { refetch: refetchSession } = authClient.useSession()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -54,7 +56,7 @@ export function SignUpForm() {
     <Card>
       <CardHeader>
         <CardTitle>{m.auth_sign_up_title()}</CardTitle>
-        {isOAuthFlow() && <CardDescription>{m.auth_oauth_notice()}</CardDescription>}
+        {oauthFlow && <CardDescription>{m.auth_oauth_notice()}</CardDescription>}
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit}>
