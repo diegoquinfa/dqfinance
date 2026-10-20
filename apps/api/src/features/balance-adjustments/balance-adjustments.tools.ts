@@ -1,9 +1,20 @@
 import { toolDefinition } from '@tanstack/ai'
+import { z } from 'zod'
 import type { McpContext } from '../mcp/mcp-context'
 import { sendPush } from '../push/send-push'
 import { adjustBalance, adjustBalanceInput } from './adjust-balance'
+import { listBalanceAdjustments } from './list-balance-adjustments'
 
 export const balanceAdjustmentTools = [
+  toolDefinition({
+    name: 'list_balance_adjustments',
+    description: 'The last 100 balance corrections, newest first: the source, the balance observed, and the difference recorded.',
+    inputSchema: z.object({}),
+    metadata: { annotations: { readOnlyHint: true } },
+  }).server<McpContext>(async (_input, ctx) => ({
+    adjustments: await listBalanceAdjustments(ctx.context.db, ctx.context.userId),
+  })),
+
   toolDefinition({
     name: 'adjust_balance',
     description:

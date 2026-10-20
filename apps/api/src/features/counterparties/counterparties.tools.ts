@@ -1,7 +1,9 @@
 import { toolDefinition } from '@tanstack/ai'
+import { z } from 'zod'
 import type { McpContext } from '../mcp/mcp-context'
 import { createCounterparty, createCounterpartyInput } from './create-counterparty'
 import { deleteCounterparty, deleteCounterpartyInput } from './delete-counterparty'
+import { getCounterparty, getCounterpartyInput } from './get-counterparty'
 import { listCounterparties, listCounterpartiesInput } from './list-counterparties'
 import { updateCounterparty, updateCounterpartyToolInput } from './update-counterparty'
 
@@ -15,6 +17,16 @@ export const counterpartyTools = [
   }).server<McpContext>(async (input, ctx) => ({
     contacts: await listCounterparties(ctx.context.db, ctx.context.userId, input),
   })),
+
+  toolDefinition({
+    name: 'get_contact',
+    description:
+      'One contact in full for a period: totals per currency, what the money went to by category, and month by month.',
+    inputSchema: getCounterpartyInput.extend({ id: z.string().min(1) }),
+    metadata: { annotations: { readOnlyHint: true } },
+  }).server<McpContext>(({ id, ...input }, ctx) =>
+    getCounterparty(ctx.context.db, ctx.context.userId, ctx.context.locale, id, input),
+  ),
 
   toolDefinition({
     name: 'create_contact',
