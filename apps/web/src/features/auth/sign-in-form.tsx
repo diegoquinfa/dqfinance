@@ -32,7 +32,7 @@ export function SignInForm() {
         : await authClient.signIn.email({ email, password })
     } catch {
       setPending(false)
-      return setError(m.error_network({ url: import.meta.env.VITE_API_URL ?? 'http://localhost:8787' }))
+      return setError(m.error_network({ url: location.origin }))
     }
     if (result.error) {
       setPending(false)

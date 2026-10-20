@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "deploy": "pnpm --filter @dqfinance/web run deploy",
     "dev": "turbo run dev",
     "test": "turbo run test && node --test scripts/",
     "check-types": "turbo run check-types",
@@ -16,6 +17,22 @@
     "react-doctor": "^0.9.18",
     "turbo": "^2.11.9",
     "typescript": "7.0.2"
+  },
+  "cloudflare": {
+    "bindings": {
+      "BETTER_AUTH_SECRET": {
+        "description": "Signs sessions and tokens. Generate one with `openssl rand -base64 32`."
+      },
+      "VAPID_PUBLIC_KEY": {
+        "description": "Optional: leave empty to turn push notifications off."
+      },
+      "VAPID_PRIVATE_KEY": {
+        "description": "Optional: leave empty to turn push notifications off."
+      },
+      "VAPID_SUBJECT": {
+        "description": "Optional: a `mailto:` or `https:` contact for push services."
+      }
+    }
   },
   "packageManager": "pnpm@11.25.0",
   "engines": {

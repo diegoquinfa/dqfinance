@@ -2,8 +2,12 @@
 
 Personal finance tracker with an OAuth-protected MCP server, so AI agents can read and record your transactions.
 
-- `apps/api` — Cloudflare Worker: Hono REST API, Better Auth (OAuth 2.1 authorization server), MCP server at `/mcp`, D1 + Drizzle.
-- `apps/web` — TanStack Start app: sign-in and consent, onboarding, overview, accounts with a source detail page, movements (with CSV import), transfers, recurring, contacts, settings, and per-account documents.
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/diegoquinfa/dqfinance)
+
+One Cloudflare Worker serves both apps from one origin:
+
+- `apps/api` — Hono REST API, Better Auth (OAuth 2.1 authorization server), MCP server at `/mcp`, D1 + Drizzle. Mounted on `/api/*`, `/.well-known/*` and `/mcp`.
+- `apps/web` — the Worker itself (`src/server.ts`), a TanStack Start app: sign-in and consent, onboarding, overview, accounts with a source detail page, movements (with CSV import), transfers, recurring, contacts, settings, and per-account documents.
 
 Agent rules: [AGENTS.md](./AGENTS.md). Architecture: [docs/architecture.md](./docs/architecture.md). Conventions: [CODING_STANDARDS.md](./CODING_STANDARDS.md). UI rules: [DESIGN.md](./DESIGN.md).
 
@@ -11,16 +15,16 @@ Agent rules: [AGENTS.md](./AGENTS.md). Architecture: [docs/architecture.md](./do
 
 ```bash
 pnpm install
-cp apps/api/.dev.vars.example apps/api/.dev.vars   # then set BETTER_AUTH_SECRET (openssl rand -base64 32)
-pnpm db:migrate:local                              # creates the local D1 database
-pnpm dev                                           # api → http://localhost:8787, web → http://localhost:3000
+cp .dev.vars.example .dev.vars   # then set BETTER_AUTH_SECRET (openssl rand -base64 32)
+pnpm db:migrate:local            # creates the local D1 database
+pnpm dev                         # http://localhost:3000
 ```
 
 Open http://localhost:3000, create an account, and follow the setup wizard: country, language, and the currencies you use. It creates your categories and a cash wallet ("Wallet"), then you add your banks, accounts, products and cards under **Accounts**.
 
 ## Connect an agent
 
-Point any MCP client that supports remote servers with OAuth at `http://localhost:8787/mcp`. The client registers itself, sends you to sign in and approve access, and then gets these tools:
+Point any MCP client that supports remote servers with OAuth at `http://localhost:3000/mcp` (or `<your origin>/mcp` once deployed). The client registers itself, sends you to sign in and approve access, and then gets these tools:
 
 | Tool | What it does |
 | --- | --- |
@@ -47,9 +51,8 @@ Inspect it with `npx @modelcontextprotocol/inspector`. Banks, bank accounts and 
 
 ## Deploy
 
-1. `wrangler d1 create dqfinance` and put the id in `apps/api/wrangler.jsonc`.
-2. Set `BETTER_AUTH_URL` and `WEB_URL` in `apps/api/wrangler.jsonc` to the production origins. Run `wrangler secret put BETTER_AUTH_SECRET`.
-3. `pnpm --filter @dqfinance/api db:migrate:remote && pnpm --filter @dqfinance/api deploy`.
-4. Build the web app with `VITE_API_URL=<api origin>`, then `pnpm --filter @dqfinance/web deploy`.
+**With the button:** it copies this repo to your GitHub account, creates the D1 database and R2 bucket, asks for `BETTER_AUTH_SECRET`, then runs `pnpm run build` and `pnpm run deploy` (migrations, then deploy). Every push to your copy deploys again.
 
-Keep the API and web on the same site (e.g. `api.example.com` and `app.example.com`) so the `SameSite=Lax` session cookie works.
+**By hand:** `wrangler d1 create dqfinance` and put the id in `wrangler.jsonc`, `wrangler secret put BETTER_AUTH_SECRET`, then `pnpm build && pnpm run deploy`. Use `pnpm run deploy`: `pnpm deploy` is a built-in pnpm command.
+
+**Custom domain:** add it in the dashboard (Worker → Settings → Domains & Routes). Keep `routes` out of `wrangler.jsonc`: a deploy replaces dashboard routes with the ones in the file. The auth issuer and the MCP URL follow whichever hostname a request arrives on, so there is nothing else to configure.
