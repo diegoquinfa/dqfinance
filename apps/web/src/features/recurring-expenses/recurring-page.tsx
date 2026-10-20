@@ -4,6 +4,7 @@ import { SourceSelect } from '#/features/accounts/source-select'
 import { useCategories } from '#/features/categories/categories-api'
 import { useCounterparties } from '#/features/counterparties/counterparties-api'
 import { useSettings } from '#/features/settings/settings-api'
+import { sourceLabel } from '#/features/transactions/source-label'
 import { formatDay, today } from '#/shared/dates'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
@@ -327,7 +328,7 @@ export function RecurringPage() {
                     )}
                   </p>
                   <p className="label-mono text-muted-foreground">
-                    {item.source.name} / {item.category.name} / {m.recurring_next_due({ date: formatDay(item.nextDueOn) })}
+                    {sourceLabel(item.source)} / {item.category.name} / {m.recurring_next_due({ date: formatDay(item.nextDueOn) })}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
