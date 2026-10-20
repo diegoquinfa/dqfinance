@@ -9,6 +9,8 @@ export const authClient = createAuthClient({
   plugins: [oauthProviderClient()],
 })
 
+/** True when a query string carries an MCP client's OAuth authorization request. */
+export const isOAuthSearch = (search: string) => new URLSearchParams(search).has('sig')
+
 /** True while this page is part of an MCP client's OAuth authorization flow. */
-export const isOAuthFlow = () =>
-  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('sig')
+export const isOAuthFlow = () => typeof window !== 'undefined' && isOAuthSearch(window.location.search)
