@@ -21,19 +21,35 @@ export function Eyebrow({ index, children, className }: { index?: string; childr
 export function PageHeader({
   title,
   actions,
+  mobileActions,
   children,
 }: {
   title: string
   actions?: React.ReactNode
+  /** An action that belongs beside the title on mobile; the desktop actions then move there too. */
+  mobileActions?: React.ReactNode
   children?: React.ReactNode
 }) {
   return (
     <header className="grid gap-6 pt-6 pb-8 md:pt-10 md:pb-12 lg:grid-cols-12 lg:items-end lg:gap-x-12">
       <div className="grid gap-4 lg:col-span-8">
-        <h1 className="type-title font-medium text-ink">{title}</h1>
+        <div className="flex items-end justify-between gap-4">
+          <h1 className="type-title font-medium text-ink">{title}</h1>
+          {mobileActions && <div className="lg:hidden">{mobileActions}</div>}
+        </div>
         {children}
       </div>
-      {actions && <div className="flex flex-wrap gap-3 lg:col-span-4 lg:justify-end">{actions}</div>}
+      {actions && (
+        <div
+          className={cn(
+            'flex flex-wrap gap-3 lg:col-span-4 lg:justify-end',
+            // The action moved to the title row on mobile, so the desktop row stays out of it.
+            mobileActions && 'max-lg:hidden',
+          )}
+        >
+          {actions}
+        </div>
+      )}
     </header>
   )
 }

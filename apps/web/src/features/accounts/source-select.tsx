@@ -14,6 +14,7 @@ export function SourceSelect({
   value,
   onChange,
   className,
+  emptyLabel = m.label_none(),
 }: {
   id: string
   label: string
@@ -23,6 +24,8 @@ export function SourceSelect({
   value: string
   onChange: (key: string) => void
   className?: string
+  /** What the empty choice says: "None" in a form, "All sources" in a filter. */
+  emptyLabel?: string
 }) {
   const groups = useMemo(() => {
     const byGroup = new Map<string, SourceOption[]>()
@@ -39,11 +42,11 @@ export function SourceSelect({
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Select value={value} onValueChange={onChange} required>
         <SelectTrigger id={id} aria-invalid={Boolean(error)}>
-          <SelectValue placeholder={m.label_none()} />
+          <SelectValue placeholder={emptyLabel} />
         </SelectTrigger>
         <SelectContent>
           {/* A filter clears back to "None"; `required` still blocks an empty form submit. */}
-          <SelectItem value="">{m.label_none()}</SelectItem>
+          <SelectItem value="">{emptyLabel}</SelectItem>
           {groups.map(([group, groupOptions]) => (
             <SelectGroup key={group}>
               <SelectLabel>{group}</SelectLabel>

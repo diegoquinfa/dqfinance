@@ -2,9 +2,11 @@ import { toolDefinition } from '@tanstack/ai'
 import type { McpContext } from '../mcp/mcp-context'
 import { sendPush } from '../push/send-push'
 import { createTransaction, createTransactionInput } from './create-transaction'
+import { deleteTransaction, deleteTransactionInput } from './delete-transaction'
 import { importTransactions, importTransactionsInput } from './import-transactions'
 import { listTransactions, listTransactionsInput } from './list-transactions'
 import { summarizeTransactions, summarizeTransactionsInput } from './summarize-transactions'
+import { updateTransaction, updateTransactionToolInput } from './update-transaction'
 
 // ctx.context.userId comes from the verified OAuth token (sub claim), never from tool input.
 export const transactionTools = [
@@ -50,4 +52,19 @@ export const transactionTools = [
   }).server<McpContext>(async (input, ctx) => ({
     summary: await summarizeTransactions(ctx.context.db, ctx.context.userId, input),
   })),
+
+  toolDefinition({
+    name: 'update_transaction',
+    description:
+      "Change an income or expense. Send only the fields to change; null removes the contact or the description. A new source charges in its own currency unless you send currency. Movements a transfer created (they have a transferId) cannot be changed.",
+    inputSchema: updateTransactionToolInput,
+  }).server<McpContext>(async ({ id, ...input }, ctx) => updateTransaction(ctx.context.db, ctx.context.userId, id, input)),
+
+  toolDefinition({
+    name: 'delete_transaction',
+    description:
+      'Delete an income or expense recorded by mistake. Confirm with the user first. Movements a transfer created cannot be deleted.',
+    inputSchema: deleteTransactionInput,
+    metadata: { annotations: { destructiveHint: true } },
+  }).server<McpContext>((input, ctx) => deleteTransaction(ctx.context.db, ctx.context.userId, input.id)),
 ] as const

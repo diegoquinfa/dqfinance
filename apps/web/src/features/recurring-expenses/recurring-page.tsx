@@ -23,7 +23,7 @@ import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
-import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
@@ -192,8 +192,9 @@ function NewRecurringForm({
           </Select>
         </Field>
         <Field>
-          <FieldLabel htmlFor="recurring-starts-on">{m.label_date()}</FieldLabel>
+          <FieldLabel htmlFor="recurring-starts-on">{m.recurring_starts_on()}</FieldLabel>
           <Input id="recurring-starts-on" name="startsOn" type="date" defaultValue={today()} required />
+          <FieldDescription>{m.recurring_starts_on_hint()}</FieldDescription>
         </Field>
         <FieldError>{create.error?.message}</FieldError>
         <div className="flex justify-end gap-2">

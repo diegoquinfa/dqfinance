@@ -5,9 +5,11 @@ import { requireSession } from '../auth/require-session'
 import { pushConfigFrom } from '../push/push-config'
 import { sendPush } from '../push/send-push'
 import { createTransaction, createTransactionInput } from './create-transaction'
+import { deleteTransaction } from './delete-transaction'
 import { importTransactions, importTransactionsInput } from './import-transactions'
 import { listTransactions, listTransactionsInput } from './list-transactions'
 import { summarizeTransactions, summarizeTransactionsInput } from './summarize-transactions'
+import { updateTransaction, updateTransactionInput } from './update-transaction'
 
 export const transactionsRoutes = new Hono<AppEnv>()
   .use(requireSession)
@@ -28,3 +30,7 @@ export const transactionsRoutes = new Hono<AppEnv>()
     if (imported.created > 0) await sendPush(c.var.db, c.var.userId, c.var.locale, pushConfigFrom(c.env), 'import')
     return c.json(imported)
   })
+  .patch('/:id', jsonBody(updateTransactionInput), async (c) =>
+    c.json(await updateTransaction(c.var.db, c.var.userId, c.req.param('id'), c.req.valid('json'))),
+  )
+  .delete('/:id', async (c) => c.json(await deleteTransaction(c.var.db, c.var.userId, c.req.param('id'))))

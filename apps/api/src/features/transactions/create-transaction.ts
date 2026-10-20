@@ -34,6 +34,15 @@ export async function createTransaction(
   input: CreateTransactionInput,
   links: { recurringExpenseId?: string } = {},
 ) {
+  const [row] = await db
+    .insert(transaction)
+    .values({ userId, ...(await transactionValues(db, userId, input)), recurringExpenseId: links.recurringExpenseId })
+    .returning()
+  return toTransactionView(row!)
+}
+
+/** Validates a movement against the user's sources, categories and contacts; the columns to write. Shared by create and update. */
+export async function transactionValues(db: Db, userId: string, input: CreateTransactionInput) {
   const source = await resolveSource(db, userId, input.source)
   const currency = chargeCurrency(source, input.currency)
   const foreign = currency !== source.currency
@@ -62,23 +71,17 @@ export async function createTransaction(
     )
   }
 
-  const [row] = await db
-    .insert(transaction)
-    .values({
-      userId,
-      type: input.type,
-      amountCents: toCents(input.amount),
-      currency,
-      ...sourceColumns(source.ref),
-      primaryAmountCents: foreign ? toCents(input.primaryAmount!) : null,
-      categoryId: input.categoryId,
-      counterpartyId: input.counterpartyId,
-      recurringExpenseId: links.recurringExpenseId,
-      description: input.description || null,
-      occurredAt: input.occurredAt ? new Date(input.occurredAt) : new Date(),
-    })
-    .returning()
-  return toTransactionView(row!)
+  return {
+    type: input.type,
+    amountCents: toCents(input.amount),
+    currency,
+    ...sourceColumns(source.ref),
+    primaryAmountCents: foreign ? toCents(input.primaryAmount!) : null,
+    categoryId: input.categoryId,
+    counterpartyId: input.counterpartyId ?? null,
+    description: input.description || null,
+    occurredAt: input.occurredAt ? new Date(input.occurredAt) : new Date(),
+  }
 }
 
 /** Products, cash wallets and debit cards use their own currency; credit cards may charge in another one. */
