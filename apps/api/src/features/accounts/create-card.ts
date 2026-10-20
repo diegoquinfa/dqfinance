@@ -14,7 +14,7 @@ export const cardDetails = {
   brand: z.enum(CARD_BRANDS).nullish(),
   interestRateBps: rateBps
     .nullish()
-    .describe('The rate the issuer charges, in basis points (10000 = 100%). Null for no rate.'),
+    .describe('Issuer rate in basis points (10000 = 100%); null for no rate'),
   interestRatePeriod: z.enum(INTEREST_RATE_PERIODS).nullish().describe('`monthly` (MV) or `annual` (EA)'),
   color: z.enum(CARD_COLORS).nullish().describe('Presentation only'),
 }

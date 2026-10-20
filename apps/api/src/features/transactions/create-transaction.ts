@@ -11,17 +11,17 @@ import { assertCurrencyEnabled } from '../settings/get-settings'
 import { TRANSACTION_TYPES, transaction } from './transaction.schema'
 
 export const createTransactionInput = z.object({
-  type: z.enum(TRANSACTION_TYPES).describe('income adds money, expense removes it. Sending money to a person is an expense.'),
-  amount: moneyAmount.describe('Positive amount with up to 2 decimals, in the transaction currency'),
-  source: sourceRef.describe('Where the money left from or arrived to. Get ids from list_accounts.'),
+  type: z.enum(TRANSACTION_TYPES).describe('income adds money, expense removes it; money sent to a person is an expense.'),
+  amount: moneyAmount.describe('Positive decimal amount (not cents), in the transaction currency'),
+  source: sourceRef.describe('Where the money left from or arrived to; ids from list_accounts.'),
   currency: currencyCode
     .optional()
-    .describe("Credit cards only: the charge currency (defaults to the card's). Other sources always use their own currency."),
+    .describe("Credit cards only: the charge currency (defaults to the card's). Other sources use their own."),
   primaryAmount: moneyAmount
     .optional()
-    .describe("Required for a credit card charge in a foreign currency: its value in the card's currency on the purchase day"),
-  categoryId: z.string().min(1).describe('From list_categories; its kind must match type'),
-  counterpartyId: z.string().min(1).optional().describe('Person or business, from list_contacts'),
+    .describe("Required for a foreign-currency card charge: the value in the card's currency that day"),
+  categoryId: z.string().min(1).describe('From list_categories; kind must match type'),
+  counterpartyId: z.string().min(1).optional().describe('Person or business (list_contacts)'),
   description: z.string().trim().max(200).optional(),
   occurredAt: isoDateTime.optional().describe('ISO 8601 datetime; defaults to now'),
 })

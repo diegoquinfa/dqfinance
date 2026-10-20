@@ -16,7 +16,7 @@ export const recurringExpenseTools = [
   toolDefinition({
     name: 'list_recurring',
     description:
-      "The user's recurring expenses (subscriptions, bills). pending: true returns only the due ones, the 'to confirm' inbox; ask the user before confirming each one.",
+      "Recurring expenses (subscriptions, bills). pending true returns only the due ones ('to confirm' inbox); ask the user before confirming each.",
     inputSchema: listRecurringExpensesInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({
@@ -48,7 +48,7 @@ export const recurringExpenseTools = [
 
   toolDefinition({
     name: 'skip_recurring',
-    description: 'Skip this occurrence of a recurring expense without recording anything (e.g. it was not charged).',
+    description: 'Skip this occurrence of a recurring expense without recording anything (it was not charged).',
     inputSchema: skipRecurringExpenseInput,
   }).server<McpContext>((input, ctx) => skipRecurringExpense(ctx.context.db, ctx.context.userId, input)),
 ] as const

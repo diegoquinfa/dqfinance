@@ -11,8 +11,8 @@ import { recurringExpense } from './recurring-expense.schema'
 
 export const confirmRecurringExpenseInput = z.object({
   id: z.string().min(1),
-  amount: moneyAmount.optional().describe('The real amount this time; defaults to the expected amount'),
-  primaryAmount: moneyAmount.optional().describe('Credit card charge in a foreign currency: value in the card currency'),
+  amount: moneyAmount.optional().describe('Real amount (decimal, not cents); defaults to the expected amount'),
+  primaryAmount: moneyAmount.optional().describe('Card charge in a foreign currency: value in the card currency'),
   occurredAt: isoDateTime.optional().describe('Defaults to now'),
 })
 

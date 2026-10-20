@@ -15,16 +15,16 @@ export const createProductInput = z.object({
   currency: currencyCode,
   annualRateBps: rateBps
     .nullish()
-    .describe('Effective annual rate in basis points (10000 = 100%). Null for no rate.'),
+    .describe('Effective annual rate in basis points (10000 = 100%); null for no rate'),
   parentProductId: z
     .string()
     .min(1)
     .nullish()
-    .describe("The product this one sets money aside from. Only for type 'pocket'."),
+    .describe("The product this one sets money aside from; only for type 'pocket'."),
   yieldPayout: z
     .enum(YIELD_PAYOUTS)
     .nullish()
-    .describe('How often the interest is paid: daily or monthly.'),
+    .describe('How often interest is paid: daily or monthly.'),
 })
 
 export async function createProduct(db: Db, userId: string, input: z.infer<typeof createProductInput>) {

@@ -21,7 +21,7 @@ const cardAccount = alias(bankAccount, 'card_account')
 const cardBank = alias(bank, 'card_bank')
 
 export const listRecurringExpensesInput = z.object({
-  pending: z.boolean().optional().describe("Only active items due today or earlier (the 'to confirm' inbox)"),
+  pending: z.boolean().optional().describe("Only items due today or earlier (the 'to confirm' inbox)"),
 })
 
 export async function listRecurringExpenses(

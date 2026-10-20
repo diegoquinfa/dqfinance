@@ -4,7 +4,7 @@ import { COUNTERPARTY_KINDS, counterparty } from './counterparty.schema'
 
 export const createCounterpartyInput = z.object({
   name: z.string().trim().min(1).max(80),
-  kind: z.enum(COUNTERPARTY_KINDS).describe('person (a friend, a relative) or business (a store, a service)'),
+  kind: z.enum(COUNTERPARTY_KINDS).describe('person (a friend) or business (a store, a service)'),
 })
 
 export async function createCounterparty(db: Db, userId: string, input: z.infer<typeof createCounterpartyInput>) {
