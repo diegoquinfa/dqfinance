@@ -11,10 +11,9 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "dqfinance",
-      // Placeholder: the Deploy button provisions the database and writes its id here. By hand:
-      // `wrangler d1 create dqfinance`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // No database_id: wrangler deploy keeps the database already bound to DB, else uses the
+      // database with this name, else creates it. Migrations find it by this name too.
+      "database_name": "dqfinance-db",
       "migrations_dir": "apps/api/migrations"
     }
   ],
