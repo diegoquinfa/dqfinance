@@ -31,6 +31,33 @@
       },
       "VAPID_SUBJECT": {
         "description": "Optional: a `mailto:` or `https:` contact for push services."
+      },
+      "EMAIL_PROVIDER": {
+        "description": "Optional: cloudflare | resend | smtp. Empty picks the first configured provider."
+      },
+      "EMAIL_FROM": {
+        "description": "Optional: the From address of transactional email. Required by every provider."
+      },
+      "RESEND_API_KEY": {
+        "description": "Optional: leave empty to turn email off."
+      },
+      "CLOUDFLARE_ACCOUNT_ID": {
+        "description": "Optional: leave empty to turn email off."
+      },
+      "CLOUDFLARE_API_TOKEN": {
+        "description": "Optional: leave empty to turn email off."
+      },
+      "SMTP_HOST": {
+        "description": "Optional: leave empty to turn email off."
+      },
+      "SMTP_PORT": {
+        "description": "Optional: the SMTP port. Defaults to 465."
+      },
+      "SMTP_USER": {
+        "description": "Optional: leave empty to turn email off."
+      },
+      "SMTP_PASSWORD": {
+        "description": "Optional: leave empty to turn email off."
       }
     }
   },
