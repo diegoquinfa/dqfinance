@@ -9,7 +9,7 @@ export const balanceTools = [
   toolDefinition({
     name: 'list_accounts',
     description:
-      "List every source of the user's money with its id: bank products and cash wallets (with balance), debit cards (spend from their product), and credit cards (debt per currency). Use { type, id } as the source in other tools.",
+      'List the money sources with their ids: products, cash wallets, debit cards, credit cards. Use { type, id } as the source in other tools.',
     inputSchema: z.object({}),
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (_input, ctx) => {
@@ -37,7 +37,7 @@ export const balanceTools = [
   toolDefinition({
     name: 'get_balance_history',
     description:
-      'Month-end assets and card debt per currency over the last N months, ending with the current month. Pass sourceType and sourceId to follow one source instead (a card reports its debt).',
+      'Month-end assets and card debt per currency over the last N months, ending with the current month. sourceType and sourceId follow one source (a card reports its debt).',
     inputSchema: balanceHistoryInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({

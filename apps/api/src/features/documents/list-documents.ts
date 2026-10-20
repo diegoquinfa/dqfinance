@@ -7,7 +7,7 @@ import { toDocumentView } from './upload-document'
 
 export const listDocumentsInput = z
   .object({
-    sourceType: z.enum(SOURCE_TYPES).optional().describe('Limit the list to one source; use with sourceId'),
+    sourceType: z.enum(SOURCE_TYPES).optional().describe('One source only; use with sourceId'),
     sourceId: z.string().min(1).optional(),
   })
   .refine((input) => Boolean(input.sourceType) === Boolean(input.sourceId), {

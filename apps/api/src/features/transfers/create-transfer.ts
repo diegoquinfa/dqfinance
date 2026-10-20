@@ -14,18 +14,18 @@ import { transfer } from './transfer.schema'
 
 export const createTransferInput = z.object({
   from: sourceRef.extend({ type: z.enum(['product', 'cash_wallet']) }).describe('Origin: a product or cash wallet'),
-  to: sourceRef.describe('Destination: a product, a cash wallet, or a credit card (card payment)'),
-  amount: moneyAmount.describe('Amount that left the origin, in its currency (fee excluded)'),
+  to: sourceRef.describe('Destination: a product, cash wallet or credit card (card payment)'),
+  amount: moneyAmount.describe('Decimal amount (not cents) leaving the origin, in its currency, fee excluded'),
   receivedAmount: moneyAmount
     .optional()
-    .describe('Amount that arrived, in the destination currency. Required only when the currencies differ.'),
+    .describe('Amount that arrived, in the destination currency. Required when currencies differ.'),
   debtCurrency: currencyCode
     .optional()
-    .describe("Card payments only: which debt currency is being paid (defaults to the card's currency)"),
-  fee: moneyAmount.optional().describe('Bank fee charged on the origin, in its currency'),
+    .describe("Card payments only: which debt currency is paid (defaults to the card's)"),
+  fee: moneyAmount.optional().describe('Bank fee on the origin, in its currency'),
   note: z.string().trim().max(200).optional(),
   sentAt: isoDateTime.optional().describe('ISO 8601 datetime; defaults to now'),
-  inTransit: z.boolean().optional().describe('True when the money has not arrived yet (e.g. an interbank transfer)'),
+  inTransit: z.boolean().optional().describe('True while the money has not arrived (e.g. an interbank transfer)'),
 })
 
 export type CreateTransferInput = z.infer<typeof createTransferInput>

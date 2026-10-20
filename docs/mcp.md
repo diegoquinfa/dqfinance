@@ -31,6 +31,17 @@ apps/api  /mcp
 - `/mcp` requires every scope in `MCP_SCOPES`.
 - Mark read-only tools with `metadata.annotations.readOnlyHint`.
 - Wrap a returned list in an object, so the response is a JSON object with `structuredContent`.
+- **A description is a fixed cost.** Every client pays for the whole `tools/list` payload the moment
+  it connects, so a tool description says in one sentence what the tool does, and a field
+  description says only what the schema cannot: not the type, not the name, not a fact the schema
+  already carries (`exclusiveMinimum`, `multipleOf`, `maxItems`, `enum`). Keep the facts a model
+  needs to call correctly: amounts are decimal and not cents, dates are `YYYY-MM-DD` or an ISO 8601
+  datetime, an amount is positive and the type carries the sign, which id comes from which list
+  tool, a dry run before an import, and a confirmation before a delete.
+- The `tools/list` payload is **22,647 chars** (36 tools). Measure it by bundling a script that
+  builds `createMCPServer` with the real tool arrays (the esbuild next to wrangler, with
+  `NODE_PATH=apps/api/node_modules`), then asking the server for `tools/list`: the sources use
+  extensionless imports, so plain Node cannot load them.
 
 ## Gotchas
 

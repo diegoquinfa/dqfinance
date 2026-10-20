@@ -9,7 +9,7 @@ import { mergeTransactionUpdate } from './merge-transaction-update'
 import { transaction } from './transaction.schema'
 
 export const updateTransactionInput = createTransactionInput.partial().extend({
-  counterpartyId: z.string().min(1).nullable().optional().describe('From list_contacts; null removes the contact'),
+  counterpartyId: z.string().min(1).nullable().optional().describe('From list_contacts; null removes it'),
   description: z.string().trim().max(200).nullable().optional().describe('null removes the description'),
 })
 

@@ -14,29 +14,28 @@ import { TRANSACTION_TYPES, transaction } from './transaction.schema'
 export const MAX_IMPORT_ROWS = 500
 
 export const importTransactionsInput = z.object({
-  source: sourceRef.describe('The one source every row belongs to. Get ids from list_accounts.'),
+  source: sourceRef.describe('The source every row belongs to. Get ids from list_accounts.'),
   rows: z
     .array(
       z.object({
         type: z.enum(TRANSACTION_TYPES),
-        amount: moneyAmount.describe('Positive amount with up to 2 decimals, in the source currency'),
+        amount: moneyAmount.describe('Positive decimal amount (not cents), in the source currency'),
         occurredAt: z
           .union([isoDate, isoDateTime])
-          .describe('YYYY-MM-DD, or an ISO 8601 datetime when the statement has the time'),
+          .describe('YYYY-MM-DD, or an ISO 8601 datetime when the time is known'),
         description: z.string().trim().max(200).optional(),
         categoryId: z
           .string()
           .min(1)
           .optional()
-          .describe('From list_categories. Omit to book it as "Other expenses" or "Other income".'),
+          .describe('From list_categories. Omit to book as "Other expenses" or "Other income".'),
       }),
     )
     .min(1)
-    .max(MAX_IMPORT_ROWS)
-    .describe(`At most ${MAX_IMPORT_ROWS} rows per call`),
+    .max(MAX_IMPORT_ROWS),
   dryRun: z
     .boolean()
-    .describe('True previews every row and writes nothing. Preview first, show the user, then import.'),
+    .describe('True previews every row and writes nothing. Show the user the preview, then import.'),
 })
 
 export type ImportTransactionsInput = z.infer<typeof importTransactionsInput>

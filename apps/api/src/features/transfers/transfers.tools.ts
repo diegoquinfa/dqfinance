@@ -9,7 +9,7 @@ export const transferTools = [
   toolDefinition({
     name: 'create_transfer',
     description:
-      "Move the user's own money between two of their sources (between accounts, cash withdrawal or deposit, credit card payment). Never use it for money sent to another person: that is an expense (create_transaction).",
+      "Move money between two of their own sources: between accounts, a cash withdrawal or deposit, or a credit card payment. Never for money sent to another person: that is an expense (create_transaction).",
     inputSchema: createTransferInput,
   }).server<McpContext>(async (input, ctx) => {
     const created = await createTransfer(ctx.context.db, ctx.context.userId, input)
@@ -19,7 +19,7 @@ export const transferTools = [
 
   toolDefinition({
     name: 'list_transfers',
-    description: "List the user's transfers, newest first. Each has a derived type (own_same_bank, withdrawal, card_payment, …).",
+    description: "List transfers, newest first. Each has a derived type (own_same_bank, withdrawal, card_payment, …).",
     inputSchema: listTransfersInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({

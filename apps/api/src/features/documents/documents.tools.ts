@@ -9,7 +9,7 @@ export const documentTools = [
   toolDefinition({
     name: 'list_documents',
     description:
-      "List the files (contracts, terms, fee tables) attached to the user's sources, newest first. Uploading and downloading them happens in the web app.",
+      "List the files attached to the sources, newest first. Uploading and downloading them happens in the web app.",
     inputSchema: listDocumentsInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({
