@@ -1,9 +1,9 @@
-/** What makes two movements the same one: source, type, amount, calendar day, and description. */
+/** What makes two movements the same one: source, type, amount, calendar day, and title. */
 export type MovementFingerprint = {
   type: 'income' | 'expense'
   amountCents: number
   occurredAt: Date
-  description: string | null
+  title: string | null
 }
 
 /** Calendar day in UTC, matching the days the API stores (occurred_at is a timestamp). */
@@ -11,8 +11,8 @@ const calendarDay = (at: Date) => at.toISOString().slice(0, 10)
 
 const signature = (m: MovementFingerprint) => `${m.type}|${m.amountCents}|${calendarDay(m.occurredAt)}`
 
-/** Two rows are the same when both say what they were for and it matches; a missing description never blocks. */
-const sameDescription = (a: string | null, b: string | null) => !a || !b || a === b
+/** Two rows are the same when both say what they were for and it matches; a missing title never blocks. */
+const sameTitle = (a: string | null, b: string | null) => !a || !b || a === b
 
 /**
  * Flags the rows that look like a movement already recorded on the same source, either in the
@@ -30,7 +30,7 @@ export function duplicateFlags(batch: MovementFingerprint[], existing: MovementF
 
   return batch.map((row) => {
     const bucket = bySignature.get(signature(row)) ?? []
-    const duplicate = bucket.some((other) => sameDescription(other.description, row.description))
+    const duplicate = bucket.some((other) => sameTitle(other.title, row.title))
     // A row the import will skip does not become the reason a later identical row is skipped.
     if (!duplicate) remember(row)
     return duplicate

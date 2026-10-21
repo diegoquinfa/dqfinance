@@ -7,7 +7,7 @@ export type CsvTable = { headers: string[]; rows: string[][] }
 
 export type ColumnMap = {
   date: number
-  description: number
+  title: number
   amount: number
   /** A statement with its own type column, else null (the sign of the amount decides). */
   type: number | null
@@ -17,7 +17,22 @@ export type ParsedMovement = {
   type: 'income' | 'expense'
   amount: number
   occurredAt: string
+  title?: string
   description?: string
+}
+
+/** The short label that names a movement in a list; the API caps it at the same length. */
+export const TITLE_MAX = 120
+
+/**
+ * A statement line is the movement's title. A line longer than a title keeps its full
+ * text as the description, so nothing the statement said is lost.
+ */
+export function splitTitle(text: string): { title: string; description?: string } {
+  if (text.length <= TITLE_MAX) return { title: text }
+  const head = text.slice(0, TITLE_MAX)
+  const space = head.lastIndexOf(' ')
+  return { title: (space > 0 ? head.slice(0, space) : head).trim(), description: text }
 }
 
 /** Splits one line: quoted fields keep their separator. */
@@ -66,7 +81,17 @@ const word = (value: string) =>
     .toLowerCase()
 
 const DATE_WORDS = ['fecha', 'date', 'dia']
-const DESCRIPTION_WORDS = ['descripcion', 'description', 'concepto', 'concept', 'detalle', 'detail', 'movimiento']
+const TITLE_WORDS = [
+  'descripcion',
+  'description',
+  'concepto',
+  'concept',
+  'detalle',
+  'detail',
+  'movimiento',
+  'titulo',
+  'title',
+]
 const AMOUNT_WORDS = ['monto', 'importe', 'amount', 'valor', 'value']
 const TYPE_WORDS = ['tipo', 'type']
 
@@ -75,12 +100,12 @@ export function detectColumns(headers: string[]): ColumnMap {
   const normalized = headers.map(word)
   const find = (words: string[]) => normalized.findIndex((header) => words.some((name) => header.includes(name)))
   const date = find(DATE_WORDS)
-  const description = find(DESCRIPTION_WORDS)
+  const title = find(TITLE_WORDS)
   const amount = find(AMOUNT_WORDS)
   const type = find(TYPE_WORDS)
   return {
     date: date === -1 ? 0 : date,
-    description: description === -1 ? 1 : description,
+    title: title === -1 ? 1 : title,
     amount: amount === -1 ? headers.length - 1 : amount,
     type: type === -1 ? null : type,
   }
@@ -155,8 +180,14 @@ export function mapRows(table: CsvTable, columns: ColumnMap): { rows: ParsedMove
     const type =
       columns.type === null ? null : movementType(row[columns.type] ?? '')
     const resolved = type ?? (signed < 0 ? 'expense' : 'income')
-    const description = (row[columns.description] ?? '').trim()
-    rows.push({ type: resolved, amount: Math.abs(signed), occurredAt, ...(description ? { description } : {}) })
+    const { title, description } = splitTitle((row[columns.title] ?? '').trim())
+    rows.push({
+      type: resolved,
+      amount: Math.abs(signed),
+      occurredAt,
+      ...(title ? { title } : {}),
+      ...(description ? { description } : {}),
+    })
   }
   return { rows, skipped }
 }

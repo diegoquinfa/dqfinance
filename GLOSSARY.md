@@ -17,6 +17,8 @@ Domain terms used in code, docs, and reviews. Code uses the English term; the Sp
 | **Balance** (Saldo) | Money in a product or cash wallet. Always computed from movements. |
 | **Debt** (Deuda) | What is owed on a credit card, per currency. Always computed. |
 | **Transaction** (Movimiento) | An income or an expense on one source. Changes the user's net worth. |
+| **Title** (Título) | The short label that names a transaction in every list, at most 120 characters. Empty falls back to the category name. |
+| **Description** (Descripción) | The long free text of a transaction, with the details its title has no room for. Shown only in the transaction's detail sheet. |
 | **Transfer** (Transferencia) | Moving the user's own money between two of their sources. Not income or expense. |
 | **Transfer type** | Derived from origin and destination: own same bank, own other bank, withdrawal, deposit, cash exchange, card payment. |
 | **In transit** (En tránsito) | A transfer that left its origin but has no received date yet. |

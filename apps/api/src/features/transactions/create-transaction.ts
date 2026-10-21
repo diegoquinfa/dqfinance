@@ -10,6 +10,11 @@ import { counterparty } from '../counterparties/counterparty.schema'
 import { assertCurrencyEnabled } from '../settings/get-settings'
 import { TRANSACTION_TYPES, transaction } from './transaction.schema'
 
+/** The short label that names a movement in a list. */
+export const TITLE_MAX = 120
+/** The long free text that holds the details. */
+export const DESCRIPTION_MAX = 2000
+
 export const createTransactionInput = z.object({
   type: z.enum(TRANSACTION_TYPES).describe('income adds money, expense removes it; money sent to a person is an expense.'),
   amount: moneyAmount.describe('Positive decimal amount (not cents), in the transaction currency'),
@@ -22,7 +27,13 @@ export const createTransactionInput = z.object({
     .describe("Required for a foreign-currency card charge: the value in the card's currency that day"),
   categoryId: z.string().min(1).describe('From list_categories; kind must match type'),
   counterpartyId: z.string().min(1).optional().describe('Person or business (list_contacts)'),
-  description: z.string().trim().max(200).optional(),
+  title: z.string().trim().max(TITLE_MAX).optional().describe('Short name of the movement, shown in the list'),
+  description: z
+    .string()
+    .trim()
+    .max(DESCRIPTION_MAX)
+    .optional()
+    .describe('Longer details about the movement'),
   occurredAt: isoDateTime.optional().describe('ISO 8601 datetime; defaults to now'),
 })
 
@@ -79,6 +90,7 @@ export async function transactionValues(db: Db, userId: string, input: CreateTra
     primaryAmountCents: foreign ? toCents(input.primaryAmount!) : null,
     categoryId: input.categoryId,
     counterpartyId: input.counterpartyId ?? null,
+    title: input.title || null,
     description: input.description || null,
     occurredAt: input.occurredAt ? new Date(input.occurredAt) : new Date(),
   }
@@ -100,6 +112,7 @@ export const toTransactionView = (row: typeof transaction.$inferSelect) => ({
   source: sourceRefOf(row),
   categoryId: row.categoryId,
   counterpartyId: row.counterpartyId,
+  title: row.title,
   description: row.description,
   occurredAt: row.occurredAt.toISOString(),
 })

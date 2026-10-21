@@ -125,10 +125,10 @@ Checklist for every added component:
 | `Separator` | A lone divider line, where a `border-t` used to be. List rows keep `divide-y` through `rowsClass`. |
 | `Toaster` (sonner) | Mounted once in the root route. A successful create confirms with `toast.success(...)`; never for reads. |
 | `PageHeader`, `Section`, `Eyebrow`, `FocusLayout` | `shared/ui/page.tsx`: the page h1, the rail sections, the `// 0X` marker, and the signed-out layout (two-tone statement + panel). A section heading is two lines: the `// 0X` index above the label in `type-heading`. |
-| `TransactionRow` | `features/transactions`: description in `ink`, mono metadata (`date / source / category`), the signed amount on the right. Every movement list uses it. |
+| `TransactionRow` | `features/transactions`: title in `ink`, mono metadata (`date / source / category`), the signed amount on the right. Every movement list uses it. |
 | `Chart` | `shared/ui/chart.tsx` wraps Recharts (the only chart dependency). Lines only: assets solid in `ink`, liabilities dashed in `muted-foreground`, so the dash tells them apart without relying on tone. A mono legend beside the title, a `line` grid, mono ticks with compact amounts on the Y axis (`150 mil`), a `line-strong` cursor, no area fills, no lilac, no animation. The tooltip is a square hairline panel with the month, then each series label beside its `formatMoney` value; the region carries an `aria-label` and the same points sit in an `sr-only` table beside it. |
 | `Table` | Data with more than two columns, like the statement import preview: mono headers, hairline rows, no box, no zebra. |
-| `Textarea` | Pasted statement rows: filled `surface`, mono, grows with what it holds. |
+| `Textarea` | Pasted statement rows: filled `surface`, mono, grows with what it holds. A movement's description uses it too, in sans. |
 | `CardFace` | `features/accounts/card-face.tsx`: the 1.586 square-cornered face on a product's card page, with its color, brand (`label-mono`) and masked last 4. |
 
 States: hover changes tone or moves a row title 4px right, never size. Focus is a 1px `signal` outline with a 4px offset (global); the amount field shows focus on its bottom line. Disabled is `opacity-50`.

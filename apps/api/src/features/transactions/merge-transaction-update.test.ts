@@ -11,7 +11,8 @@ const current: CreateTransactionInput = {
   primaryAmount: 80000,
   categoryId: 'food',
   counterpartyId: 'jose',
-  description: 'Lunch',
+  title: 'Lunch',
+  description: 'Lunch with the team',
   occurredAt: '2026-10-18T17:00:00.000Z',
 }
 
@@ -27,11 +28,14 @@ test('a field in the patch replaces only that field', () => {
   })
 })
 
-test('null removes the contact and the description; undefined keeps them', () => {
-  const merged = mergeTransactionUpdate(current, { counterpartyId: null, description: null })
+test('null removes the contact, the title and the description; undefined keeps them', () => {
+  const merged = mergeTransactionUpdate(current, { counterpartyId: null, title: null, description: null })
   assert.equal(merged.counterpartyId, undefined)
+  assert.equal(merged.title, undefined)
   assert.equal(merged.description, undefined)
   assert.equal(mergeTransactionUpdate(current, { counterpartyId: undefined }).counterpartyId, 'jose')
+  assert.equal(mergeTransactionUpdate(current, { title: undefined }).title, 'Lunch')
+  assert.equal(mergeTransactionUpdate(current, { description: undefined }).description, 'Lunch with the team')
 })
 
 test('a new source drops the old charge currency and primary amount', () => {

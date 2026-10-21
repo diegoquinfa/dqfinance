@@ -8,6 +8,7 @@ import { moneyAmount, toCents } from '../../shared/money'
 import { resolveSource, sourceColumns, sourceRef, type SourceRef } from '../accounts/source'
 import { category } from '../categories/category.schema'
 import { categoryName, systemCategoryId } from '../categories/system-categories'
+import { DESCRIPTION_MAX, TITLE_MAX } from './create-transaction'
 import { duplicateFlags, type MovementFingerprint } from './duplicate'
 import { TRANSACTION_TYPES, transaction } from './transaction.schema'
 
@@ -23,7 +24,13 @@ export const importTransactionsInput = z.object({
         occurredAt: z
           .union([isoDate, isoDateTime])
           .describe('YYYY-MM-DD, or an ISO 8601 datetime when the time is known'),
-        description: z.string().trim().max(200).optional(),
+        title: z.string().trim().max(TITLE_MAX).optional().describe('Short name of the movement, from the statement'),
+        description: z
+          .string()
+          .trim()
+          .max(DESCRIPTION_MAX)
+          .optional()
+          .describe('Longer details, when the statement has them'),
         categoryId: z
           .string()
           .min(1)
@@ -44,6 +51,7 @@ export type ImportRowView = {
   type: 'income' | 'expense'
   amount: number
   occurredAt: string
+  title: string | null
   description: string | null
   categoryId: string
   categoryName: string
@@ -52,7 +60,15 @@ export type ImportRowView = {
 
 export type ImportView = { created: number; skipped: number; rows: ImportRowView[] }
 
-type ParsedRow = { type: 'income' | 'expense'; amount: number; amountCents: number; at: Date; description: string | null; categoryId?: string }
+type ParsedRow = {
+  type: 'income' | 'expense'
+  amount: number
+  amountCents: number
+  at: Date
+  title: string | null
+  description: string | null
+  categoryId?: string
+}
 
 /**
  * Records many movements of one source from a statement. Rows that look like a movement already
@@ -70,6 +86,7 @@ export async function importTransactions(
     amount: row.amount,
     amountCents: toCents(row.amount),
     at: parseOccurredAt(row.occurredAt),
+    title: row.title || null,
     description: row.description || null,
     categoryId: row.categoryId,
   }))
@@ -79,13 +96,14 @@ export async function importTransactions(
     categoriesOf(db, userId, locale, rows),
   ])
   const duplicates = duplicateFlags(
-    rows.map((row) => ({ type: row.type, amountCents: row.amountCents, occurredAt: row.at, description: row.description })),
+    rows.map((row) => ({ type: row.type, amountCents: row.amountCents, occurredAt: row.at, title: row.title })),
     existing,
   )
   const preview = rows.map((row, index) => ({
     type: row.type,
     amount: row.amount,
     occurredAt: input.rows[index]!.occurredAt,
+    title: row.title,
     description: row.description,
     categoryId: categories[index]!.id,
     categoryName: categories[index]!.name,
@@ -105,6 +123,7 @@ export async function importTransactions(
           currency: source.currency,
           ...sourceColumns(source.ref),
           categoryId,
+          title: row.title,
           description: row.description,
           occurredAt: row.at,
         })),
@@ -136,7 +155,7 @@ async function existingMovements(db: Db, userId: string, ref: SourceRef, rows: P
       type: transaction.type,
       amountCents: transaction.amountCents,
       occurredAt: transaction.occurredAt,
-      description: transaction.description,
+      title: transaction.title,
     })
     .from(transaction)
     .where(

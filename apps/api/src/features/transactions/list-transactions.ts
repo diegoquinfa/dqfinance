@@ -106,6 +106,7 @@ export async function listTransactions(db: Db, userId: string, locale: Locale, i
     counterparty: t.counterpartyId
       ? { id: t.counterpartyId, name: joined.counterpartyName!, kind: joined.counterpartyKind! }
       : null,
+    title: t.title,
     description: t.description,
     transferId: t.transferId,
     recurringExpenseId: t.recurringExpenseId,
