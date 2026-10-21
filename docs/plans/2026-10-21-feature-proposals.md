@@ -12,8 +12,16 @@ that already accounts for:
 - money set aside for savings goals and annual bills (proposals 4 and 5),
 - what is left until the next expected income (proposal 7, so not only a monthly salary).
 
-Formula sketch: `(available balance − pending recurring − savings − set-asides) / days until next income`.
-Unspent money rolls into the following days.
+Decided: divide by the days **left**, not the days of the month, so the number corrects itself (overspend
+yesterday and today drops; underspend and it rises).
+
+```
+today = (available − pending fixed expenses − this month's savings and set-asides) / days left
+```
+
+The user also sets a **monthly spending target**. It works as a cap: if the formula gives more than what is left
+of that target divided by the days left, the lower value wins. "Days left" runs to the end of the month or to the
+next expected income (proposal 7).
 
 ## 2. Forecast
 
@@ -21,7 +29,10 @@ Projected balance at the end of the month, and optionally 3 months out, from the
 known recurring expenses and expected income. Shares its calculation with proposal 1 and covers the month-end
 projection Kriz911 asked for.
 
-**Open question:** one screen or two? Proposal 1 is the daily answer, this is the trend.
+Decided: **separate from proposal 1**. Forecast answers "where am I heading if nothing changes": the balance
+left at month end if the current average daily spending continues, minus the fixed expenses still due, plus
+expected income. Proposal 1 answers "how much may I spend today to arrive well". They can share helpers in the
+backend but are different features and views (forecast as a line chart to month end, warning if it nears zero).
 
 ## 3. Reminders of upcoming expenses
 
@@ -75,11 +86,11 @@ use them in proposals 1 and 2 instead of assuming a payday.
 
 ## 8. Shared expenses
 
-Split an expense with contacts and track who owes whom. Builds on contacts (Counterparty) and overlaps with
-loans and debts on the Later list.
+Split an expense with other people and track who owes whom. Overlaps with loans and debts on the Later list.
 
-**Open question:** splitting with contacts who don't use the app (Splitwise style), or shared accounts between
-two dqfinance users (a couple)?
+Decided: built on top of proposal 11 (federated contacts). A contact who is not on dqfinance stays a plain
+Counterparty and the split is only recorded locally (Splitwise style). A connected dqfinance contact receives the
+split as a request to accept or reject, and on accept it lands in their own books.
 
 ## 9. Custom categories
 
@@ -90,4 +101,33 @@ and maybe subcategories.
 
 Track CDTs, stocks or crypto with current value and return. Already on the Later list.
 
-**Open question:** manual value updates, or automatic prices?
+Decided: start with **manual value updates** (covers CDTs and funds, which have no public price). Automatic
+prices for stocks or crypto come later; they need a price API, its cost and limits, and currency conversion.
+
+## 11. Federated contacts (Mastodon style)
+
+Signed-in users connect with each other, whether they share an instance or each one runs an independent
+deployment. This is the base for shared expenses (proposal 8) and for sending money between people.
+
+- **Identity:** each user has a handle `user@instance` (for example `diego@finance.diegoquinfa.dev`). The
+  instance publishes discovery with WebFinger (`/.well-known/webfinger`) and a per-user Ed25519 public key.
+- **Same origin vs. remote:** the contact record stores whether the other user is on the same instance (local
+  delivery, no network call) or on another one (its origin and public key).
+- **Connecting:** A sends a contact request, B accepts or rejects. Nothing is exchanged before acceptance, and
+  either side can remove or block the contact.
+- **Server to server:** requests between instances are signed (HTTP Message Signatures with the user's key), with
+  a timestamp and nonce against replays. The receiving instance verifies the signature against the key it
+  fetched for that handle. Only HTTPS origins; same SSRF rules as the webhooks in proposal 3.
+- **Money and splits are requests:** when A records "sent 50,000 COP to B" or splits an expense with B, B gets a
+  notification (Web Push and inbox) to **accept or reject**. Accept creates the matching movement in B's books
+  (income, or a debt for a split). Reject leaves a note on A's side. Nothing is written in B's books without
+  B's action.
+- **Minimal data:** only the amount, currency, date, a short title and the handles travel. Never balances,
+  accounts or categories.
+- **Simple first:** start with contacts and money requests between instances. Groups, multi-person splits and a
+  shared ledger come later.
+
+Open questions: whether to use ActivityPub itself (interoperable but heavy) or a small dqfinance protocol with
+the same ideas; how an instance handles an unreachable peer (a queue with retries); and whether open sign-up
+instances need rate limits on contact requests.
+
