@@ -35,26 +35,26 @@ export type DemoSource = 'checking' | 'savings' | 'card' | 'cash'
 
 /** The movements of a month, repeated over the demo's months. */
 const MONTHLY = [
-  { day: 1, type: 'income', amount: 3200, category: 'salary', source: 'checking', contact: 'employer', description: 'salary' },
-  { day: 3, type: 'expense', amount: 1450, category: 'housing', source: 'checking', contact: 'landlord', description: 'rent' },
-  { day: 5, type: 'expense', amount: 6.5, category: 'food', source: 'cash', contact: 'coffee', description: 'coffee' },
-  { day: 8, type: 'expense', amount: 118.4, category: 'food', source: 'card', contact: 'market', description: 'groceries' },
-  { day: 9, type: 'expense', amount: 2.75, category: 'transport', source: 'cash', contact: 'transit', description: 'fare' },
-  { day: 12, type: 'expense', amount: 59.99, category: 'utilities', source: 'checking', contact: 'utility', description: 'internet' },
-  { day: 15, type: 'expense', amount: 24.9, category: 'subscriptions', source: 'card', contact: 'streaming', description: 'streaming' },
-  { day: 17, type: 'expense', amount: 74.2, category: 'shopping', source: 'card', contact: 'store', description: 'shopping' },
-  { day: 19, type: 'expense', amount: 86.9, category: 'food', source: 'card', contact: 'market', description: 'groceries' },
-  { day: 21, type: 'expense', amount: 45, category: 'transport', source: 'checking', contact: 'transit', description: 'pass' },
-  { day: 24, type: 'expense', amount: 32, category: 'entertainment', source: 'card', contact: 'cinema', description: 'cinema' },
-  { day: 26, type: 'expense', amount: 35, category: 'health', source: 'cash', contact: 'gym', description: 'gym' },
-  { day: 28, type: 'income', amount: 450, category: 'freelance', source: 'checking', contact: 'client', description: 'freelance' },
+  { day: 1, type: 'income', amount: 3200, category: 'salary', source: 'checking', contact: 'employer', title: 'salary' },
+  { day: 3, type: 'expense', amount: 1450, category: 'housing', source: 'checking', contact: 'landlord', title: 'rent' },
+  { day: 5, type: 'expense', amount: 6.5, category: 'food', source: 'cash', contact: 'coffee', title: 'coffee' },
+  { day: 8, type: 'expense', amount: 118.4, category: 'food', source: 'card', contact: 'market', title: 'groceries' },
+  { day: 9, type: 'expense', amount: 2.75, category: 'transport', source: 'cash', contact: 'transit', title: 'fare' },
+  { day: 12, type: 'expense', amount: 59.99, category: 'utilities', source: 'checking', contact: 'utility', title: 'internet' },
+  { day: 15, type: 'expense', amount: 24.9, category: 'subscriptions', source: 'card', contact: 'streaming', title: 'streaming' },
+  { day: 17, type: 'expense', amount: 74.2, category: 'shopping', source: 'card', contact: 'store', title: 'shopping' },
+  { day: 19, type: 'expense', amount: 86.9, category: 'food', source: 'card', contact: 'market', title: 'groceries' },
+  { day: 21, type: 'expense', amount: 45, category: 'transport', source: 'checking', contact: 'transit', title: 'pass' },
+  { day: 24, type: 'expense', amount: 32, category: 'entertainment', source: 'card', contact: 'cinema', title: 'cinema' },
+  { day: 26, type: 'expense', amount: 35, category: 'health', source: 'cash', contact: 'gym', title: 'gym' },
+  { day: 28, type: 'income', amount: 450, category: 'freelance', source: 'checking', contact: 'client', title: 'freelance' },
 ] as const
 
 /** The default categories the movements use. */
 export type CategoryKey = (typeof MONTHLY)[number]['category']
 
-/** What the movement was for, beside the contact's name. */
-export type DescriptionKey = (typeof MONTHLY)[number]['description']
+/** The name of the movement, beside the contact's name. */
+export type TitleKey = (typeof MONTHLY)[number]['title']
 
 /** Recurring expenses: what lands in the "to confirm" inbox and on the calendar. */
 export const RECURRING = [
@@ -70,7 +70,7 @@ export type DemoMovement = {
   category: CategoryKey
   source: DemoSource
   contact: ContactKey
-  description: DescriptionKey
+  title: TitleKey
 }
 
 export type DemoTransfer = { date: string; to: 'savings' | 'card'; amount: number }
@@ -78,8 +78,8 @@ export type DemoTransfer = { date: string; to: 'savings' | 'card'; amount: numbe
 /** The name of a contact, in the language of the ledger. */
 export const contactName = (key: ContactKey, locale: Locale) => m[`demo_contact_${key}`]({}, { locale })
 
-/** What a movement was for, in the language of the ledger. */
-export const movementDescription = (key: DescriptionKey, locale: Locale) => m[`demo_desc_${key}`]({}, { locale })
+/** The name of the movement, in the language of the ledger. */
+export const movementTitle = (key: TitleKey, locale: Locale) => m[`demo_desc_${key}`]({}, { locale })
 
 /** The date of a day of the month, `monthsBack` months before the demo's current month. */
 export const dayIn = (today: string, monthsBack: number, day: number) => {

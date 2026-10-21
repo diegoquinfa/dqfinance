@@ -4,13 +4,14 @@ import type { Db } from '../../db'
 import { AppError, found } from '../../shared/http'
 import { fromCents } from '../../shared/money'
 import { sourceRefOf } from '../accounts/source'
-import { createTransactionInput, toTransactionView, transactionValues } from './create-transaction'
+import { createTransactionInput, DESCRIPTION_MAX, TITLE_MAX, toTransactionView, transactionValues } from './create-transaction'
 import { mergeTransactionUpdate } from './merge-transaction-update'
 import { transaction } from './transaction.schema'
 
 export const updateTransactionInput = createTransactionInput.partial().extend({
   counterpartyId: z.string().min(1).nullable().optional().describe('From list_contacts; null removes it'),
-  description: z.string().trim().max(200).nullable().optional().describe('null removes the description'),
+  title: z.string().trim().max(TITLE_MAX).nullable().optional().describe('null removes the title'),
+  description: z.string().trim().max(DESCRIPTION_MAX).nullable().optional().describe('null removes the description'),
 })
 
 /** The MCP tool has no path to take the id from, so it carries it in the input. */
@@ -45,6 +46,7 @@ export async function updateTransaction(db: Db, userId: string, id: string, inpu
       primaryAmount: existing.primaryAmountCents === null ? undefined : fromCents(existing.primaryAmountCents),
       categoryId: existing.categoryId,
       counterpartyId: existing.counterpartyId ?? undefined,
+      title: existing.title ?? undefined,
       description: existing.description ?? undefined,
       occurredAt: existing.occurredAt.toISOString(),
     },

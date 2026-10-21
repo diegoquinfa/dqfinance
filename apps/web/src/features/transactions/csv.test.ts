@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { detectColumns, mapRows, parseAmount, parseCsv, parseDay } from './csv.ts'
+import { detectColumns, mapRows, parseAmount, parseCsv, parseDay, splitTitle, TITLE_MAX } from './csv.ts'
 
 test('parseCsv keeps separators inside quoted fields, in both separators', () => {
   const quoted = parseCsv('date,description,amount\n2026-10-19,"Rent, October",-450000\n')
@@ -39,19 +39,19 @@ test('parseDay takes both statement formats and rejects impossible days', () => 
 test('detectColumns guesses the map, in either language', () => {
   assert.deepEqual(detectColumns(['Fecha', 'Descripcion', 'Tipo', 'Monto']), {
     date: 0,
-    description: 1,
+    title: 1,
     amount: 3,
     type: 2,
   })
-  assert.deepEqual(detectColumns(['Date', 'Details', 'Value']), { date: 0, description: 1, amount: 2, type: null })
+  assert.deepEqual(detectColumns(['Date', 'Details', 'Value']), { date: 0, title: 1, amount: 2, type: null })
 })
 
 test('mapRows signs the rows and reports what it could not read', () => {
   const table = parseCsv('date,description,amount\n2026-10-19,Salary,3200000\n2026-10-20,Rent,-450000\n2026-10-21,Broken,\n')
   const mapped = mapRows(table, detectColumns(table.headers))
   assert.deepEqual(mapped.rows, [
-    { type: 'income', amount: 3200000, occurredAt: '2026-10-19', description: 'Salary' },
-    { type: 'expense', amount: 450000, occurredAt: '2026-10-20', description: 'Rent' },
+    { type: 'income', amount: 3200000, occurredAt: '2026-10-19', title: 'Salary' },
+    { type: 'expense', amount: 450000, occurredAt: '2026-10-20', title: 'Rent' },
   ])
   assert.equal(mapped.skipped, 1)
 })
@@ -60,7 +60,15 @@ test('mapRows prefers a type column but falls back to the sign', () => {
   const table = parseCsv('date,type,description,amount\n2026-10-19,gasto,Fee,12000\n2026-10-20,,Refund,-30000\n')
   const mapped = mapRows(table, detectColumns(table.headers))
   assert.deepEqual(mapped.rows, [
-    { type: 'expense', amount: 12000, occurredAt: '2026-10-19', description: 'Fee' },
-    { type: 'expense', amount: 30000, occurredAt: '2026-10-20', description: 'Refund' },
+    { type: 'expense', amount: 12000, occurredAt: '2026-10-19', title: 'Fee' },
+    { type: 'expense', amount: 30000, occurredAt: '2026-10-20', title: 'Refund' },
   ])
+})
+
+test('splitTitle keeps a short line whole and a long one as the description', () => {
+  assert.deepEqual(splitTitle('Salary'), { title: 'Salary' })
+  const long = `${'word '.repeat(40)}end`
+  const split = splitTitle(long)
+  assert.equal(split.title.length <= TITLE_MAX, true)
+  assert.equal(split.description, long)
 })
