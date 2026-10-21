@@ -184,11 +184,11 @@ export function ImportPage() {
               onChange={(value) => setMap({ ...columns, date: value ?? 0 })}
             />
             <ColumnField
-              id="import-column-description"
-              label={m.label_description()}
+              id="import-column-title"
+              label={m.label_title()}
               headers={table.headers}
-              value={columns.description}
-              onChange={(value) => setMap({ ...columns, description: value ?? 0 })}
+              value={columns.title}
+              onChange={(value) => setMap({ ...columns, title: value ?? 0 })}
             />
             <ColumnField
               id="import-column-amount"
@@ -239,7 +239,7 @@ export function ImportPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>{m.label_date()}</TableHead>
-                  <TableHead>{m.label_description()}</TableHead>
+                  <TableHead>{m.label_title()}</TableHead>
                   <TableHead className="hidden sm:table-cell">{m.label_category()}</TableHead>
                   <TableHead className="text-right">{m.label_amount()}</TableHead>
                 </TableRow>
@@ -252,7 +252,7 @@ export function ImportPage() {
                     </TableCell>
                     <TableCell className="text-ink">
                       <span className="flex flex-wrap items-center gap-2">
-                        {row.description || row.categoryName}
+                        {row.title || row.categoryName}
                         {row.duplicate && <Badge variant="outline">{m.import_duplicate()}</Badge>}
                         {/* The category column drops below sm so four columns fit a phone. */}
                         <span className="label-mono text-muted-foreground sm:hidden">{row.categoryName}</span>

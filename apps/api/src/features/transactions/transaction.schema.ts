@@ -31,6 +31,8 @@ export const transaction = sqliteTable(
     recurringExpenseId: text('recurring_expense_id').references(() => recurringExpense.id, { onDelete: 'set null' }),
     // Fee and FX difference entries created by a transfer; deleted with it.
     transferId: text('transfer_id').references(() => transfer.id, { onDelete: 'cascade' }),
+    // The short label that names the movement; the details live in `description`.
+    title: text('title'),
     description: text('description'),
     occurredAt: timestamp('occurred_at').notNull(),
     createdAt: createdAt(),

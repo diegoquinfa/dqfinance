@@ -31,7 +31,7 @@ import { useDeleteTransaction, type Transaction } from './transactions-api'
 export function TransactionDetailDialog({ transaction, trigger }: { transaction: Transaction; trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
-  const title = transaction.description || transaction.category.name
+  const title = transaction.title || transaction.category.name
 
   return (
     <Dialog

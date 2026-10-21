@@ -1,8 +1,9 @@
 import type { CreateTransactionInput } from './create-transaction'
 
-/** An edit: every field optional; `null` removes the contact or the description. */
-export type TransactionPatch = Partial<Omit<CreateTransactionInput, 'counterpartyId' | 'description'>> & {
+/** An edit: every field optional; `null` removes the contact, the title or the description. */
+export type TransactionPatch = Partial<Omit<CreateTransactionInput, 'counterpartyId' | 'title' | 'description'>> & {
   counterpartyId?: string | null
+  title?: string | null
   description?: string | null
 }
 
@@ -21,6 +22,7 @@ export function mergeTransactionUpdate(current: CreateTransactionInput, patch: T
     primaryAmount: patch.primaryAmount ?? (sourceGiven ? undefined : current.primaryAmount),
     categoryId: patch.categoryId ?? current.categoryId,
     counterpartyId: patch.counterpartyId === null ? undefined : (patch.counterpartyId ?? current.counterpartyId),
+    title: patch.title === null ? undefined : (patch.title ?? current.title),
     description: patch.description === null ? undefined : (patch.description ?? current.description),
     occurredAt: patch.occurredAt ?? current.occurredAt,
   }

@@ -66,4 +66,4 @@ The consent page refuses too, so the agent's author sees why instead of a myster
 
 ## Importing a statement
 
-`import_transactions` takes one source and up to 500 rows. The tool description asks the agent to parse the PDF or screenshot itself, call with `dryRun: true`, show the preview, and only then call again with `dryRun: false`; the write is one multi-row INSERT. A row is a duplicate when the source, type, amount in cents, calendar day and (when both have one) description already exist. The rule is `features/transactions/duplicate.ts` (pure, tested).
+`import_transactions` takes one source and up to 500 rows. The tool description asks the agent to parse the PDF or screenshot itself, call with `dryRun: true`, show the preview, and only then call again with `dryRun: false`; the write is one multi-row INSERT. A row is a duplicate when the source, type, amount in cents, calendar day and (when both have one) title already exist. The rule is `features/transactions/duplicate.ts` (pure, tested).

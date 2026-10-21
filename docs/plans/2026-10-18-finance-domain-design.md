@@ -27,6 +27,7 @@ Status: approved 2026-10-18. Terms are defined in [GLOSSARY.md](../../GLOSSARY.m
 | D12 | The user's **currencies** (chosen in the onboarding wizard) limit every currency picker. | A user in Colombia does not scroll through 300 currencies. |
 | D13 | i18n lives in one shared package (`packages/i18n`, Paraglide) used by the API and the web. | One message catalog; the API translates errors and system category names. |
 | D14 | A **pocket** is a product with `type = 'pocket'` and a `parent_product_id`: the product it sets money aside from. Its rules: the parent is a non-pocket product of the same user, the same bank account and the same currency, one level only; cards cannot belong to a pocket; a product with pockets cannot become a pocket, and a pocket's type cannot change. Every product also has a `yield_payout` (`daily` \| `monthly`), how often its interest is paid. | Colombian accounts let people set money aside inside one account ("home services", "transport"), each with its own effective annual rate. |
+| D15 | A transaction has a **title** (≤ 120 characters, the short label that names it in every list) and a **description** (≤ 2 000 characters, the details shown in its detail sheet). An empty title falls back to the category name. The title is what a statement gives a movement; a statement line longer than a title keeps its full text as the description. | One field doing both jobs forces a long title to name a movement, or details with nowhere to go. |
 
 ## Data model
 
@@ -43,7 +44,7 @@ All tables have `id` (text UUID, except where noted), `user_id` (FK → `user`, 
 | `card` | `product_id`, `kind` (`debit` \| `credit`), `name`, `last4?`, `credit_limit_cents?`, `statement_day?`, `due_day?`, `brand?`, `interest_rate_bps?`, `interest_rate_period?`, `color?` | A **source**. Currency = its product's currency. `brand` is `visa` \| `mastercard` \| `amex` \| `diners` \| `other`; `interest_rate_period` is `monthly` (MV) or `annual` (EA), and the rate belongs to a credit card. `color` is presentation only. |
 | `category` | `name?`, `kind` (`expense` \| `income`), `system_key?` | System categories (`fx_loss`, `fx_gain`, `bank_fees`, `other_expense`, `other_income`) have a key and no stored name; the name is translated on read. An import row without a category is booked in `other_expense` / `other_income`. |
 | `counterparty` | `name`, `kind` (`person` \| `business`) | |
-| `transaction` | `type` (`income` \| `expense`), `amount_cents`, `currency`, **source** (`product_id?` \| `cash_wallet_id?` \| `card_id?`), `primary_amount_cents?`, `category_id`, `counterparty_id?`, `recurring_expense_id?`, `transfer_id?`, `description?`, `occurred_at` | `primary_amount_cents` only for a credit-card charge in a foreign currency. `transfer_id` links the fee and FX entries a transfer created. |
+| `transaction` | `type` (`income` \| `expense`), `amount_cents`, `currency`, **source** (`product_id?` \| `cash_wallet_id?` \| `card_id?`), `primary_amount_cents?`, `category_id`, `counterparty_id?`, `recurring_expense_id?`, `transfer_id?`, `title?`, `description?`, `occurred_at` | `primary_amount_cents` only for a credit-card charge in a foreign currency. `transfer_id` links the fee and FX entries a transfer created. `title` names the transaction in a list, `description` holds the details (D15). |
 | `transfer` | **from** (`from_product_id?` \| `from_cash_wallet_id?`), **to** (`to_product_id?` \| `to_cash_wallet_id?` \| `to_card_id?`), `sent_amount_cents`, `sent_currency`, `received_amount_cents`, `received_currency`, `fee_cents?`, `cost_basis_cents?`, `note?`, `sent_at`, `received_at?` | `cost_basis_cents` = purchase-day value released when paying foreign card debt. |
 | `balance_adjustment` | **source** (one of three), `currency`, `observed_balance_cents`, `delta_cents`, `note?`, `adjusted_at` | For a card, the balance is the debt in that currency. |
 | `recurring_expense` | `name`, `amount_cents`, `currency`, **source**, `category_id`, `counterparty_id?`, `frequency` (`weekly` \| `monthly` \| `yearly`), `starts_on`, `next_due_on`, `active` | Dates are calendar dates (`YYYY-MM-DD`) in the user's timezone. |
@@ -119,9 +120,9 @@ difference        = sent_amount − released_basis
 
 ## Statement import
 
-One source, up to 500 rows, and a `dryRun` flag. Each row is `{ type, amount, occurredAt, description?, categoryId? }`; `occurredAt` is a calendar date or an ISO datetime.
+One source, up to 500 rows, and a `dryRun` flag. Each row is `{ type, amount, occurredAt, title?, description?, categoryId? }`; `occurredAt` is a calendar date or an ISO datetime.
 
-- **Duplicate:** same source, same type, same amount in cents, same calendar day (UTC), and the same description when both rows have one. Existing movements on those days and earlier rows of the same batch both count; the first occurrence wins.
+- **Duplicate:** same source, same type, same amount in cents, same calendar day (UTC), and the same title when both rows have one. Existing movements on those days and earlier rows of the same batch both count; the first occurrence wins.
 - **Category:** the row's `categoryId` when given (its kind must match the type), else the system `other_expense` / `other_income`, translated on read.
 - **dryRun:** returns every row with `duplicate` and its resolved category, and writes nothing.
 - **Write:** the non-duplicate rows in one multi-row INSERT, so D1 applies it entirely or not at all. Returns `{ created, skipped }`.

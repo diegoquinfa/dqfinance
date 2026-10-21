@@ -6,7 +6,7 @@ const row = (over: Partial<MovementFingerprint> = {}): MovementFingerprint => ({
   type: 'expense',
   amountCents: 4500050,
   occurredAt: new Date('2026-10-18T13:20:00Z'),
-  description: null,
+  title: null,
   ...over,
 })
 
@@ -34,12 +34,12 @@ test('type, amount or day differing is not a duplicate', () => {
   )
 })
 
-test('a description only separates rows when both have one', () => {
-  const existing = [row({ description: 'Exito' })]
-  assert.deepEqual(duplicateFlags([row({ description: 'Exito' })], existing), [true])
-  assert.deepEqual(duplicateFlags([row({ description: 'Carulla' })], existing), [false])
-  assert.deepEqual(duplicateFlags([row({ description: null })], existing), [true])
-  assert.deepEqual(duplicateFlags([row({ description: 'Exito' })], [row({ description: null })]), [true])
+test('a title only separates rows when both have one', () => {
+  const existing = [row({ title: 'Exito' })]
+  assert.deepEqual(duplicateFlags([row({ title: 'Exito' })], existing), [true])
+  assert.deepEqual(duplicateFlags([row({ title: 'Carulla' })], existing), [false])
+  assert.deepEqual(duplicateFlags([row({ title: null })], existing), [true])
+  assert.deepEqual(duplicateFlags([row({ title: 'Exito' })], [row({ title: null })]), [true])
 })
 
 test('earlier rows of the same batch count', () => {
@@ -47,7 +47,7 @@ test('earlier rows of the same batch count', () => {
   assert.deepEqual(duplicateFlags([row(), row(), row({ amountCents: 1 })], []), [false, true, false])
   // Both rows match a movement already recorded, so both are skipped.
   assert.deepEqual(
-    duplicateFlags([row({ description: 'Exito' }), row({ description: 'Exito' })], [row({ description: 'Exito' })]),
+    duplicateFlags([row({ title: 'Exito' }), row({ title: 'Exito' })], [row({ title: 'Exito' })]),
     [true, true],
   )
 })

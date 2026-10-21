@@ -34,7 +34,7 @@ export function TransactionRow({
             className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1 py-4 text-left"
           >
             <span className="truncate text-ink transition-transform duration-500 group-hover:translate-x-1">
-              {transaction.description || transaction.category.name}
+              {transaction.title || transaction.category.name}
               {showCounterparty && transaction.counterparty && (
                 <span className="ml-2 text-sm text-muted-foreground">{transaction.counterparty.name}</span>
               )}

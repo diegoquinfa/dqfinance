@@ -25,7 +25,7 @@ import {
   DEMO_TIMEZONE,
   demoMovements,
   demoTransfers,
-  movementDescription,
+  movementTitle,
   RECURRING,
   type CategoryKey,
   type ContactKey,
@@ -104,7 +104,7 @@ export async function seedDemo(db: Db, userId: string, locale: Locale): Promise<
         ...sourceColumns(movement.source),
         categoryId: categoryId(movement.category),
         counterpartyId: contactIds.get(movement.contact) ?? null,
-        description: movementDescription(movement.description, locale),
+        title: movementTitle(movement.title, locale),
         occurredAt: at(movement.date),
       })
     }

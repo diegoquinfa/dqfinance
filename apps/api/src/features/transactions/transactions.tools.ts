@@ -24,7 +24,7 @@ export const transactionTools = [
   toolDefinition({
     name: 'import_transactions',
     description:
-      'Record many movements of one source from a statement. Parse the PDF, screenshot or video yourself, one row per movement; omit categoryId when unsure. Rows matching an existing movement (same source, type, amount, day, description) are skipped. Call with dryRun true, show the user the preview, then dryRun false after they agree.',
+      'Record many movements of one source from a statement. Parse the PDF, screenshot or video yourself, one row per movement; omit categoryId when unsure. Rows matching an existing movement (same source, type, amount, day, title) are skipped. Call with dryRun true, show the user the preview, then dryRun false after they agree.',
     inputSchema: importTransactionsInput,
   }).server<McpContext>(async (input, ctx) => {
     const imported = await importTransactions(ctx.context.db, ctx.context.userId, ctx.context.locale, input)
@@ -56,7 +56,7 @@ export const transactionTools = [
   toolDefinition({
     name: 'update_transaction',
     description:
-      'Change an income or expense: send only the fields to change; null clears the contact or description. Transfer movements cannot be changed.',
+      'Change an income or expense: send only the fields to change; null clears the contact, the title or the description. Transfer movements cannot be changed.',
     inputSchema: updateTransactionToolInput,
   }).server<McpContext>(async ({ id, ...input }, ctx) => updateTransaction(ctx.context.db, ctx.context.userId, id, input)),
 

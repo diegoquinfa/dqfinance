@@ -13,6 +13,7 @@ import { Input } from '#/shared/ui/input'
 import { Label } from '#/shared/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
+import { Textarea } from '#/shared/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { toast } from 'sonner'
 import { useCreateTransaction, useUpdateTransaction, type NewTransaction, type Transaction } from './transactions-api'
@@ -63,6 +64,7 @@ export function TransactionForm({
       categoryId: String(form.get('categoryId')),
     }
     const counterpartyId = String(form.get('counterpartyId'))
+    const title = String(form.get('title'))
     const description = String(form.get('description'))
     if (transaction) {
       update.mutate(
@@ -73,6 +75,7 @@ export function TransactionForm({
             // An edit always names the currency: leaving it out would keep a foreign one.
             currency: chargeCurrency,
             counterpartyId: counterpartyId || null,
+            title: title || null,
             description: description || null,
             // An unchanged day keeps the original time, and with it the order within the day.
             occurredAt: day === originalDay ? undefined : dayToIso(day),
@@ -92,6 +95,7 @@ export function TransactionForm({
         ...values,
         currency: isForeign ? chargeCurrency : undefined,
         counterpartyId: counterpartyId || undefined,
+        title: title || undefined,
         description: description || undefined,
         occurredAt: dayToIso(day),
       },
@@ -242,12 +246,23 @@ export function TransactionForm({
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="transaction-description">{`${m.label_description()} (${m.label_optional()})`}</FieldLabel>
+          <FieldLabel htmlFor="transaction-title">{`${m.label_title()} (${m.label_optional()})`}</FieldLabel>
           <Input
+            id="transaction-title"
+            name="title"
+            defaultValue={transaction?.title ?? ''}
+            maxLength={120}
+          />
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor="transaction-description">{`${m.label_description()} (${m.label_optional()})`}</FieldLabel>
+          <Textarea
             id="transaction-description"
             name="description"
+            className="font-sans"
             defaultValue={transaction?.description ?? ''}
-            maxLength={200}
+            maxLength={2000}
           />
         </Field>
 

@@ -55,7 +55,7 @@ export async function confirmRecurringExpense(db: Db, userId: string, input: z.i
       primaryAmount: input.primaryAmount,
       categoryId: item.categoryId,
       counterpartyId: item.counterpartyId ?? undefined,
-      description: item.name,
+      title: item.name,
       occurredAt: input.occurredAt,
     },
     { recurringExpenseId: item.id },
