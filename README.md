@@ -76,3 +76,7 @@ Inspect it with `npx @modelcontextprotocol/inspector`. Uploading and downloading
 - **SMTP:** port 465 (implicit TLS) or 587 (STARTTLS); Workers cannot open port 25. Authentication is `AUTH PLAIN`, one recipient per message.
 
 **Custom domain:** add it in the dashboard (Worker → Settings → Domains & Routes). Keep `routes` out of `wrangler.jsonc`: a deploy replaces dashboard routes with the ones in the file. The auth issuer and the MCP URL follow whichever hostname a request arrives on, so there is nothing else to configure.
+
+## License
+
+[Apache License 2.0](./LICENSE). You may use, change and sell it; a copy you redistribute keeps the license and the [NOTICE](./NOTICE). The name and the logo are not part of the license.
