@@ -2,6 +2,8 @@
 
 Personal finance tracker with an OAuth-protected MCP server, so AI agents can read and record your transactions.
 
+![DQFinance connected to Grok over MCP: the assistant records an expense and summarizes the month's groceries](./docs/images/assistant-connected.png)
+
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/diegoquinfa/dqfinance)
 
 One Cloudflare Worker serves both apps from one origin:
