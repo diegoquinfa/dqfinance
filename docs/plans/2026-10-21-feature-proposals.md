@@ -88,7 +88,7 @@ use them in proposals 1 and 2 instead of assuming a payday.
 
 Split an expense with other people and track who owes whom. Overlaps with loans and debts on the Later list.
 
-Decided: built on top of proposal 11 (federated contacts). A contact who is not on dqfinance stays a plain
+Decided: built on top of proposal 10 (federated contacts). A contact who is not on dqfinance stays a plain
 Counterparty and the split is only recorded locally (Splitwise style). A connected dqfinance contact receives the
 split as a request to accept or reject, and on accept it lands in their own books.
 
@@ -97,14 +97,7 @@ split as a request to accept or reject, and on accept it lands in their own book
 Today categories can only be created. Add edit, delete or merge (moving their transactions), icon and color,
 and maybe subcategories.
 
-## 10. Investments
-
-Track CDTs, stocks or crypto with current value and return. Already on the Later list.
-
-Decided: start with **manual value updates** (covers CDTs and funds, which have no public price). Automatic
-prices for stocks or crypto come later; they need a price API, its cost and limits, and currency conversion.
-
-## 11. Federated contacts (Mastodon style)
+## 10. Federated contacts (Mastodon style)
 
 Signed-in users connect with each other, whether they share an instance or each one runs an independent
 deployment. This is the base for shared expenses (proposal 8) and for sending money between people.
