@@ -124,3 +124,29 @@ Open questions: whether to use ActivityPub itself (interoperable but heavy) or a
 the same ideas; how an instance handles an unreachable peer (a queue with retries); and whether open sign-up
 instances need rate limits on contact requests.
 
+
+## 11. Expense search (keyword + semantic)
+
+Find movements by what they were, both from the web and from an agent over MCP. Today there is no search over
+transactions.
+
+- **Indexed fields:** title, description and category name only. Never amounts, accounts or balances
+  (approved by the user).
+- **Keyword search:** exact words and phrases with D1 FTS5 (an external-content virtual table kept in sync by
+  triggers on `transaction` and category renames). Accent and case insensitive (`unicode61 remove_diacritics`).
+- **Semantic search:** natural-language queries such as "búscame los gastos que hice en Web Sunday". Embed
+  title + description + category with Workers AI (a multilingual model such as `@cf/baai/bge-m3`) and store the
+  vectors in Vectorize with `userId` as metadata, filtered on every query. Embed on create and update, delete on
+  delete, and backfill existing rows with a one-off job.
+- **Hybrid ranking:** run both and merge with reciprocal rank fusion, so an exact match always ranks first and
+  semantic hits fill in. Optional filters: date range, type, category.
+- **Compact for agents:** one MCP tool, `search_transactions { query, from?, to?, limit? }` (default limit 10,
+  max 50). Each hit is one short line, for example
+  `t_123 · 2026-10-12 · Web Sunday ticket · Eventos · -120.000 COP`, plus a total count and a cursor. No
+  descriptions or nested objects; the agent asks for one movement's details only when it needs them. The amount
+  appears in the result but is not indexed.
+- **Privacy:** the query and indexed text go to Workers AI inside the same Cloudflare account; nothing leaves to
+  third parties.
+
+Open question: keep semantic search behind a per-instance flag, since self-hosted deployments must enable Workers
+AI and Vectorize.
