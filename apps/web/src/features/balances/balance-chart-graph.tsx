@@ -162,25 +162,30 @@ export default function BalanceChartGraph({ currency, source, className }: Balan
         </LineChart>
       </ChartContainer>
 
-      <table className="sr-only">
-        <caption>{m.history_table_caption({ currency })}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{m.history_month()}</th>
-            <th scope="col">{m.overview_assets()}</th>
-            {!source && <th scope="col">{m.overview_liabilities()}</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {points.map((point) => (
-            <tr key={point.at}>
-              <th scope="row">{point.label}</th>
-              <td>{formatMoney(point.assets, currency)}</td>
-              {point.liabilities !== null && <td>{formatMoney(point.liabilities, currency)}</td>}
+      {/* The table is the chart's data for screen readers. It hides inside a wrapper: a table's own
+          clipping never reaches its caption box, so Firefox and Safari painted the caption over
+          the chart. */}
+      <div className="sr-only">
+        <table>
+          <caption>{m.history_table_caption({ currency })}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{m.history_month()}</th>
+              <th scope="col">{m.overview_assets()}</th>
+              {!source && <th scope="col">{m.overview_liabilities()}</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {points.map((point) => (
+              <tr key={point.at}>
+                <th scope="row">{point.label}</th>
+                <td>{formatMoney(point.assets, currency)}</td>
+                {point.liabilities !== null && <td>{formatMoney(point.liabilities, currency)}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
