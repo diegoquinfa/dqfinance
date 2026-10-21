@@ -79,4 +79,4 @@ Inspect it with `npx @modelcontextprotocol/inspector`. Uploading and downloading
 
 ## License
 
-[Apache License 2.0](./LICENSE). You may use, change and sell it; a copy you redistribute keeps the license and the [NOTICE](./NOTICE). The name and the logo are not part of the license.
+[MIT](./LICENSE).
