@@ -42,3 +42,6 @@ yarn-error.log*
 *.pem
 # Local Pi runtime state
 .atl/
+
+# Parallel agent worktrees (git worktree add .workspaces/<feature>)
+/.workspaces/
