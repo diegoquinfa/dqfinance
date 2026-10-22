@@ -38,6 +38,7 @@ type Fixture = {
   currencies?: { userId: string; code: string }[]
   systemCategories?: { id: string; userId: string; systemKey: string }[]
   budgets?: { userId: string; categoryId: string }[]
+  pushSubscriptions?: { userId: string; endpoint: string }[]
 }
 
 const featuresDir = fileURLToPath(new URL('../', import.meta.url))
@@ -87,6 +88,8 @@ function rowsFor(table: DrizzleTable, where: SQL, fixture: Fixture): object[] {
       return (fixture.systemCategories ?? []).filter((row) => params.includes(row.userId))
     case 'budget':
       return (fixture.budgets ?? []).filter((row) => params.includes(row.userId))
+    case 'push_subscription':
+      return (fixture.pushSubscriptions ?? []).filter((row) => params.includes(row.userId))
     default:
       return []
   }
@@ -241,4 +244,42 @@ test('signing into an account that owns the same unique rows: the target keeps t
     [statements.length],
   )
   for (const drop of deletes) assert.ok(statements.indexOf(drop) < statements.indexOf(moves[0]!))
+})
+
+test('target already owns the same push endpoint: the guest duplicate is dropped', async () => {
+  const shared = 'https://push.example/both'
+  const guestOnly = 'https://push.example/guest-only'
+  const { db, statements, batches } = recordingDb({
+    guest: { id: 'guest-1' },
+    pushSubscriptions: [
+      { userId: 'guest-1', endpoint: shared },
+      { userId: 'guest-1', endpoint: guestOnly },
+      { userId: 'account-1', endpoint: shared },
+    ],
+  })
+
+  await moveGuestData(db, 'guest-1', 'account-1')
+
+  const deletes = statements.filter((statement) => statement.kind === 'delete')
+  const drops = deletes.filter((statement) => tableNameOf(statement) === 'push_subscription')
+  const move = statements.find(
+    (statement) =>
+      statement.kind === 'update' &&
+      statement.values?.userId === 'account-1' &&
+      tableNameOf(statement) === 'push_subscription',
+  )!
+
+  // The target's row wins for the shared endpoint; the guest-only endpoint is not dropped.
+  assert.equal(drops.length, 1)
+  assert.deepEqual(whereParams(drops[0]!), ['guest-1', shared])
+  // The guest's row for the guest-only endpoint still moves.
+  assert.deepEqual(whereParams(move), ['guest-1'])
+  // The duplicate goes before the move that would collide on the unique endpoint.
+  assert.ok(statements.indexOf(drops[0]!) < statements.indexOf(move))
+
+  // Both in the same batch, whole or not at all.
+  assert.deepEqual(
+    batches.map((batch) => batch.length),
+    [statements.length],
+  )
 })
