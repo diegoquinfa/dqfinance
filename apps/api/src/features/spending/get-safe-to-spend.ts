@@ -81,7 +81,8 @@ export async function getSafeToSpend(db: Db, userId: string) {
   const pendingBillsCents = bills.reduce((sum, bill) => sum + bill.amountCents, 0)
 
   // What the user already spent this month. Transfers and adjustments are not expenses (design D3).
-  const monthStart = `${period.end.slice(0, 8)}01`
+  // The month is the calendar month, not the period: a payday in the next month does not move it.
+  const monthStart = `${today.slice(0, 8)}01`
   const spent = await db
     .select({ cents: sql<number>`sum(${transaction.amountCents})` })
     .from(transaction)
