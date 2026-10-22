@@ -1,7 +1,7 @@
 import { Link, Navigate, Outlet, createFileRoute } from '@tanstack/react-router'
 import { House, Landmark, Plus, ReceiptText, Repeat, X } from 'lucide-react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Locale } from '#/shared/i18n'
 import { authClient } from '#/features/auth/auth-client'
 import { useSettings } from '#/features/settings/settings-api'
@@ -62,8 +62,8 @@ function AppLayout() {
   const isGuest = Boolean(session?.user.isAnonymous)
   const seed = useSeedDemo()
   const { mutate: seedDemo } = seed
-  const check = useCheckDueBills()
-  const { mutate: checkDueBills } = check
+  const { mutate: checkDueBills } = useCheckDueBills()
+  const announcedDueBills = useRef(false)
 
   // The user's saved language wins over the browser's, once per change.
   useEffect(() => {
@@ -79,13 +79,14 @@ function AppLayout() {
     seedDemo()
   }, [isGuest, settings.isPending, settings.isFetching, settings.data, seed.isPending, seed.isError, seedDemo])
 
-  // The app tells the user's own automation when a bill falls due. The check runs when the app
-  // opens and only calls the hooks for a bill that has not been announced yet.
+  // The app tells the user's own automation when a bill falls due, once per open. The mutation state
+  // must NOT be in the dependencies: `isPending` returning to false is itself a change, so the effect
+  // would fire again on every result and post forever.
   useEffect(() => {
-    if (!settings.data) return
-    if (check.isPending || check.isError) return
+    if (!settings.data || announcedDueBills.current) return
+    announcedDueBills.current = true
     checkDueBills()
-  }, [settings.data, check.isPending, check.isError, checkDueBills])
+  }, [settings.data, checkDueBills])
 
   if (isPending || (session && settings.isPending)) return <div className="min-h-dvh" aria-busy="true" />
   if (!session) return <Navigate to="/sign-in" />
