@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { shareInMonth } from '../transactions/installments.ts'
-import { safeToSpend, type SafeToSpendInput } from './safe-to-spend.ts'
+import {
+  billsDueCents,
+  monthSpentCents,
+  safeToSpend,
+  yearlySetAsideCents,
+  type SafeToSpendInput,
+} from './safe-to-spend.ts'
 
 const input = (over: Partial<SafeToSpendInput> = {}): SafeToSpendInput => ({
   availableCents: 500000,
@@ -68,4 +74,32 @@ test('the cap counts the share of a spread purchase, not the whole amount', () =
   assert.equal(result.targetDailyCents, 40000)
   assert.equal(result.allowedCents, 40000)
   assert.equal(result.cappedByTarget, true)
+})
+
+test('a weekly bill that falls twice before the period ends counts twice', () => {
+  const bill = { amountCents: 20000, startsOn: '2026-10-01', nextDueOn: '2026-10-02', frequency: 'weekly' as const }
+  assert.equal(billsDueCents([bill], '2026-10-01', '2026-10-15'), 40000)
+})
+
+test('an overdue bill counts once, and its occurrences from today on still count', () => {
+  const overdue = { amountCents: 90000, startsOn: '2026-09-05', nextDueOn: '2026-09-05', frequency: 'monthly' as const }
+  assert.equal(billsDueCents([overdue], '2026-10-10', '2026-10-31'), 90000)
+  // A weekly bill three weeks late: the overdue date once, plus the three still to come.
+  const weekly = { amountCents: 20000, startsOn: '2026-10-01', nextDueOn: '2026-10-01', frequency: 'weekly' as const }
+  assert.equal(billsDueCents([weekly], '2026-10-10', '2026-10-31'), 80000)
+  const due = { amountCents: 90000, startsOn: '2026-09-20', nextDueOn: '2026-10-20', frequency: 'monthly' as const }
+  assert.equal(billsDueCents([due], '2026-10-10', '2026-10-31'), 90000)
+})
+
+test('a yearly bill due before the period ends is not set aside a second time', () => {
+  const due = { amountCents: 1200000, nextDueOn: '2026-10-20' }
+  assert.equal(yearlySetAsideCents([due], '2026-10-31'), 0)
+  const later = { amountCents: 1200000, nextDueOn: '2027-03-20' }
+  assert.equal(yearlySetAsideCents([later], '2026-10-31'), 100000)
+})
+
+test('a foreign card charge counts its value in the card currency', () => {
+  // $5 on a COP card is 200,000 COP cents: the movement the query sums, not the $5 charge.
+  const movement = { amountCents: 200000, months: null, occurredAt: new Date('2026-10-05T15:00:00Z') }
+  assert.equal(monthSpentCents([movement], 'UTC', '2026-10'), 200000)
 })
