@@ -1,6 +1,9 @@
 import { sendViaSmtp, type SmtpConnector } from './smtp-client.ts'
 import { connectSmtpSocket } from './smtp-sockets.ts'
 
+/** How long a provider gets to answer before the send is a failure. */
+const EMAIL_TIMEOUT_MS = 5000
+
 export type EmailMessage = {
   to: string
   subject: string
@@ -111,6 +114,8 @@ function cloudflareRestSender(env: EmailEnv, from: string): EmailSender | null {
         `https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`,
         {
           method: 'POST',
+          // A provider that never answers must not hold the request open.
+          signal: AbortSignal.timeout(EMAIL_TIMEOUT_MS),
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: message.to,
@@ -135,6 +140,8 @@ function resendSender(env: EmailEnv, from: string): EmailSender | null {
     send: async (message) => {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
+        // A provider that never answers must not hold the request open.
+        signal: AbortSignal.timeout(EMAIL_TIMEOUT_MS),
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from,

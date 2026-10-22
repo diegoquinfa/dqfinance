@@ -258,6 +258,11 @@ function PendingItem({ id, name, amount, currency, nextDueOn }: { id: string; na
           {m.action_skip()}
         </Button>
       </div>
+      {(confirm.error || skip.error) && (
+        <p role="alert" className="text-sm text-destructive sm:col-span-2">
+          {confirm.error?.message ?? skip.error?.message}
+        </p>
+      )}
     </li>
   )
 }

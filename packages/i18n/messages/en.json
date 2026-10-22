@@ -29,6 +29,7 @@
   "error_recurring_not_found": "That recurring expense doesn't exist.",
   "error_savings_goal_not_found": "That savings goal doesn't exist.",
   "error_expected_income_not_found": "That expected income doesn't exist.",
+  "error_recurring_already_confirmed": "That recurring expense is already confirmed.",
   "error_push_not_configured": "Push notifications aren't set up on this server.",
   "error_push_subscription_owned": "That browser is already registered to another account.",
   "error_document_not_found": "That document doesn't exist.",

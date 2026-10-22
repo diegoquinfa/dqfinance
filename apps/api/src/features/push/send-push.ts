@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import type { Db } from '../../db'
 import type { Locale } from '../../shared/locale'
 import { expiredPushStatus } from './expired-push-status'
+import { pushEndpointUrl } from './push-endpoint'
 import type { PushConfig } from './push-config'
 import { pushSubscription } from './push-subscription.schema'
 import { pushCopy, type PushKind } from './push-copy'
@@ -28,6 +29,12 @@ export async function sendPush(
     await Promise.all(
       subscriptions.map(async (row) => {
         try {
+          // The endpoint was checked when it was stored; it is checked again here, so a row that
+          // no longer points at a public https URL is skipped instead of fetched.
+          if (!pushEndpointUrl(row.endpoint)) {
+            console.error(`push subscription ${row.id} has an endpoint that is not a public https URL`)
+            return
+          }
           const payload = await buildPushPayload(
             message,
             { endpoint: row.endpoint, expirationTime: null, keys: { p256dh: row.p256dh, auth: row.auth } },
