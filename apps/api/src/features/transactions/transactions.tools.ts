@@ -62,7 +62,7 @@ export const transactionTools = [
     inputSchema: summarizeTransactionsInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({
-    summary: await summarizeTransactions(ctx.context.db, ctx.context.userId, input),
+    summary: await summarizeTransactions(ctx.context.db, ctx.context.userId, ctx.context.locale, input),
   })),
 
   toolDefinition({
