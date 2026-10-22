@@ -58,12 +58,17 @@ export type ErrorCode = (typeof ERROR_CODES)[number]
 
 /** A failure the caller can act on. Its code is stable; the HTTP layer translates the message. */
 export class AppError extends Error {
-  constructor(
-    readonly code: ErrorCode,
-    readonly status: ContentfulStatusCode = 400,
-    readonly issues?: unknown,
-  ) {
+  // Written out instead of constructor parameter properties: those are not erasable syntax, and a
+  // test that imports this module under Node's strip-only TypeScript loader would die on them.
+  readonly code: ErrorCode
+  readonly status: ContentfulStatusCode
+  readonly issues?: unknown
+
+  constructor(code: ErrorCode, status: ContentfulStatusCode = 400, issues?: unknown) {
     super(code)
+    this.code = code
+    this.status = status
+    this.issues = issues
   }
 }
 
