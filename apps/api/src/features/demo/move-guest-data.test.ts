@@ -76,7 +76,7 @@ test('every table with a user_id moves with the guest', async () => {
 })
 
 test('the move touches only the rows the guest still owns', async () => {
-  const { db, statements, batches } = recordingDb({ isAnonymous: true })
+  const { db, statements, batches } = recordingDb({ id: 'guest-1' })
   await moveGuestData(db, 'guest-1', 'account-1')
 
   assert.equal(statements.length, guestOwnedTables.length)
