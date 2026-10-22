@@ -1,6 +1,7 @@
 import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { ownerId } from '../auth/owner'
+import { PALETTE_COLORS } from '../../shared/appearance'
 import { cents, createdAt, id } from '../../shared/schema-columns'
 
 export const PRODUCT_TYPES = ['savings', 'checking', 'payroll', 'investment', 'other', 'pocket'] as const
@@ -11,7 +12,7 @@ export const CARD_BRANDS = ['visa', 'mastercard', 'amex', 'diners', 'other'] as 
 /** How a card states its interest: `monthly` (MV) or `annual` (EA). */
 export const INTEREST_RATE_PERIODS = ['monthly', 'annual'] as const
 /** Presentation only: the UI maps a name to a token. */
-export const CARD_COLORS = ['ink', 'signal', 'sand', 'moss', 'clay', 'ocean'] as const
+export const CARD_COLORS = PALETTE_COLORS
 
 export const bank = sqliteTable('bank', {
   id: id(),
