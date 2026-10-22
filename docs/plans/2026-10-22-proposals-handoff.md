@@ -6,9 +6,11 @@ Read first: [AGENTS.md](../../AGENTS.md), [docs/architecture.md](../architecture
 
 ## State
 
-- Branch `fix/reviewer-findings` (HEAD `25b6947`), based on `main` at `538046a`. **Everything is local**: `git push`
-  still answers 403 for `dquintana-kurbuo`; the `diegoquinfa` credential is not in this checkout.
-- 22 commits: 15 in the proposal stack, 7 reviewer fixes. **Ten of the thirteen proposals are implemented**
+- Branch `fix/reviewer-findings` (HEAD is the last commit of this file), based on `main` at `538046a`. **Everything
+  is local**: `git push` still answers 403 for `dquintana-kurbuo`; the `diegoquinfa` credential is not in this
+  checkout.
+- 35 commits over `main` at `538046a`: the 22 of the stack, the worktree setup, this handoff, and the 11 fix
+  commits of the batch below. **Ten of the thirteen proposals are implemented**
   (1, 2, 3, 4, 5, 6, 7, 9, 11, 13). Not implemented: 8 (shared expenses), 10 (federated contacts) and 12 (group
   projects); 10 blocks 8 and 12, which are a whole protocol, not a screen.
 - Working tree: `M skills-lock.json` and untracked `.agents/skills/handoff/` — the half-finished handoff work.
@@ -19,9 +21,10 @@ Read first: [AGENTS.md](../../AGENTS.md), [docs/architecture.md](../architecture
 `pnpm` and `turbo` do not run inside the DSH sandbox (pnpm cannot open its store lock, turbo spawns a child and
 gets EPERM). What was verified directly instead:
 
-- API: `node --test --test-isolation=none "src/**/*.test.ts"` → **224/224 pass**.
+- API: every `src/**/*.test.ts` run directly with `node` → **260/260 pass** (the runner itself spawns and the
+  sandbox denies it).
 - Web: 29/29 pass. Root `scripts/`: 5/5 pass. `tsc --noEmit` in `apps/api` and `apps/web` → clean.
-- i18n: `en.json` and `es.json` have the same 706 flat keys.
+- i18n: `en.json` and `es.json` have the same 708 flat keys.
 - **`pnpm build` was NOT verified**: `vite build` dies loading `@tailwindcss/oxide` (spawn EPERM). Run
   `pnpm check-types && pnpm test && pnpm build` outside the sandbox before any delivery.
 
@@ -53,6 +56,9 @@ gets EPERM). What was verified directly instead:
 RDD is not installed in this runtime: `gentle-ai review status` cannot even resolve the repo root under the
 sandbox. So this was a manual candidate validation — no receipt, no approval claim, ordinary policy. Seven
 reviewers took one slice each; the blockers below were confirmed against the code (four by running a probe).
+
+**Status after the fix batch: nine of the eleven code blockers and all three documentation blockers are fixed.**
+#3 (the adjustment guard) and #11 (accent-insensitive search) remain open, both listed under "Still open" below.
 
 ### Blockers — code (11)
 
@@ -132,16 +138,50 @@ reviewers took one slice each; the blockers below were confirmed against the cod
   `docs/mcp.md:56,69` keeps the old tool count and duplicate rule; the domain design still lists the shipped
   proposals as future work; 10 `odd/tasks` docs link `../docs/plans/…` instead of `../../docs/plans/…`.
 
+## What the fix batch changed (2026-10-22, after the review)
+
+Eleven commits fix nine of the eleven code blockers and all three documentation blockers. Each commit carries its
+own scope; the money, security and data ones were re-checked by an independent verifier.
+
+| Commit | What |
+| --- | --- |
+| `83a16c8` | webhooks: a bill is announced only when a hook received it; `redirect: 'manual'`; a stable `X-DQFinance-Delivery`; the update filters by `userId` |
+| `aac2fb6` | web: the due-bill check runs once per app open — a ref, and the mutation state out of the dependencies |
+| `25b2e9a` | spending: an irregular income lands once; payday is strict; installments count by their share in the budget and in the cap; the month is the user's |
+| `c90004f` | categories: merge moves transactions, recurring bills and the budget; delete refuses a category a bill still uses |
+| `7a32a62` | shared: a day starts at the first instant that reads as that day (Havana, Santiago, Azores) |
+| `db801e5` | shared: the private IPv6 forms `new URL` rewrites are rejected (mapped, NAT64, 6to4) |
+| `53446e0` | docs: domain design, screens, architecture, mcp and the 11 task docs match the code |
+| `bc8ccc3` | copy: `category_in_use` (409), truthful tool descriptions, `webhooks_lead_day`, the card-currency balance |
+| `feba988` | test: the installment share pinned to the user month |
+| `aa9a08f` | spending: every bill occurrence (weekly twice, overdue once), a yearly bill not doubled, the card-currency movement |
+| `84fa474` | demo: the guest move survives a target that already owns settings, currencies and system categories |
+
+Gate after the batch: **260 API tests, 29 web, 5 scripts, `tsc` clean on both apps, i18n 708/708**. `pnpm build` still
+could not run in the sandbox.
+
+Still open, deliberately:
+
+- `apps/api/src/features/balance-adjustments/adjust-balance.ts` — the `expectedBalance` guard is still a
+  read-then-insert; two concurrent adjustments both apply. Needs a conditional write or a written limit.
+- Accent-insensitive search — SQLite `LIKE` folds ASCII case only and system categories store `name = NULL`. A real
+  fix needs a stored normalized column plus every write path, or dropping the promise in
+  `odd/tasks/expense-search.md:40`. Product call.
+- `pushSubscription.endpoint` is globally unique, so the same browser endpoint owned by both the guest and the
+  target can still collide on sign-in.
+- `summarize-transactions.ts` and `get-calendar.ts` never receive the locale, so their filters keep the
+  stored-name-only search the list no longer uses.
+- `delete_category`'s description and `category_delete_hint` still say "movements" where bills now count too.
+- The `tools/list` size was not re-measured (needs a run outside the sandbox).
+
 ## Next, in order
 
-1. Fix blockers 1–11, each with the test that would have caught it. The three that hurt a user today: the check
-   loop (battery, D1 reads), the merge that 500s or eats a budget, and the forecast that invents income.
-2. Rewrite `docs/plans/2026-10-18-finance-domain-design.md:125` and the `/budgets` row of `docs/screens.md`.
-3. Decide the `odd/tasks/*.md` convention: check the tasks off with their commit ids, or let this handoff be the
-   record and stop writing per-feature plans that nobody closes.
-4. Decide the `handoff` skill: commit it or drop it. It writes to `%TEMP%` and it is not the repo convention.
-5. Run `pnpm check-types && pnpm test && pnpm build` outside the sandbox, then push once the credentials are fixed.
-6. Proposals 8, 10 and 12 are still open; 10 (federated contacts) is the gate for 8 and 12.
+1. `pnpm check-types && pnpm test && pnpm build` outside the sandbox — the one gate this session could not close.
+2. The adjustment compare-and-set, with the pattern `mark-transfer-received.ts` already uses.
+3. Decide accent folding: schema column or drop the promise from `expense-search.md:40`.
+4. Push once the credentials for `diegoquinfa` are in place (today `git push` answers 403).
+5. Proposals 8, 10 and 12 are still open; 10 (federated contacts) is the gate for 8 and 12.
+
 
 ## Gotchas (do not rediscover)
 
