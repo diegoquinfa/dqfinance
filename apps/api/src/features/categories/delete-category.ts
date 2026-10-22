@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { AppError, found } from '../../shared/http'
+import { budget } from '../budgets/budget.schema'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { transaction } from '../transactions/transaction.schema'
 import { category } from './category.schema'
@@ -9,9 +10,10 @@ import { category } from './category.schema'
 export const deleteCategoryInput = z.object({ id: z.string().min(1) })
 
 /**
- * Deletes a category nothing points at: no movement and no recurring expense may use it, because
- * both keep their category. Merging it into another category is the way out. A category of another
- * user is not found.
+ * Deletes a category nothing points at: no movement, no recurring expense and no budget may use it.
+ * A movement and a recurring expense keep their category; the budget would otherwise disappear with
+ * it and take the user's limit silently. Merging it into another category is the way out. A category
+ * of another user is not found.
  */
 export async function deleteCategory(db: Db, userId: string, id: string) {
   const existing = found(
@@ -29,8 +31,13 @@ export async function deleteCategory(db: Db, userId: string, id: string) {
     .from(recurringExpense)
     .where(and(eq(recurringExpense.categoryId, id), eq(recurringExpense.userId, userId)))
     .limit(1)
+  const limited = await db
+    .select({ id: budget.id })
+    .from(budget)
+    .where(and(eq(budget.categoryId, id), eq(budget.userId, userId)))
+    .limit(1)
   if (used.length > 0) throw new AppError('category_has_transactions')
-  if (billed.length > 0) throw new AppError('category_in_use', 409)
+  if (billed.length > 0 || limited.length > 0) throw new AppError('category_in_use', 409)
   await db.delete(category).where(and(eq(category.id, id), eq(category.userId, userId)))
   return { id, deleted: true }
 }
