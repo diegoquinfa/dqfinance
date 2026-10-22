@@ -3,6 +3,8 @@
  * its amount; only the budget and the safe-to-spend number see it in parts.
  */
 
+import { todayIn } from '../../shared/dates.ts'
+
 /** The months between two calendar months, the second one minus the first. */
 export const monthsBetween = (from: string, to: string): number => {
   const [year, month] = from.split('-').map(Number) as [number, number]
@@ -10,9 +12,8 @@ export const monthsBetween = (from: string, to: string): number => {
   return (toYear - year) * 12 + (toMonth - month)
 }
 
-/** The calendar month of a moment, YYYY-MM. */
-export const monthOf = (at: Date): string =>
-  `${at.getUTCFullYear()}-${String(at.getUTCMonth() + 1).padStart(2, '0')}`
+/** The calendar month of a moment on the user's clock, YYYY-MM. */
+export const monthOf = (at: Date, timeZone: string): string => todayIn(timeZone, at).slice(0, 7)
 
 /**
  * The share of an expense that belongs to each month, starting with the month it happened. The
@@ -34,3 +35,13 @@ export const futureShares = (amountCents: number, months: number, elapsedMonths:
   installmentShares(amountCents, months)
     .slice(Math.max(0, elapsedMonths + 1))
     .reduce((sum, share) => sum + share, 0)
+
+/**
+ * What an expense costs in a calendar month. A spread one costs that month's share, the same share
+ * the safe-to-spend number puts back into the money; an ordinary one costs everything in the month
+ * it happened.
+ */
+export const shareInMonth = (amountCents: number, months: number | null, elapsedMonths: number): number => {
+  if (months === null) return elapsedMonths === 0 ? amountCents : 0
+  return installmentShares(amountCents, months)[elapsedMonths] ?? 0
+}

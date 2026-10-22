@@ -35,3 +35,20 @@ test('an income that already came is not counted', () => {
   assert.equal(period.end, '2026-10-31')
   assert.equal(period.expectedCents, 0)
 })
+
+test('an income arriving today is already in the money and does not shorten the period', () => {
+  const period = incomePeriod('2026-10-22', '2026-10-31', [{ amountCents: 100000, nextOn: '2026-10-22' }])
+  assert.equal(period.end, '2026-10-31')
+  assert.equal(period.daysLeft, 10)
+  assert.equal(period.expectedCents, 0)
+})
+
+test('a later payday still opens the period when one income arrives today', () => {
+  const period = incomePeriod('2026-10-22', '2026-10-31', [
+    { amountCents: 100000, nextOn: '2026-10-22' },
+    { amountCents: 50000, nextOn: '2026-10-25' },
+  ])
+  assert.equal(period.end, '2026-10-25')
+  assert.equal(period.daysLeft, 4)
+  assert.equal(period.expectedCents, 50000)
+})

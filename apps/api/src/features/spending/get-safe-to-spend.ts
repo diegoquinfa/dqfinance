@@ -1,16 +1,18 @@
-import { and, eq, gte, isNotNull, lte, sql } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, lt, lte, or } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
+import { startOfDayIn } from '../../shared/day-range.ts'
 import { fromCents, toCents } from '../../shared/money'
 import { assetsAndLiabilities } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
+import { shiftDay } from '../calendar/calendar-days.ts'
 import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { monthlySetAside } from '../recurring-expenses/monthly-set-aside'
 import { listGoals } from '../savings-goals/list-goals'
 import { requireSettings } from '../settings/get-settings'
 import { transaction } from '../transactions/transaction.schema'
-import { futureShares, monthOf, monthsBetween } from '../transactions/installments'
+import { futureShares, monthOf, monthsBetween, shareInMonth } from '../transactions/installments'
 import { incomePeriod } from './income-period'
 import { safeToSpend } from './safe-to-spend'
 import { monthPeriod } from './spending-period'
@@ -56,13 +58,18 @@ export async function getSafeToSpend(db: Db, userId: string) {
         eq(transaction.type, 'expense'),
         eq(transaction.currency, currency),
         isNotNull(transaction.installmentMonths),
-        lte(transaction.occurredAt, new Date(`${today}T23:59:59Z`)),
+        lt(transaction.occurredAt, startOfDayIn(settings.timezone, shiftDay(today, 1))),
       ),
     )
   const currentMonth = today.slice(0, 7)
   const futureCents = installments.reduce(
     (sum, item) =>
-      sum + futureShares(item.amountCents, item.months!, monthsBetween(monthOf(item.occurredAt), currentMonth)),
+      sum +
+      futureShares(
+        item.amountCents,
+        item.months!,
+        monthsBetween(monthOf(item.occurredAt, settings.timezone), currentMonth),
+      ),
     0,
   )
 
@@ -82,19 +89,37 @@ export async function getSafeToSpend(db: Db, userId: string) {
 
   // What the user already spent this month. Transfers and adjustments are not expenses (design D3).
   // The month is the calendar month, not the period: a payday in the next month does not move it.
+  // A spread expense weighs its share of this month, never the whole purchase: that is the same
+  // share the money above adds back for the months that have not come.
   const monthStart = `${today.slice(0, 8)}01`
-  const spent = await db
-    .select({ cents: sql<number>`sum(${transaction.amountCents})` })
+  const monthExpenses = await db
+    .select({
+      amountCents: transaction.amountCents,
+      months: transaction.installmentMonths,
+      occurredAt: transaction.occurredAt,
+    })
     .from(transaction)
     .where(
       and(
         eq(transaction.userId, userId),
         eq(transaction.type, 'expense'),
         eq(transaction.currency, currency),
-        gte(transaction.occurredAt, new Date(`${monthStart}T00:00:00Z`)),
+        or(
+          gte(transaction.occurredAt, startOfDayIn(settings.timezone, monthStart)),
+          isNotNull(transaction.installmentMonths),
+        ),
       ),
     )
-  const spentCents = Number(spent[0]?.cents ?? 0)
+  const spentCents = monthExpenses.reduce(
+    (sum, item) =>
+      sum +
+      shareInMonth(
+        item.amountCents,
+        item.months,
+        monthsBetween(monthOf(item.occurredAt, settings.timezone), currentMonth),
+      ),
+    0,
+  )
 
   // A yearly bill sets aside a twelfth of its amount every month, so the money is there when it
   // comes. The savings goals (proposal 6) add to this.

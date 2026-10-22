@@ -37,3 +37,23 @@ export const nextIncomeDate = (frequency: IncomeFrequency, anchor: string, today
   while (addMonths(anchor, months) < today) months++
   return addMonths(anchor, months)
 }
+
+/**
+ * Every occurrence of the income between two calendar dates, both included. An irregular income has
+ * no rhythm to walk, so it arrives once: on its next date.
+ */
+export const incomeDatesIn = (frequency: IncomeFrequency, anchor: string, from: string, to: string): string[] => {
+  const first = nextIncomeDate(frequency, anchor, from)
+  if (first > to) return []
+  if (frequency === 'irregular') return [first]
+  const days: string[] = []
+  let day = first
+  while (day <= to) {
+    days.push(day)
+    const next = nextIncomeDate(frequency, anchor, addDays(day, 1))
+    // A frequency that stops moving would repeat the same date for ever.
+    if (next <= day) break
+    day = next
+  }
+  return days
+}

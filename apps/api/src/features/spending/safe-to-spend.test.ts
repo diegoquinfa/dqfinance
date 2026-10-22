@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { shareInMonth } from '../transactions/installments.ts'
 import { safeToSpend, type SafeToSpendInput } from './safe-to-spend.ts'
 
 const input = (over: Partial<SafeToSpendInput> = {}): SafeToSpendInput => ({
@@ -57,4 +58,14 @@ test('a cap already passed holds the number below zero', () => {
   const result = safeToSpend(input({ targetCents: 100000, spentCents: 120000 }))
   assert.equal(result.targetDailyCents, -2000)
   assert.equal(result.allowedCents, -2000)
+})
+
+test('the cap counts the share of a spread purchase, not the whole amount', () => {
+  // 600,000 over six months with a 500,000 cap: this month carries 100,000, so (500,000 − 100,000) / 10.
+  const result = safeToSpend(
+    input({ availableCents: 1200000, pendingBillsCents: 0, spentCents: shareInMonth(600000, 6, 0), targetCents: 500000 }),
+  )
+  assert.equal(result.targetDailyCents, 40000)
+  assert.equal(result.allowedCents, 40000)
+  assert.equal(result.cappedByTarget, true)
 })
