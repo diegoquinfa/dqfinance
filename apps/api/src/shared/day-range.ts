@@ -6,8 +6,8 @@
  * has to be turned into an instant before it can be compared.
  */
 
-/** The zone's offset from UTC at that instant, in milliseconds. */
-const offsetAt = (timeZone: string, instant: Date) => {
+/** The zone's wall clock date and its offset from UTC at that instant, in milliseconds. */
+const wallAt = (timeZone: string, instant: Date) => {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone,
     year: 'numeric',
@@ -21,22 +21,30 @@ const offsetAt = (timeZone: string, instant: Date) => {
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
   const part = (type: string) => Number(values[type])
   const wall = Date.UTC(part('year'), part('month') - 1, part('day'), part('hour'), part('minute'), part('second'))
-  return wall - instant.getTime()
+  return { day: `${values.year}-${values.month}-${values.day}`, offset: wall - instant.getTime() }
 }
 
 /**
  * The instant the calendar day starts in that timezone, e.g.
  * startOfDayIn('America/Bogota', '2026-10-21') → 2026-10-21T05:00:00Z.
  *
- * The offset is read twice because a day that changes its offset (the clock
- * moves) is not solved by the first guess.
+ * Midnight UTC is only a guess at the day's offset: a day whose clock moves at
+ * midnight starts under a different offset, so that guess can land on the day
+ * before (a spring-forward skips local midnight), the day after (a fall-back
+ * repeats it), or an hour into the day. The offset read at each guess moves the
+ * proposal, and the day begins at the earliest proposal that reads its date.
  */
 export const startOfDayIn = (timeZone: string, day: string) => {
   const guess = new Date(`${day}T00:00:00Z`)
-  const offset = offsetAt(timeZone, guess)
-  const candidate = new Date(guess.getTime() - offset)
-  const settled = offsetAt(timeZone, candidate)
-  return settled === offset ? candidate : new Date(guess.getTime() - settled)
+  const first = new Date(guess.getTime() - wallAt(timeZone, guess).offset)
+  const atFirst = wallAt(timeZone, first)
+  const second = new Date(guess.getTime() - atFirst.offset)
+  const atSecond = second.getTime() === first.getTime() ? atFirst : wallAt(timeZone, second)
+  if (atFirst.day === day && atSecond.day === day) return second < first ? second : first
+  if (atFirst.day === day) return first
+  if (atSecond.day === day) return second
+  // A day the clock skipped entirely has no first instant; its edge is the later guess.
+  return second > first ? second : first
 }
 
 /**
