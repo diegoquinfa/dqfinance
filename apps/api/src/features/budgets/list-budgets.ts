@@ -3,6 +3,8 @@ import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
 import { startOfDayIn } from '../../shared/day-range.ts'
 import { fromCents } from '../../shared/money'
+import { card } from '../accounts/account.schema'
+import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
 import { requireSettings } from '../settings/get-settings'
 import { monthOf, monthsBetween, shareInMonth } from '../transactions/installments'
 import { transaction } from '../transactions/transaction.schema'
@@ -33,16 +35,19 @@ export async function listBudgets(db: Db, userId: string): Promise<BudgetView[]>
   const monthStart = `${today.slice(0, 8)}01`
   const budgets = await db.select().from(budget).where(eq(budget.userId, userId))
   // The expenses of the month itself, plus every spread expense that still owes this month a share:
-  // a purchase of 600,000 over six months weighs 100,000 on each of those months.
+  // a purchase of 600,000 over six months weighs 100,000 on each of those months. A foreign card
+  // charge counts its value in the card's currency, the same one its debt sits in.
   const expenses = await db
     .select({
       categoryId: transaction.categoryId,
-      currency: transaction.currency,
-      amountCents: transaction.amountCents,
+      currency: movementCurrency,
+      amountCents: movementAmount,
       months: transaction.installmentMonths,
       occurredAt: transaction.occurredAt,
     })
     .from(transaction)
+    .leftJoin(card, eq(card.id, transaction.cardId))
+    .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
     .where(
       and(
         eq(transaction.userId, userId),
