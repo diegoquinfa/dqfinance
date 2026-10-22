@@ -122,7 +122,15 @@ export function SafeToSpendCard() {
           <dt className="label-mono text-muted-foreground">{m.spending_bills()}</dt>
           <dd className="text-soft tabular-nums">{formatMoney(data.pendingBills, data.currency)}</dd>
         </div>
+        {data.setAsides > 0 && (
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="label-mono text-muted-foreground">{m.spending_set_aside()}</dt>
+            <dd className="text-soft tabular-nums">{formatMoney(data.setAsides, data.currency)}</dd>
+          </div>
+        )}
       </dl>
+
+      {data.setAsides > 0 && <p className="label-mono text-muted-foreground">{m.spending_set_aside_hint()}</p>}
 
       {over && <p className="text-sm text-destructive">{m.spending_over()}</p>}
       {data.cappedByTarget && <p className="label-mono text-muted-foreground">{m.spending_capped()}</p>}

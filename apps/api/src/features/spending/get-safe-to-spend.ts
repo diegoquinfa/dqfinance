@@ -5,6 +5,7 @@ import { fromCents } from '../../shared/money'
 import { assetsAndLiabilities } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
+import { monthlySetAside } from '../recurring-expenses/monthly-set-aside'
 import { requireSettings } from '../settings/get-settings'
 import { transaction } from '../transactions/transaction.schema'
 import { safeToSpend } from './safe-to-spend'
@@ -54,8 +55,20 @@ export async function getSafeToSpend(db: Db, userId: string) {
     )
   const spentCents = Number(spent[0]?.cents ?? 0)
 
-  // The yearly set-aside (proposal 4) and the savings goals (proposal 6) land in their own slices.
-  const setAsidesCents = 0
+  // A yearly bill sets aside a twelfth of its amount every month, so the money is there when it
+  // comes. The savings goals (proposal 6) add to this.
+  const yearly = await db
+    .select({ amountCents: recurringExpense.amountCents })
+    .from(recurringExpense)
+    .where(
+      and(
+        eq(recurringExpense.userId, userId),
+        eq(recurringExpense.active, true),
+        eq(recurringExpense.currency, currency),
+        eq(recurringExpense.frequency, 'yearly'),
+      ),
+    )
+  const setAsidesCents = yearly.reduce((sum, item) => sum + monthlySetAside(item.amountCents), 0)
 
   const result = safeToSpend({
     availableCents,
