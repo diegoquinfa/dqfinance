@@ -17,7 +17,7 @@ export const transactionsRoutes = new Hono<AppEnv>()
     c.json(await listTransactions(c.var.db, c.var.userId, c.var.locale, c.req.valid('query'))),
   )
   .get('/summary', queryParams(summarizeTransactionsInput), async (c) =>
-    c.json(await summarizeTransactions(c.var.db, c.var.userId, c.req.valid('query'))),
+    c.json(await summarizeTransactions(c.var.db, c.var.userId, c.var.locale, c.req.valid('query'))),
   )
   .post('/', jsonBody(createTransactionInput), async (c) => {
     const created = await createTransaction(c.var.db, c.var.userId, c.req.valid('json'))
