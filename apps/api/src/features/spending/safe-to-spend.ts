@@ -1,3 +1,7 @@
+import { monthlySetAside } from '../recurring-expenses/monthly-set-aside.ts'
+import { nextDueDate, type Frequency } from '../recurring-expenses/next-due-date.ts'
+import { monthOf, monthsBetween, shareInMonth } from '../transactions/installments.ts'
+
 /**
  * How much the user may spend today.
  *
@@ -56,3 +60,48 @@ export const safeToSpend = (input: SafeToSpendInput): SafeToSpend => {
     cappedByTarget: targetDailyCents !== null && targetDailyCents < dailyCents,
   }
 }
+
+export type Bill = {
+  amountCents: number
+  startsOn: string
+  nextDueOn: string
+  frequency: Frequency
+}
+
+/**
+ * What the bills still take before the period ends: every occurrence from today on, and an overdue
+ * bill once, because its date still waits to be confirmed.
+ */
+export const billsDueCents = (bills: Bill[], today: string, end: string): number => {
+  let cents = 0
+  for (const bill of bills) {
+    // An overdue bill is still owed; count it once, not once per missed cycle.
+    if (bill.nextDueOn < today) cents += bill.amountCents
+    // A weekly bill falls more than once before the period ends; each occurrence from today counts.
+    for (let day = bill.nextDueOn; day <= end; ) {
+      if (day >= today) cents += bill.amountCents
+      const next = nextDueDate(bill.startsOn, day, bill.frequency)
+      // A due date that does not move on would add the bill for ever.
+      if (next <= day) break
+      day = next
+    }
+  }
+  return cents
+}
+
+/**
+ * What the yearly bills set aside every month. One due before the period ends is already counted
+ * in full as a pending bill, so its share is not subtracted again.
+ */
+export const yearlySetAsideCents = (bills: Pick<Bill, 'amountCents' | 'nextDueOn'>[], end: string): number =>
+  bills.reduce((sum, bill) => sum + (bill.nextDueOn > end ? monthlySetAside(bill.amountCents) : 0), 0)
+
+export type MonthExpense = { amountCents: number; months: number | null; occurredAt: Date }
+
+/** What the expenses cost in a calendar month, each spread one only the share that month carries. */
+export const monthSpentCents = (expenses: MonthExpense[], timeZone: string, month: string): number =>
+  expenses.reduce(
+    (sum, item) =>
+      sum + shareInMonth(item.amountCents, item.months, monthsBetween(monthOf(item.occurredAt, timeZone), month)),
+    0,
+  )

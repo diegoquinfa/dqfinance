@@ -1,20 +1,21 @@
-import { and, eq, gte, isNotNull, lt, lte, or } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, lt, or } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
 import { startOfDayIn } from '../../shared/day-range.ts'
 import { fromCents, toCents } from '../../shared/money'
+import { card } from '../accounts/account.schema'
+import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
 import { assetsAndLiabilities } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
 import { shiftDay } from '../calendar/calendar-days.ts'
 import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
-import { monthlySetAside } from '../recurring-expenses/monthly-set-aside'
 import { listGoals } from '../savings-goals/list-goals'
 import { requireSettings } from '../settings/get-settings'
 import { transaction } from '../transactions/transaction.schema'
-import { futureShares, monthOf, monthsBetween, shareInMonth } from '../transactions/installments'
+import { futureShares, monthOf, monthsBetween } from '../transactions/installments'
 import { incomePeriod } from './income-period'
-import { safeToSpend } from './safe-to-spend'
+import { billsDueCents, monthSpentCents, safeToSpend, yearlySetAsideCents } from './safe-to-spend'
 import { monthPeriod } from './spending-period'
 
 /**
@@ -44,19 +45,22 @@ export async function getSafeToSpend(db: Db, userId: string) {
   const inHandCents = (totals?.assetsCents ?? 0) - (totals?.liabilitiesCents ?? 0)
 
   // An expense the user spread over several months: the money already left the account, but the
-  // months that have not come yet are still the user's.
+  // months that have not come yet are still the user's. A foreign card charge weighs its value in
+  // the card's currency, the same one its debt sits in.
   const installments = await db
     .select({
-      amountCents: transaction.amountCents,
+      amountCents: movementAmount,
       months: transaction.installmentMonths,
       occurredAt: transaction.occurredAt,
     })
     .from(transaction)
+    .leftJoin(card, eq(card.id, transaction.cardId))
+    .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
     .where(
       and(
         eq(transaction.userId, userId),
         eq(transaction.type, 'expense'),
-        eq(transaction.currency, currency),
+        eq(movementCurrency, currency),
         isNotNull(transaction.installmentMonths),
         lt(transaction.occurredAt, startOfDayIn(settings.timezone, shiftDay(today, 1))),
       ),
@@ -73,69 +77,61 @@ export async function getSafeToSpend(db: Db, userId: string) {
     0,
   )
 
+  // The bills still to be paid: every occurrence before the period ends, plus an overdue bill,
+  // whose date still waits to be confirmed. A weekly bill can fall twice; both count.
   const bills = await db
-    .select({ amountCents: recurringExpense.amountCents })
+    .select({
+      amountCents: recurringExpense.amountCents,
+      startsOn: recurringExpense.startsOn,
+      nextDueOn: recurringExpense.nextDueOn,
+      frequency: recurringExpense.frequency,
+    })
     .from(recurringExpense)
     .where(
       and(
         eq(recurringExpense.userId, userId),
         eq(recurringExpense.active, true),
         eq(recurringExpense.currency, currency),
-        gte(recurringExpense.nextDueOn, today),
-        lte(recurringExpense.nextDueOn, period.end),
       ),
     )
-  const pendingBillsCents = bills.reduce((sum, bill) => sum + bill.amountCents, 0)
+  const pendingBillsCents = billsDueCents(bills, today, period.end)
 
   // What the user already spent this month. Transfers and adjustments are not expenses (design D3).
   // The month is the calendar month, not the period: a payday in the next month does not move it.
   // A spread expense weighs its share of this month, never the whole purchase: that is the same
-  // share the money above adds back for the months that have not come.
+  // share the money above adds back for the months that have not come. A foreign card charge counts
+  // its value in the card's currency, like its debt.
   const monthStart = `${today.slice(0, 8)}01`
   const monthExpenses = await db
     .select({
-      amountCents: transaction.amountCents,
+      amountCents: movementAmount,
       months: transaction.installmentMonths,
       occurredAt: transaction.occurredAt,
     })
     .from(transaction)
+    .leftJoin(card, eq(card.id, transaction.cardId))
+    .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
     .where(
       and(
         eq(transaction.userId, userId),
         eq(transaction.type, 'expense'),
-        eq(transaction.currency, currency),
+        eq(movementCurrency, currency),
         or(
           gte(transaction.occurredAt, startOfDayIn(settings.timezone, monthStart)),
           isNotNull(transaction.installmentMonths),
         ),
       ),
     )
-  const spentCents = monthExpenses.reduce(
-    (sum, item) =>
-      sum +
-      shareInMonth(
-        item.amountCents,
-        item.months,
-        monthsBetween(monthOf(item.occurredAt, settings.timezone), currentMonth),
-      ),
-    0,
-  )
+  const spentCents = monthSpentCents(monthExpenses, settings.timezone, currentMonth)
 
   // A yearly bill sets aside a twelfth of its amount every month, so the money is there when it
-  // comes. The savings goals (proposal 6) add to this.
-  const yearly = await db
-    .select({ amountCents: recurringExpense.amountCents })
-    .from(recurringExpense)
-    .where(
-      and(
-        eq(recurringExpense.userId, userId),
-        eq(recurringExpense.active, true),
-        eq(recurringExpense.currency, currency),
-        eq(recurringExpense.frequency, 'yearly'),
-      ),
-    )
+  // comes. One due before the period ends is already a pending bill above, so its share is not
+  // subtracted again. The savings goals (proposal 6) add to this.
   const setAsidesCents =
-    yearly.reduce((sum, item) => sum + monthlySetAside(item.amountCents), 0) +
+    yearlySetAsideCents(
+      bills.filter((bill) => bill.frequency === 'yearly'),
+      period.end,
+    ) +
     // The goals ask for their own share every month, on top of the yearly bills.
     (await listGoals(db, userId))
       .filter((goal) => goal.currency === currency)
