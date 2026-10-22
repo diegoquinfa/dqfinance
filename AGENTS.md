@@ -35,9 +35,9 @@ One checkout is the default. Several agents can work in the same tree at once wh
 the parent commits. Use a worktree **only** when the work would collide or must not mix: the same file, an
 experiment to throw away, or a long feature that must leave the working tree alone.
 
-- `git worktree add .worktrees/<feature> -b <branch>` — always inside `.worktrees/`, which is gitignored and
-  is the only place the sandbox can write. One branch per worktree; the agent commits on it and the parent
-  merges.
+- `git worktree add .worktrees/<feature> -b <branch>` — always inside `.worktrees/`, which is gitignored. One
+  branch per worktree; the agent commits on it and the parent merges. A checkout outside the repo is denied by
+  the sandbox, so do not put a worktree beside the repository.
 - A fresh worktree has no `node_modules`. Once, with full sandbox access:
   `pnpm install --frozen-lockfile --offline --store-dir "$env:LOCALAPPDATA\pnpm\store"`, then
   `pnpm --filter @dqfinance/i18n build` (the paraglide output is gitignored, so `tsc` fails without it).

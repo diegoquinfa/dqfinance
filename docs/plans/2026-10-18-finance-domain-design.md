@@ -52,7 +52,7 @@ All tables have `id` (text UUID, except where noted), `user_id` (FK → `user`, 
 | `savings_goal` | `name`, `target_cents`, `currency`, `target_date?`, `active` | What the user is saving for. With a `target_date`, what is left is spread over the months left and kept out of safe to spend; without one it asks for nothing. |
 | `savings_contribution` | `goal_id`, `amount_cents`, `contributed_on` | What the user put into a goal; the goal's progress is their sum. `contributed_on` is a calendar date in the user's timezone. |
 | `expected_income` | `name`, `amount_cents`, `currency`, `frequency` (`weekly` \| `biweekly` \| `monthly` \| `irregular`), `next_on`, `active` | The money the user expects. `next_on` is the anchor the occurrences count from (`YYYY-MM-DD`); the safe-to-spend period ends at the first one that arrives. |
-| `webhook` | `url`, `secret`, `active` | A public https endpoint the app posts to when a bill falls due. The body carries an HMAC made with `secret`, which is never returned, only its last 4 characters. |
+| `webhook` | `url`, `secret`, `active` | A public https endpoint the app posts to when a bill falls due. The `X-DQFinance-Signature` header carries the HMAC of the exact body, made with `secret`, which is never returned, only its last 4 characters; `X-DQFinance-Delivery` carries `${billId}:${dueOn}` so a receiver can drop a repeated announcement. |
 | `document` | **source**, `name`, `content_type`, `size_bytes`, `r2_key` | A file attached to a source (contract, terms, fee table), stored in the R2 bucket `DOCUMENTS` under a key namespaced by `user_id`. PDF or image, up to 10 MB. |
 
 **Source columns.** A source is stored as three nullable foreign keys plus a `CHECK` that exactly one is set. This keeps referential integrity in the database (no "type + id" text pairs).
@@ -130,7 +130,7 @@ One source, up to 500 rows, and a `dryRun` flag. Each row is `{ type, amount, oc
 - **Duplicate:** same source, same type, same amount in cents, the same calendar day in the user's timezone (`user_settings.timezone`), and a title or a description both rows carry matches. Existing movements on those days and earlier rows of the same batch both count; the first occurrence wins.
 - **Category:** the row's `categoryId` when given (its kind must match the type), else the system `other_expense` / `other_income`, translated on read.
 - **dryRun:** returns every row with `duplicate`, `possibleDuplicate` and its resolved category, and writes nothing.
-- **Write:** the non-duplicate rows in one multi-row INSERT, so D1 applies it entirely or not at all. Returns `{ created, skipped, rows }`. A row that only looks like one — nothing both rows carry says it is the same movement or a different one — is imported and flagged `possibleDuplicate`.
+- **Write:** the non-duplicate rows in one atomic `db.batch` of 8-row INSERTs (D1 allows 100 bound parameters per statement), so it applies entirely or not at all. Returns `{ created, skipped, rows }`. A row that only looks like one — nothing both rows carry says it is the same movement or a different one — is imported and flagged `possibleDuplicate`.
 
 Agents parse the statement themselves and always preview first (`docs/mcp.md#importing-a-statement`).
 
