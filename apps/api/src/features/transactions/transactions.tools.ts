@@ -25,7 +25,7 @@ export const transactionTools = [
   toolDefinition({
     name: 'import_transactions',
     description:
-      'Record many movements of one source from a statement. Parse the PDF, screenshot or video yourself, one row per movement; omit categoryId when unsure. Rows matching an existing movement (same source, type, amount, day, title) are skipped. Call with dryRun true, show the user the preview, then dryRun false after they agree.',
+      'Record many movements of one source from a statement. Parse the PDF, screenshot or video yourself, one row per movement; omit categoryId when unsure. A row is skipped only when it matches a recorded movement (same source, type, amount, day, and a title or description both carry); a row that only looks like one is imported and marked as a possible duplicate. Call with dryRun true, show the user the preview, then dryRun false after they agree.',
     inputSchema: importTransactionsInput,
   }).server<McpContext>(async (input, ctx) => {
     const imported = await importTransactions(ctx.context.db, ctx.context.userId, ctx.context.locale, input)
