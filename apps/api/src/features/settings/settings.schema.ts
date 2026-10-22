@@ -1,7 +1,7 @@
 import { primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { user } from '../auth/auth.schema'
 import { ownerId } from '../auth/owner'
-import { createdAt, timestamp } from '../../shared/schema-columns'
+import { cents, createdAt, timestamp } from '../../shared/schema-columns'
 
 export const LOCALES = ['en', 'es'] as const
 
@@ -15,6 +15,8 @@ export const userSettings = sqliteTable('user_settings', {
   // IANA timezone; "today" for recurring expenses is computed in it.
   timezone: text('timezone').notNull(),
   primaryCurrency: text('primary_currency').notNull(),
+  // What the user wants to spend in a month; null when they set no cap.
+  spendingTargetCents: cents('spending_target_cents'),
   onboardedAt: timestamp('onboarded_at').notNull(),
 })
 

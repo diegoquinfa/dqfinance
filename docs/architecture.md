@@ -23,6 +23,7 @@ Folders whose name says what they own are not listed below.
 - `documents/`: files attached to a source (contract, terms, fee table) in R2. `document-rules.ts` (pure) holds the accepted types and the size limit; upload and download stay in the web app, since agents cannot carry binary.
 - `balances/`: `compute-balances.ts` (pure) is the one place for every balance, debt, cost basis, in-transit rule, and the as-of-date history. Also owns the list tools (`list_accounts`, `get_balance_history`).
 - `calendar/`: per day of the user's timezone, what moved and which recurring expenses fall due. `calendar-days.ts` (pure) does the day grouping and the projection.
+- `spending/`: how much the user may spend today. `safe-to-spend.ts` and `spending-period.ts` (pure) hold the rule and the days left in the month.
 - `mcp/`: the MCP server; collects every feature's tools and guards `/mcp`. `guest-rule.ts` (pure) keeps a guest away from the tools.
 
 Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rules.
@@ -37,6 +38,7 @@ Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rule
 - `balances/`: the overview and the source detail page (`/accounts/$type/$id`).
 - `documents/`: the file section on the source detail page, which `balances/source-page.tsx` renders. No page of its own, and it imports only the `SourceRef` type from `accounts/`.
 - `counterparties/`: the contacts list and the contact detail page (`/contacts/$id`).
+- `spending/`: the card on the overview that says how much the user may spend today.
 
 `shared/api.ts` is the single Hono RPC client, with `unwrap()`.
 
@@ -47,7 +49,7 @@ A feature imports only from features earlier in this order:
 ```
 categories → settings → accounts → documents → counterparties → transactions
            → recurring-expenses → balances → balance-adjustments → transfers → calendar
-           → demo
+           → spending → demo
 ```
 
 `auth/` is a foundation in both apps (the API's `mcp/` and `push/` too), outside the order: any feature may import it.
@@ -61,6 +63,7 @@ Four dependencies the order cannot express, the first two long-standing:
 - **The web `accounts/` and `balances/` slices reference each other.** `balances/` renders the account rows and the source detail page, and `accounts/sources.ts` reads balances through `balances-api`. Unwinding it means moving the source list and the balance query into `shared/`.
 - **The web `balances/`, `transfers/` and `accounts/` slices reference each other.** `balances/source-page.tsx` opens `transfers/new-transfer-dialog`, which pulls `accounts/sources`, and `accounts/new-pocket-page.tsx` creates a transfer through `transfers/transfers-api` to move money into a pocket, so `balances → transfers → accounts → balances` is a cycle the order cannot express. It is safe because no module runs anything at import time. Nothing else may add edges across the order.
 - **The web `counterparties/` and `transactions/` slices reference each other.** `counterparties/contact-page.tsx` renders the shared movement row and reads the contact list, and `transactions/new-transaction-dialog.tsx` reads the contact list to offer it, so `transactions → counterparties → transactions` is a cycle the order cannot express. It is safe because no module runs anything at import time. Unwinding it means moving `TransactionRow` into `shared/`.
+- **The web `balances/` and `spending/` slices reference each other.** The overview (`balances/`) opens with the safe-to-spend card, so `balances → spending`. The card only reads the spending API, and nothing in `spending/` reads the balances slice, so the edge does not close.
 
 Anything two features need that is not a domain noun moves to `shared/`, and `shared/` imports nothing from `features/`.
 
