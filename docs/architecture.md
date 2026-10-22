@@ -24,7 +24,7 @@ Folders whose name says what they own are not listed below.
 - `transactions/`: the movements, their source and their date. `installments.ts` (pure) holds how an expense the user spread over several months is seen in parts; `search-terms.ts` (pure) holds which words of a search carry meaning.
 - `balances/`: `compute-balances.ts` (pure) is the one place for every balance, debt, cost basis, in-transit rule, and the as-of-date history. Also owns the list tools (`list_accounts`, `get_balance_history`).
 - `calendar/`: per day of the user's timezone, what moved and which recurring expenses fall due. `calendar-days.ts` (pure) does the day grouping and the projection.
-- `spending/`: how much the user may spend today. `safe-to-spend.ts` and `spending-period.ts` (pure) hold the rule and the days left in the month; `income-period.ts` (pure) holds the payday the period ends on.
+- `spending/`: how much the user may spend today, and what the balance looks like day by day. `safe-to-spend.ts` and `spending-period.ts` (pure) hold the rule and the days left in the month; `income-period.ts` (pure) holds the payday the period ends on; `forecast.ts` (pure) holds the running balance of the projection.
 - `savings-goals/`: what the user is saving for and what they put into it. `goal-progress.ts` (pure) holds how much of a goal is saved and what it asks for every month.
 - `expected-incomes/`: the money the user expects, with how often it arrives. `next-income-date.ts` (pure) holds the next payday, counted from the anchor so the day of the month never drifts.
 - `webhooks/`: the places the user asked the app to call when a bill falls due. `webhook-signature.ts` (pure) holds the HMAC of the body; the endpoint goes through `shared/public-url.ts`, the same check the push endpoints use.
@@ -42,7 +42,7 @@ Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rule
 - `balances/`: the overview and the source detail page (`/accounts/$type/$id`).
 - `documents/`: the file section on the source detail page, which `balances/source-page.tsx` renders. No page of its own, and it imports only the `SourceRef` type from `accounts/`.
 - `counterparties/`: the contacts list and the contact detail page (`/contacts/$id`).
-- `spending/`: the card on the overview that says how much the user may spend today.
+- `spending/`: the card on the overview that says how much the user may spend today, and the forecast of the balance day by day.
 - `savings-goals/`: the savings goals page (`/savings`) and its query hooks.
 - `expected-incomes/`: the expected incomes page (`/incomes`) and its query hooks.
 
