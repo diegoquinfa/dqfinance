@@ -29,6 +29,23 @@ Always use the skill ponytail
 - Changing the data model or a design decision (D1–D13): [the domain design](./docs/plans/2026-10-18-finance-domain-design.md).
 - Choosing what to build next: the domain design, then the [redesign follow-ups](./docs/plans/2026-10-19-web-redesign.md#follow-ups-not-built).
 
+## Parallel work
+
+One checkout is the default. Several agents can work in the same tree at once when their files are disjoint;
+the parent commits. Use a worktree **only** when the work would collide or must not mix: the same file, an
+experiment to throw away, or a long feature that must leave the working tree alone.
+
+- `git worktree add .worktrees/<feature> -b <branch>` — always inside `.worktrees/`, which is gitignored and
+  is the only place the sandbox can write. One branch per worktree; the agent commits on it and the parent
+  merges.
+- A fresh worktree has no `node_modules`. Once, with full sandbox access:
+  `pnpm install --frozen-lockfile --offline --store-dir "$env:LOCALAPPDATA\pnpm\store"`, then
+  `pnpm --filter @dqfinance/i18n build` (the paraglide output is gitignored, so `tsc` fails without it).
+  After that it runs sandboxed: `node <file>.test.ts`, `node ../../node_modules/typescript/bin/tsc --noEmit`.
+- Install one worktree at a time; pnpm serializes on a store lock.
+- `git config core.longpaths true` is required to remove a worktree later: the `node_modules` paths pass 260.
+- Remove it with `git worktree remove --force .worktrees/<feature>`; the branch stays.
+
 ## Before you finish
 
 `pnpm check-types && pnpm test && pnpm build` from the root must pass.
