@@ -5,7 +5,7 @@
 The user can spread an unexpected expense over several months for budgeting, so the month does not drop
 to zero.
 
-Proposal 5 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 5 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -55,9 +55,9 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] `transactions` API: the column, the input, the edit.
-- [ ] `transactions` web: the field in the movement form.
-- [ ] `spending`: the months that have not come yet count as the user's.
+- [x] `transactions` API: the column, the input, the edit. Commit `c290608`.
+- [x] `transactions` web: the field in the movement form. Commit `c290608`.
+- [x] `spending`: the months that have not come yet count as the user's. Commit `c290608`.
 
 ## Acceptance
 

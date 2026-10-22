@@ -4,7 +4,7 @@
 
 One number the user checks most: how much may I spend **today**.
 
-Proposal 1 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 1 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -30,7 +30,7 @@ today = (money in hand − fixed bills still due − savings and set-asides) / d
 - `GET /api/spending/safe-to-spend`: the number and the pieces it comes from.
 - MCP tool `safe_to_spend`.
 - A card on the overview with the number.
-- A monthly spending target in the settings.
+- A monthly spending target on that card.
 
 ## Out of scope
 
@@ -65,8 +65,8 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] `spending` API: the rule, the use case, the route, the tool.
-- [ ] `spending` web: the card on the overview and the target in the settings.
+- [x] `spending` API: the rule, the use case, the route, the tool. Commit `4cb1817`.
+- [x] `spending` web: the card on the overview and the target on the card. Commit `4cb1817`.
 
 ## Acceptance
 

@@ -5,7 +5,7 @@
 The user names what they are saving for, puts money into it, and the app keeps that money out of the
 daily spending.
 
-Proposal 6 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 6 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -60,8 +60,8 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] `savings-goals` API: the goals, the contributions, the progress, the tools.
-- [ ] `savings-goals` web: the page and the nav entry.
+- [x] `savings-goals` API: the goals, the contributions, the progress, the tools. Commit `7142aee`.
+- [x] `savings-goals` web: the page and the nav entry. Commit `7142aee`.
 
 ## Acceptance
 

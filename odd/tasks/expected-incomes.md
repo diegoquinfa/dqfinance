@@ -4,7 +4,7 @@
 
 The user tells the app what money is coming and when, and the daily number counts on it.
 
-Proposal 7 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 7 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -22,7 +22,7 @@ the 30th, or a freelancer who invoices every few weeks, gets a number that is wr
 
 ## Scope
 
-- `GET/POST /api/expected-incomes`, `DELETE /api/expected-incomes/:id`.
+- `GET/POST /api/incomes`, `DELETE /api/incomes/:id`.
 - MCP tools: `list_expected_incomes`, `create_expected_income`, `delete_expected_income`.
 - The safe-to-spend period ends at the next payday, and the income that arrives counts into the money
   the days can be spent on.
@@ -60,9 +60,9 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] `expected-incomes` API: the incomes, the next payday, the tools.
-- [ ] `expected-incomes` web: the page and the nav entry.
-- [ ] `spending`: the period ends at the next payday.
+- [x] `expected-incomes` API: the incomes, the next payday, the tools. Commit `132df4b`.
+- [x] `expected-incomes` web: the page and the nav entry. Commit `132df4b`.
+- [x] `spending`: the period ends at the next payday. Commit `132df4b`.
 
 ## Acceptance
 

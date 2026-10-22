@@ -53,7 +53,8 @@ The consent page refuses too, so the agent's author sees why instead of a myster
   needs to call correctly: amounts are decimal and not cents, dates are `YYYY-MM-DD` or an ISO 8601
   datetime, an amount is positive and the type carries the sign, which id comes from which list
   tool, a dry run before an import, and a confirmation before a delete.
-- The `tools/list` payload is **22,647 chars** (36 tools). Measure it by bundling a script that
+- The `tools/list` payload is **a fixed cost that grows with every tool** (it was 22,647 chars at
+  36 tools; the server now publishes **55**). Measure it by bundling a script that
   builds `createMCPServer` with the real tool arrays (the esbuild next to wrangler, with
   `NODE_PATH=apps/api/node_modules`), then asking the server for `tools/list`: the sources use
   extensionless imports, so plain Node cannot load them.
@@ -66,4 +67,4 @@ The consent page refuses too, so the agent's author sees why instead of a myster
 
 ## Importing a statement
 
-`import_transactions` takes one source and up to 500 rows. The tool description asks the agent to parse the PDF or screenshot itself, call with `dryRun: true`, show the preview, and only then call again with `dryRun: false`; the write is one multi-row INSERT. A row is a duplicate when the source, type, amount in cents, calendar day and (when both have one) title already exist. The rule is `features/transactions/duplicate.ts` (pure, tested).
+`import_transactions` takes one source and up to 500 rows. The tool description asks the agent to parse the PDF or screenshot itself, call with `dryRun: true`, show the preview, and only then call again with `dryRun: false`; the write is one multi-row INSERT. A row is a duplicate when it matches a recorded movement on the same source, type, amount in cents and calendar day (the user's timezone), and a title or a description that both of them carry matches. A row that only looks like one is imported and flagged `possibleDuplicate`. The rule is `features/transactions/duplicate.ts` (pure, tested).

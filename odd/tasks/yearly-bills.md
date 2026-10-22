@@ -5,7 +5,7 @@
 A yearly bill stops surprising the user: a twelfth of its amount is set aside every month, so the money
 is there when it comes.
 
-Proposal 4 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 4 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -17,7 +17,7 @@ money. The user pays the whole bill in one go and the month's balance drops to z
 - **A twelfth, not a twelfth of the month left.** The reservation is the same every month, so the number
   the user learns does not move around.
 - **The cents that do not divide stay with the bill.** A bill of $100.01 sets aside $8.33 a month; the
-  three cents left over are the bill's.
+  five cents left over are the bill's.
 - **The reservation is not a second account.** It is a rule on the safe-to-spend number, not money that
   moves anywhere. The bill still leaves the account when it is confirmed.
 
@@ -53,8 +53,8 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] The rule: a twelfth a month, the rest stays with the bill.
-- [ ] The number and the card show the reservation.
+- [x] The rule: a twelfth a month, the rest stays with the bill. Commit `c5ec9cf`.
+- [x] The number and the card show the reservation. Commit `c5ec9cf`.
 
 ## Acceptance
 

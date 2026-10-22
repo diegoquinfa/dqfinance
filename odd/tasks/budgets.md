@@ -4,7 +4,7 @@
 
 A limit per category, and how close the user is to it.
 
-Proposal 13 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 13 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -56,8 +56,8 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] `budgets` API: the limit, the spent, the progress, the tools.
-- [ ] `budgets` web: the page and the nav entry.
+- [x] `budgets` API: the limit, the spent, the progress, the tools. Commit `4438a85`.
+- [x] `budgets` web: the page and the nav entry. Commit `4438a85`.
 
 ## Acceptance
 

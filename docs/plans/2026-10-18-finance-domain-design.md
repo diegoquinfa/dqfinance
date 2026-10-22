@@ -35,7 +35,7 @@ All tables have `id` (text UUID, except where noted), `user_id` (FK → `user`, 
 
 | Table | Columns | Notes |
 | --- | --- | --- |
-| `user_settings` | `user_id` (PK), `country`, `locale`, `timezone`, `primary_currency`, `onboarded_at` | Written by the onboarding wizard. |
+| `user_settings` | `user_id` (PK), `country`, `locale`, `timezone`, `primary_currency`, `spending_target_cents?`, `reminder_lead_days?`, `onboarded_at` | Written by the onboarding wizard. `spending_target_cents` is the monthly cap safe to spend applies; `reminder_lead_days` is how many days before a bill falls due the app warns (null: no warning). |
 | `user_currency` | (`user_id`, `code`) PK | The user's currencies; always includes `primary_currency`. |
 | `bank` | `name` | Colombian users pick from a catalog; others type the name. |
 | `bank_account` | `bank_id`, `name`, `last4?` | |
@@ -44,10 +44,15 @@ All tables have `id` (text UUID, except where noted), `user_id` (FK → `user`, 
 | `card` | `product_id`, `kind` (`debit` \| `credit`), `name`, `last4?`, `credit_limit_cents?`, `statement_day?`, `due_day?`, `brand?`, `interest_rate_bps?`, `interest_rate_period?`, `color?` | A **source**. Currency = its product's currency. `brand` is `visa` \| `mastercard` \| `amex` \| `diners` \| `other`; `interest_rate_period` is `monthly` (MV) or `annual` (EA), and the rate belongs to a credit card. `color` is presentation only. |
 | `category` | `name?`, `kind` (`expense` \| `income`), `system_key?` | System categories (`fx_loss`, `fx_gain`, `bank_fees`, `other_expense`, `other_income`) have a key and no stored name; the name is translated on read. An import row without a category is booked in `other_expense` / `other_income`. |
 | `counterparty` | `name`, `kind` (`person` \| `business`) | |
-| `transaction` | `type` (`income` \| `expense`), `amount_cents`, `currency`, **source** (`product_id?` \| `cash_wallet_id?` \| `card_id?`), `primary_amount_cents?`, `category_id`, `counterparty_id?`, `recurring_expense_id?`, `transfer_id?`, `title?`, `description?`, `occurred_at` | `primary_amount_cents` only for a credit-card charge in a foreign currency. `transfer_id` links the fee and FX entries a transfer created. `title` names the transaction in a list, `description` holds the details (D15). |
+| `transaction` | `type` (`income` \| `expense`), `amount_cents`, `currency`, **source** (`product_id?` \| `cash_wallet_id?` \| `card_id?`), `primary_amount_cents?`, `category_id`, `counterparty_id?`, `recurring_expense_id?`, `transfer_id?`, `title?`, `description?`, `installment_months?`, `occurred_at` | `primary_amount_cents` only for a credit-card charge in a foreign currency. `transfer_id` links the fee and FX entries a transfer created. `title` names the transaction in a list, `description` holds the details (D15). `installment_months` spreads an expense over the months it belongs to, for budgeting only: the movement keeps its date and its amount. |
 | `transfer` | **from** (`from_product_id?` \| `from_cash_wallet_id?`), **to** (`to_product_id?` \| `to_cash_wallet_id?` \| `to_card_id?`), `sent_amount_cents`, `sent_currency`, `received_amount_cents`, `received_currency`, `fee_cents?`, `cost_basis_cents?`, `note?`, `sent_at`, `received_at?` | `cost_basis_cents` = purchase-day value released when paying foreign card debt. |
 | `balance_adjustment` | **source** (one of three), `currency`, `observed_balance_cents`, `delta_cents`, `note?`, `adjusted_at` | For a card, the balance is the debt in that currency. |
 | `recurring_expense` | `name`, `amount_cents`, `currency`, **source**, `category_id`, `counterparty_id?`, `frequency` (`weekly` \| `monthly` \| `yearly`), `starts_on`, `next_due_on`, `active` | Dates are calendar dates (`YYYY-MM-DD`) in the user's timezone. |
+| `budget` | `category_id`, `amount_cents`, `currency` | One limit per category: `user_id` + `category_id` is unique. What the category may spend in a month; the spent is read from that month's expenses. |
+| `savings_goal` | `name`, `target_cents`, `currency`, `target_date?`, `active` | What the user is saving for. With a `target_date`, what is left is spread over the months left and kept out of safe to spend; without one it asks for nothing. |
+| `savings_contribution` | `goal_id`, `amount_cents`, `contributed_on` | What the user put into a goal; the goal's progress is their sum. `contributed_on` is a calendar date in the user's timezone. |
+| `expected_income` | `name`, `amount_cents`, `currency`, `frequency` (`weekly` \| `biweekly` \| `monthly` \| `irregular`), `next_on`, `active` | The money the user expects. `next_on` is the anchor the occurrences count from (`YYYY-MM-DD`); the safe-to-spend period ends at the first one that arrives. |
+| `webhook` | `url`, `secret`, `active` | A public https endpoint the app posts to when a bill falls due. The body carries an HMAC made with `secret`, which is never returned, only its last 4 characters. |
 | `document` | **source**, `name`, `content_type`, `size_bytes`, `r2_key` | A file attached to a source (contract, terms, fee table), stored in the R2 bucket `DOCUMENTS` under a key namespaced by `user_id`. PDF or image, up to 10 MB. |
 
 **Source columns.** A source is stored as three nullable foreign keys plus a `CHECK` that exactly one is set. This keeps referential integrity in the database (no "type + id" text pairs).
@@ -122,10 +127,10 @@ difference        = sent_amount − released_basis
 
 One source, up to 500 rows, and a `dryRun` flag. Each row is `{ type, amount, occurredAt, title?, description?, categoryId? }`; `occurredAt` is a calendar date or an ISO datetime.
 
-- **Duplicate:** same source, same type, same amount in cents, same calendar day (UTC), and the same title when both rows have one. Existing movements on those days and earlier rows of the same batch both count; the first occurrence wins.
+- **Duplicate:** same source, same type, same amount in cents, the same calendar day in the user's timezone (`user_settings.timezone`), and a title or a description both rows carry matches. Existing movements on those days and earlier rows of the same batch both count; the first occurrence wins.
 - **Category:** the row's `categoryId` when given (its kind must match the type), else the system `other_expense` / `other_income`, translated on read.
-- **dryRun:** returns every row with `duplicate` and its resolved category, and writes nothing.
-- **Write:** the non-duplicate rows in one multi-row INSERT, so D1 applies it entirely or not at all. Returns `{ created, skipped }`.
+- **dryRun:** returns every row with `duplicate`, `possibleDuplicate` and its resolved category, and writes nothing.
+- **Write:** the non-duplicate rows in one multi-row INSERT, so D1 applies it entirely or not at all. Returns `{ created, skipped, rows }`. A row that only looks like one — nothing both rows carry says it is the same movement or a different one — is imported and flagged `possibleDuplicate`.
 
 Agents parse the statement themselves and always preview first (`docs/mcp.md#importing-a-statement`).
 
@@ -151,9 +156,10 @@ A file attached to a source: contract, terms, or fee table. PDF or a common imag
 | `get_balance_history` | Month-end assets and card debt per currency, optionally for one source |
 | `create_bank`, `create_bank_account`, `create_cash_wallet` | A bank and an account in it, or a cash wallet, so an agent can set up a source end to end |
 | `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, the yield payout, the parent product of a pocket, brand, interest rate, and color |
-| `list_categories`, `create_category` | Categories to record movements with; `includeSystem` adds the FX-difference and fee ones |
+| `list_categories`, `create_category`, `update_category`, `delete_category`, `merge_categories` | Categories to record movements with, and reshaping them: rename and mark, delete an unused one, or merge one into another of the same kind; `includeSystem` adds the FX-difference and fee ones |
 | `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `delete_contact` | Contacts, and one contact's totals by category and month |
 | `create_transaction`, `list_transactions`, `summarize_transactions` | Record, query and total income and expenses |
+| `search_transactions` | Find a movement by its title, description or category, one line each, newest first |
 | `update_transaction`, `delete_transaction` | Correct or remove a movement; the fee and FX entries of a transfer belong to it and cannot change on their own |
 | `create_transfer`, `list_transfers`, `mark_transfer_received` | Move money between the user's own sources |
 | `adjust_balance`, `list_balance_adjustments` | Set the real balance of a source; the last 100 corrections |
@@ -162,6 +168,11 @@ A file attached to a source: contract, terms, or fee table. PDF or a common imag
 | `get_calendar` | Per day of the user's timezone, what moved and what falls due (up to 62 days) |
 | `import_transactions` | Record a whole statement at once, with a dry-run preview and duplicate detection |
 | `list_documents`, `delete_document` | The files attached to the user's sources, and removing one |
+| `list_expected_incomes`, `create_expected_income`, `delete_expected_income` | The money the user expects, and the day each one next arrives; safe to spend counts on them |
+| `list_savings_goals`, `create_savings_goal`, `add_savings_contribution`, `delete_savings_goal` | What the user is saving for, what was put in, and what each goal asks every month |
+| `safe_to_spend`, `forecast` | How much may be spent today; and the projected balance of each day until the month ends, with its lowest point |
+| `list_webhooks`, `create_webhook`, `delete_webhook` | The user's own automation: the public https URL the app calls when a bill falls due, and the secret its signature uses |
+| `list_budgets`, `set_budget`, `delete_budget` | A monthly limit per category, with what it spent and what is left |
 
 Onboarding, changing settings, and uploading or downloading files stay in the web app; every other write is also reachable through the tools above. Scopes: `finance:read`, `finance:write`.
 
@@ -176,7 +187,10 @@ Onboarding, changing settings, and uploading or downloading files stay in the we
 | `/accounts` | Banks → accounts → products → cards, cash wallets, "Adjust balance" |
 | `/contacts` | People and businesses |
 | `/recurring` | Recurring expenses |
-| `/settings` | Language, currencies, categories |
+| `/savings` | Savings goals: what each holds, what is left and what it asks every month |
+| `/incomes` | The money the user expects: amount, frequency and the next day it arrives |
+| `/budgets` | A monthly limit per category, with what it spent and what is left of it |
+| `/settings` | Language, currencies, categories, the webhooks the app calls when a bill falls due, and how many days before it warns |
 
 ## Implementation order
 
@@ -194,4 +208,4 @@ Each step is a full vertical slice (API + MCP + web + tests), working before the
 
 ## Later
 
-Budgets (with per-category threshold alerts), receipts/attachments, savings goals, tags, statements/periods, exchange rates (automatic purchase-day values), loans and debts (uses Counterparty), recurring subscription detection, month-end projection. User requests behind these are in [2026-10-20-user-feedback.md](2026-10-20-user-feedback.md). More proposals (safe to spend, forecast, upcoming reminders, annual bills, spreading expenses, savings goals, irregular income, shared expenses, custom categories, federated contacts, expense search, group projects, budgets) are in [2026-10-21-feature-proposals.md](2026-10-21-feature-proposals.md).
+Receipts/attachments, tags, statements/periods, exchange rates (automatic purchase-day values), loans and debts (uses Counterparty), recurring subscription detection, shared expenses, federated contacts and group projects. User requests behind these are in [2026-10-20-user-feedback.md](2026-10-20-user-feedback.md). The proposals still open are in [2026-10-21-feature-proposals.md](2026-10-21-feature-proposals.md); what shipped from that list is tracked in [odd/tasks](../../odd/tasks/).
