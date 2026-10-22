@@ -1,4 +1,4 @@
-import { and, eq, gte, isNotNull, or } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, lt, or } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
 import { startOfDayIn } from '../../shared/day-range.ts'
@@ -33,6 +33,10 @@ export async function listBudgets(db: Db, userId: string): Promise<BudgetView[]>
   const today = todayIn(settings.timezone)
   const currentMonth = today.slice(0, 7)
   const monthStart = `${today.slice(0, 8)}01`
+  // The month ends where the next one starts, on the user's clock: a movement dated next month
+  // belongs to that month's budget, never this one.
+  const [year, month] = monthStart.split('-').map(Number) as [number, number]
+  const nextMonthStart = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10)
   const budgets = await db.select().from(budget).where(eq(budget.userId, userId))
   // The expenses of the month itself, plus every spread expense that still owes this month a share:
   // a purchase of 600,000 over six months weighs 100,000 on each of those months. A foreign card
@@ -52,6 +56,7 @@ export async function listBudgets(db: Db, userId: string): Promise<BudgetView[]>
       and(
         eq(transaction.userId, userId),
         eq(transaction.type, 'expense'),
+        lt(transaction.occurredAt, startOfDayIn(settings.timezone, nextMonthStart)),
         or(
           gte(transaction.occurredAt, startOfDayIn(settings.timezone, monthStart)),
           isNotNull(transaction.installmentMonths),
