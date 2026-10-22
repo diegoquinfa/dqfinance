@@ -4,7 +4,7 @@
 
 One question, answered: will I run out of money before the month ends?
 
-Proposal 2 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 2 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -55,8 +55,8 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] `spending` API: the days, the projection, the lowest point.
-- [ ] `spending` web: the chart on the overview.
+- [x] `spending` API: the days, the projection, the lowest point. Commit `1209830`.
+- [x] `spending` web: the chart on the overview. Commit `1209830`.
 
 ## Acceptance
 

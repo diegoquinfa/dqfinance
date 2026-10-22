@@ -38,7 +38,7 @@ Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rule
 - `auth/`: also the OAuth consent card, and the anonymous client that signs a guest in.
 - `landing/`: the signed-out home at `/`.
 - `demo/`: the "Try the demo" button and the seed call.
-- `settings/`: also manages categories; `categories/` holds only the query hooks. Also the webhooks block: the hooks the app calls when a bill falls due, and the days before it the app warns.
+- `settings/`: also manages categories; `categories/` holds the query hooks and the category mark (`category-mark.tsx`) that settings, budgets and the movement dialog render. Also the webhooks block: the hooks the app calls when a bill falls due, and the days before it the app warns.
 - `accounts/`: also the adjust-balance dialog and the source picker other forms reuse.
 - `balances/`: the overview and the source detail page (`/accounts/$type/$id`).
 - `documents/`: the file section on the source detail page, which `balances/source-page.tsx` renders. No page of its own, and it imports only the `SourceRef` type from `accounts/`.
@@ -64,7 +64,7 @@ categories → settings → accounts → documents → counterparties → transa
 
 The API's `demo/` writes the rows of every feature's tables, so it sits last; the composition root (`index.ts`) wires its guest handoff, which keeps `auth/` from importing a feature.
 
-Four dependencies the order cannot express, the first two long-standing:
+Six dependencies the order cannot express, the first two long-standing:
 
 - **Table definitions point both ways.** A `*.schema.ts` declares foreign keys into another feature's tables, and the queries that read those tables import them the same way: `transactions/transaction.schema.ts` references `recurring-expenses` and `transfers`, and `balances/get-balances.ts` reads the `transfer` and `balance_adjustment` tables. Read these as data references; the order governs each feature's logic.
 - **The API's `categories/` reads the `transaction` table.** `delete-category` and `merge-categories` need to know whether a category still holds movements, so they read the `transaction` table. It is a data reference, like the table definitions that point both ways; the order still governs the feature's logic.

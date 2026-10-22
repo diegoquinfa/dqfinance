@@ -5,7 +5,7 @@
 Let the user shape the categories they record against: rename them, give them an icon and a color, delete the
 ones they do not use, and merge one into another without losing a movement.
 
-Proposal 9 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 9 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -61,8 +61,8 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] `categories` API: icon and color columns, update, delete, merge, tools, errors, migration.
-- [ ] `categories` web: the settings panel gains edit, delete and merge; the picker shows the mark.
+- [x] `categories` API: icon and color columns, update, delete, merge, tools, errors, migration. Commit `a385666`.
+- [x] `categories` web: the settings panel gains edit, delete and merge; the picker shows the mark. Commit `a385666`.
 
 ## Acceptance
 

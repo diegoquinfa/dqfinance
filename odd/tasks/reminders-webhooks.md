@@ -4,7 +4,7 @@
 
 The user asks the app to warn before a bill is due, and the app can tell other systems too.
 
-Proposal 3 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 3 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -59,8 +59,8 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] `webhooks` API: the hooks, the secret, the delivery.
-- [ ] `webhooks` web: the settings block and the overview warning.
+- [x] `webhooks` API: the hooks, the secret, the delivery. Commit `113d2d9`.
+- [x] `webhooks` web: the settings block and the overview warning. Commit `113d2d9`.
 
 ## Acceptance
 
