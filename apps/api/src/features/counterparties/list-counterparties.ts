@@ -1,4 +1,4 @@
-import { and, asc, eq, like, sql } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
@@ -6,6 +6,7 @@ import { card } from '../accounts/account.schema'
 import { transaction } from '../transactions/transaction.schema'
 import { counterpartyAggregates } from './counterparty-aggregates'
 import { COUNTERPARTY_KINDS, counterparty } from './counterparty.schema'
+import { escapeLike } from './escape-like.ts'
 
 export const listCounterpartiesInput = z.object({
   kind: z.enum(COUNTERPARTY_KINDS).optional(),
@@ -38,7 +39,9 @@ export async function listCounterparties(db: Db, userId: string, input: z.infer<
       and(
         eq(counterparty.userId, userId),
         input.kind ? eq(counterparty.kind, input.kind) : undefined,
-        input.search ? like(counterparty.name, `%${input.search}%`) : undefined,
+        input.search
+          ? sql`${counterparty.name} like ${`%${escapeLike(input.search)}%`} escape '\\'`
+          : undefined,
       ),
     )
     .groupBy(counterparty.id, counterparty.name, counterparty.kind, currency)

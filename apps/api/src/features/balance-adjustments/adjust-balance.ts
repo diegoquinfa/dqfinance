@@ -12,6 +12,7 @@ export const adjustBalanceInput = z.object({
   source: sourceRef.describe('A product, cash wallet or credit card'),
   observedBalance: z
     .number()
+    .max(1e12)
     .multipleOf(0.01)
     .describe('Real balance now (decimal, not cents); for a credit card the debt owed in `currency` (positive)'),
   currency: currencyCode.optional().describe("Credit cards only: which debt currency (defaults to the card's)"),
