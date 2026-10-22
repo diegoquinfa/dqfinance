@@ -19,10 +19,12 @@ export type DueCheck = {
 }
 
 /**
- * Announces the bills that fall due inside the lead time the user set. A bill is announced once a
- * hook received it: the due date it was announced for is kept, so the check does not call the hooks
- * again. With no active hook, or with every call failed, nothing is kept and the next check calls
- * again, so a lost call does not lose the reminder.
+ * Announces the bills that fall due inside the lead time the user set. A bill is announced only once
+ * every active hook received it: then the due date it was announced for is kept, so the check does
+ * not call the hooks again. With no active hook, or with any call failed, nothing is kept and the
+ * next check calls every hook again, so a lost call does not lose the reminder. Retrying repeats
+ * the delivery of the hooks that did succeed; the delivery id is the same, so a receiver that dedups
+ * drops the repeat.
  */
 export async function checkDueBills(db: Db, userId: string): Promise<DueCheck> {
   const settings = await requireSettings(db, userId)
@@ -71,9 +73,9 @@ export async function checkDueBills(db: Db, userId: string): Promise<DueCheck> {
         received++
       } else failures.push(`${hook.url}: ${result.error ?? 'the call failed'}`)
     }
-    // Only a bill some hook received is announced: with no hook, or with every call failed, the due
-    // date stays open and the next check calls the hooks again.
-    if (!isAnnounced(received)) continue
+    // Only a bill every active hook received is announced: with no hook, or with any call failed,
+    // the due date stays open and the next check calls every hook again.
+    if (!isAnnounced(received, hooks.length)) continue
     await db
       .update(recurringExpense)
       .set({ notifiedOn: bill.nextDueOn })
