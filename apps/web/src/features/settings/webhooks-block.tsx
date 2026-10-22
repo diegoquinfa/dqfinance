@@ -54,7 +54,9 @@ function LeadDaysField() {
         className="max-w-32 tabular-nums"
       />
       <FieldDescription>{m.webhooks_lead_days_hint()}</FieldDescription>
-      <p className="label-mono text-muted-foreground">{m.webhooks_lead_days_days({ days })}</p>
+      <p className="label-mono text-muted-foreground">
+        {days === 1 ? m.webhooks_lead_day({ days }) : m.webhooks_lead_days_days({ days })}
+      </p>
       <FieldError>{update.error?.message}</FieldError>
     </Field>
   )

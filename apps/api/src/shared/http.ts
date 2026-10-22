@@ -23,6 +23,7 @@ export const ERROR_CODES = [
   'category_kind_mismatch',
   'category_system',
   'category_has_transactions',
+  'category_in_use',
   'category_merge_same',
   'counterparty_not_found',
   'primary_amount_required',
