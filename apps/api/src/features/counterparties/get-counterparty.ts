@@ -89,8 +89,9 @@ export async function getCounterparty(
 
   // The monthly series buckets by the user's month, not the UTC one: SQLite reads the stored
   // instant after shifting it by the offset in effect at the period's start (today, when the period
-  // is open). shortcut: a movement within an hour of a daylight-saving change can land in the
-  // previous month; upgrade to a per-row offset when that matters.
+  // is open). shortcut: at every month boundary whose offset differs from the period start's, a
+  // movement within that difference can land in either neighbouring month; upgrade to a per-row
+  // offset when that matters.
   const periodStart = startOfDayIn(settings.timezone, input.from ?? todayIn(settings.timezone))
   const offsetSeconds = offsetSecondsAt(settings.timezone, periodStart)
   const month = sql<string>`strftime('%Y-%m', ${transaction.occurredAt} / 1000 + ${offsetSeconds}, 'unixepoch')`
