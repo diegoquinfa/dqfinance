@@ -4,7 +4,7 @@
 
 Find the movements the user is thinking of, from the web or from an agent, by what they were.
 
-Proposal 11 in [2026-10-21-feature-proposals.md](../docs/plans/2026-10-21-feature-proposals.md).
+Proposal 11 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
 ## Problem
 
@@ -54,8 +54,8 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [ ] `search` API: the query terms, the filter, the compact tool.
-- [ ] `search` web: the search field in the movements screen.
+- [x] `search` API: the query terms, the filter, the compact tool. Commit `b90a420`.
+- [x] `search` web: the search field in the movements screen. Commit `b90a420`.
 
 ## Acceptance
 

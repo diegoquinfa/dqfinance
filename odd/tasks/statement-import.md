@@ -72,8 +72,6 @@ The price of that choice is known and written down:
 
 ## Out of scope
 
-- The description of the MCP tool `import_transactions` still says that a row matches on
-  "same source, type, amount, day, title"; it should also name the description.
 - The movements that were imported before this change keep the midnight UTC of the old rule.
   They are not rewritten, so a statement imported again may add them a second time.
 
