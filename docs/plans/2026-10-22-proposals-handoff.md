@@ -21,7 +21,7 @@ Read first: [AGENTS.md](../../AGENTS.md), [docs/architecture.md](../architecture
 `pnpm` and `turbo` do not run inside the DSH sandbox (pnpm cannot open its store lock, turbo spawns a child and
 gets EPERM). What was verified directly instead:
 
-- API: every `src/**/*.test.ts` run directly with `node` → **260/260 pass** (the runner itself spawns and the
+- API: every `src/**/*.test.ts` run directly with `node` → **269/269 pass** (the runner itself spawns and the
   sandbox denies it).
 - Web: 29/29 pass. Root `scripts/`: 5/5 pass. `tsc --noEmit` in `apps/api` and `apps/web` → clean.
 - i18n: `en.json` and `es.json` have the same 708 flat keys.
@@ -57,8 +57,9 @@ RDD is not installed in this runtime: `gentle-ai review status` cannot even reso
 sandbox. So this was a manual candidate validation — no receipt, no approval claim, ordinary policy. Seven
 reviewers took one slice each; the blockers below were confirmed against the code (four by running a probe).
 
-**Status after the fix batch: nine of the eleven code blockers and all three documentation blockers are fixed.**
-#3 (the adjustment guard) and #11 (accent-insensitive search) remain open, both listed under "Still open" below.
+**Status after the fix batch: all eleven code blockers and all three documentation blockers are fixed.** The two
+the review left open (#3, the adjustment guard, and #11, accent-insensitive search) were closed without a schema
+change; see the batch table below.
 
 ### Blockers — code (11)
 
@@ -140,8 +141,8 @@ reviewers took one slice each; the blockers below were confirmed against the cod
 
 ## What the fix batch changed (2026-10-22, after the review)
 
-Eleven commits fix nine of the eleven code blockers and all three documentation blockers. Each commit carries its
-own scope; the money, security and data ones were re-checked by an independent verifier.
+Thirteen commits fix all eleven code blockers and all three documentation blockers. Each commit carries its own
+scope; the money, security and data ones were re-checked by an independent verifier.
 
 | Commit | What |
 | --- | --- |
@@ -156,31 +157,33 @@ own scope; the money, security and data ones were re-checked by an independent v
 | `feba988` | test: the installment share pinned to the user month |
 | `aa9a08f` | spending: every bill occurrence (weekly twice, overdue once), a yearly bill not doubled, the card-currency movement |
 | `84fa474` | demo: the guest move survives a target that already owns settings, currencies and system categories |
+| `bbc9db0` | search: the comparison folds the diacritics on both sides, so "educacion" finds "Educación" — in SQL, no migration |
+| `5e5622e` | balances: the adjustment is a conditional insert, so a second correction that read the same balance writes nothing and gets 409 |
 
-Gate after the batch: **260 API tests, 29 web, 5 scripts, `tsc` clean on both apps, i18n 708/708**. `pnpm build` still
-could not run in the sandbox.
+The two decisions the review left to the user were taken the cheap way: no schema change in either case. The
+adjustment guard is a single `insert ... select ... where not exists` (the guard is the write), and the accent
+folding is a `replace` chain over the stored text, because SQLite has no `unaccent` and a normalized column would
+have meant a migration plus every write path. Both statements are tested against a real SQLite table with
+`node:sqlite`, so the SQL itself is exercised, not only a pure function around it.
+
+Gate after the batch: **269 API tests, 29 web, 5 scripts, `tsc` clean on both apps, i18n 708/708**. `pnpm build`
+still could not run in the sandbox.
 
 Still open, deliberately:
 
-- `apps/api/src/features/balance-adjustments/adjust-balance.ts` — the `expectedBalance` guard is still a
-  read-then-insert; two concurrent adjustments both apply. Needs a conditional write or a written limit.
-- Accent-insensitive search — SQLite `LIKE` folds ASCII case only and system categories store `name = NULL`. A real
-  fix needs a stored normalized column plus every write path, or dropping the promise in
-  `odd/tasks/expense-search.md:40`. Product call.
 - `pushSubscription.endpoint` is globally unique, so the same browser endpoint owned by both the guest and the
-  target can still collide on sign-in.
-- `summarize-transactions.ts` and `get-calendar.ts` never receive the locale, so their filters keep the
-  stored-name-only search the list no longer uses.
-- `delete_category`'s description and `category_delete_hint` still say "movements" where bills now count too.
+  target can still collide on sign-in (`move-guest-data.ts` handles settings, currencies and system categories).
+- `get-calendar.ts` still calls the filters without the locale, so a system category is not findable by its shown
+  name from that screen (the list, the search tool and the summary do pass it).
 - The `tools/list` size was not re-measured (needs a run outside the sandbox).
+- The accent-folded search cannot use an index; it scans with string folding, which is fine at personal-ledger
+  size and is the thing to revisit if a user reaches tens of thousands of movements.
 
 ## Next, in order
 
 1. `pnpm check-types && pnpm test && pnpm build` outside the sandbox — the one gate this session could not close.
-2. The adjustment compare-and-set, with the pattern `mark-transfer-received.ts` already uses.
-3. Decide accent folding: schema column or drop the promise from `expense-search.md:40`.
-4. Push once the credentials for `diegoquinfa` are in place (today `git push` answers 403).
-5. Proposals 8, 10 and 12 are still open; 10 (federated contacts) is the gate for 8 and 12.
+2. Push once the credentials for `diegoquinfa` are in place (today `git push` answers 403).
+3. Proposals 8, 10 and 12 are still open; 10 (federated contacts) is the gate for 8 and 12.
 
 
 ## Gotchas (do not rediscover)
@@ -196,7 +199,8 @@ Still open, deliberately:
 - **The guest guard is "the guest still exists"**, never `isAnonymous`: a guest created before migration 0005 has
   no such column and would lose its ledger.
 - **A D1 `db.batch` is atomic**: one FK failure rolls everything back and reaches `onError` as an opaque 500.
-- **SQLite `LIKE` is ASCII-only.** Accents need normalization on both sides.
+- **SQLite `LIKE` is ASCII-only.** The search folds the diacritics itself, on both sides, with a `replace` chain
+  (`transactions/accent-free.ts`); a new searched field must go through `accentFreeSql`, not a bare column.
 - **System categories store `name = NULL`** and are translated on read; never compare `category.name` for them.
 - In DQFinance the sandbox blocks `pnpm` (store lock) and `node --test` (it spawns). `node <file>.test.ts` works.
 - Never run two `db:generate` at once: the journal corrupts.
