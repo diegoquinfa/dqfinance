@@ -1,5 +1,8 @@
 # Feature proposals
 
+Vision: a decentralized, agent-first (MCP) system for personal **and group** finance. Each person keeps their
+financial data on their own deployment instead of someone else's cloud, and instances talk to each other.
+
 Ideas to evaluate, not committed work. When one is picked up it gets a plan in `odd/tasks/`. Related user
 feedback is in [2026-10-20-user-feedback.md](2026-10-20-user-feedback.md).
 
@@ -120,6 +123,13 @@ deployment. This is the base for shared expenses (proposal 8) and for sending mo
 - **Simple first:** start with contacts and money requests between instances. Groups, multi-person splits and a
   shared ledger come later.
 
+- **Events and broker:** instances exchange domain events (`money.sent`, `split.requested`,
+  `request.accepted`, ...) through a queue (Cloudflare Queues) instead of direct calls, so a peer that is down
+  receives them later. Events need ids for idempotency, retries with backoff, a dead-letter queue, and a way to
+  reconcile state when two instances disagree.
+- **Split calculator:** split an expense among friends (equal, by amount or by percentage); each share becomes a
+  **pending transaction** in the other person's instance until they accept it.
+
 Open questions: whether to use ActivityPub itself (interoperable but heavy) or a small dqfinance protocol with
 the same ideas; how an instance handles an unreachable peer (a queue with retries); and whether open sign-up
 instances need rate limits on contact requests.
@@ -150,3 +160,22 @@ transactions.
 
 Open question: keep semantic search behind a per-instance flag, since self-hosted deployments must enable Workers
 AI and Vectorize.
+
+## 12. Group projects (shared budget)
+
+A shared space where several people pool money and expenses toward one goal, for example a trip to Canada:
+someone puts in X, someone else spends Y, and everyone sees where the budget stands. Builds on proposal 10.
+
+- **Shared budget:** a target amount and date; members record contributions and expenses against it, and the
+  project shows total, remaining and who owes whom.
+- **Custodian (optional):** one member is designated to receive and hold the pooled money, so contributions are
+  transfers to that person and group expenses come out of their account.
+- **Individual goals inside the group:** instead of pooling, each member tracks a personal savings goal toward
+  the shared plan ("Juan reached his 500,000 COP and bought the plane tickets"), and the group sees everyone's
+  progress. Unlike a bank pocket, the progress state is shared across people.
+- **Sync across instances:** members may be on the same instance or on different deployments; the project state
+  is replicated with the events from proposal 10, and failures are handled by the queue.
+
+Open questions: who owns the project's canonical state when members are on different instances (the creator's
+instance, or a replicated log every member keeps); and how a member leaves with a balance still open.
+
