@@ -35,6 +35,8 @@ test('NAT64 and 6to4 literals do not smuggle a private IPv4', () => {
   assert.equal(publicUrl('https://[2002:a00:1::]/push'), null)
   // A 6to4 literal that carries a public IPv4 is still public.
   assert.equal(publicUrl('https://[2002:808:808::]/push')?.hostname, '[2002:808:808::]')
+  // A NAT64 literal that carries a public IPv4 is still public.
+  assert.equal(publicUrl('https://[64:ff9b::808:808]/push')?.hostname, '[64:ff9b::808:808]')
 })
 
 test('local names are rejected', () => {

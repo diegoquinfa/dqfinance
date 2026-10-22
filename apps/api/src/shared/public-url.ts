@@ -54,7 +54,8 @@ const isPrivateIpv6 = (address: string) => {
   if (startsWith(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff)) return privateEmbedded(bytes.slice(-4)) // ::ffff:0:0/96
   if (startsWith(0, 0x64, 0xff, 0x9b)) {
     const nat64 = bytes.slice(4, 12).every((byte) => byte === 0) || (bytes[4] === 0 && bytes[5] === 1) // 64:ff9b::/96 or 64:ff9b:1::/48
-    if (nat64) return true
+    // A NAT64 address is as private as the IPv4 it carries in its last four bytes.
+    if (nat64) return privateEmbedded(bytes.slice(-4))
   }
   if (startsWith(0x20, 0x02)) return privateEmbedded(bytes.slice(2, 6)) // 2002::/16 carries its IPv4 at bytes 2-5
   return false
