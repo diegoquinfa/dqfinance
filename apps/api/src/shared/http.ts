@@ -32,6 +32,7 @@ export const ERROR_CODES = [
   'transfer_not_found',
   'transfer_already_received',
   'recurring_not_found',
+  'savings_goal_not_found',
   'push_not_configured',
   'document_not_found',
   'document_type_not_allowed',
