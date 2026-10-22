@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSources, findSource, sourceKey as keyOf } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { useCategories } from '#/features/categories/categories-api'
+import { CategoryMark } from '#/features/categories/category-mark'
 import { useCounterparties } from '#/features/counterparties/counterparties-api'
 import { useSettings } from '#/features/settings/settings-api'
 import { dayToIso, isoToDay, today } from '#/shared/dates'
@@ -221,7 +222,10 @@ export function TransactionForm({
             <SelectContent>
               {(categories.data ?? []).map((category) => (
                 <SelectItem key={category.id} value={category.id}>
-                  {category.name}
+                  <span className="flex items-center gap-2">
+                    <CategoryMark icon={category.icon} color={category.color} />
+                    {category.name}
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>

@@ -26,6 +26,13 @@ export async function listCategories(db: Db, userId: string, locale: Locale, inp
   return rows
     // The system key identifies the categories booked automatically, so a caller can match them by
     // key instead of by their translated name.
-    .map((row) => ({ id: row.id, kind: row.kind, name: categoryName(row, locale), systemKey: row.systemKey }))
+    .map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      name: categoryName(row, locale),
+      systemKey: row.systemKey,
+      icon: row.icon,
+      color: row.color,
+    }))
     .sort((a, b) => a.name.localeCompare(b.name, locale))
 }

@@ -57,7 +57,7 @@ Rules:
 
 - Contrast lives in a few points: the primary button, the big numbers, small lilac marks. Never lilac backgrounds, icons, or resting buttons.
 - Every text pair passes WCAG AA. `faint` is never used for text a person must read.
-- **Card faces are the only exception**, and the only non-token colors in the app. The API stores a color name (`ink`, `signal`, `sand`, `moss`, `clay`, `ocean`) and `features/accounts/card-face.tsx` maps it once to a fixed dark palette. Nothing else takes a raw color.
+- **Card faces and category marks are the only exceptions**, and the only non-token colors in the app. The API stores a color name (`ink`, `signal`, `sand`, `moss`, `clay`, `ocean`); `features/accounts/card-face.tsx` maps it once to a fixed dark palette, and `features/categories/category-mark.tsx` maps it once to a readable tone for the small dot a category carries. Nothing else takes a raw color.
 
 ## Typography
 
