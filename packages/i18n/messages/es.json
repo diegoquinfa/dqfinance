@@ -603,6 +603,8 @@
   "import_rows_skipped": "{count} filas ilegibles.",
   "import_duplicates": "{count} ya registradas.",
   "import_duplicate": "Duplicado",
+  "import_possible_duplicate": "Posible duplicado",
+  "import_possible_duplicates": "{count} pueden ser duplicados.",
   "import_done": "Importados {created}, omitidos {skipped}.",
   "guest_name": "Invitado",
   "guest_mcp_denied": "Una cuenta de invitado no puede conectar un agente de IA. Crea una cuenta para usar el servidor MCP.",

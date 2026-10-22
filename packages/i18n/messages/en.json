@@ -603,6 +603,8 @@
   "import_rows_skipped": "{count} rows unread.",
   "import_duplicates": "{count} already recorded.",
   "import_duplicate": "Duplicate",
+  "import_possible_duplicate": "Possible duplicate",
+  "import_possible_duplicates": "{count} may be duplicates.",
   "import_done": "Imported {created}, skipped {skipped}.",
   "guest_name": "Guest",
   "guest_mcp_denied": "A guest account cannot connect an AI agent. Create an account to use the MCP server.",
