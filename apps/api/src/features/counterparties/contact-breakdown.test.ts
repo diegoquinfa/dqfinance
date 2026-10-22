@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { contactCategories, contactTotals } from './contact-breakdown.ts'
+import { contactCategories, contactTotals, offsetSecondsAt } from './contact-breakdown.ts'
+
+test('the month bucket uses the offset of the user zone, not UTC', () => {
+  // The first instant of 2026-10-21 in each zone: the offset its month bucket shifts by.
+  assert.equal(offsetSecondsAt('America/Bogota', new Date('2026-10-21T05:00:00Z')), -18_000)
+  assert.equal(offsetSecondsAt('Asia/Tokyo', new Date('2026-10-20T15:00:00Z')), 32_400)
+  // Daylight saving time: the offset in effect, not the winter one.
+  assert.equal(offsetSecondsAt('America/New_York', new Date('2026-07-01T04:00:00Z')), -14_400)
+  assert.equal(offsetSecondsAt('America/New_York', new Date('2026-12-01T05:00:00Z')), -18_000)
+})
 
 test('totals keep one line per currency', () => {
   const result = contactTotals([
