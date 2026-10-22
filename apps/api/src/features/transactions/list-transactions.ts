@@ -1,5 +1,5 @@
 import { and, desc, eq, or, sql } from 'drizzle-orm'
-import { alias, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
+import { alias } from 'drizzle-orm/sqlite-core'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { isoDate } from '../../shared/dates'
@@ -81,8 +81,7 @@ export function transactionFilters(
     searchFilter(searchTerms(input.q ?? ''), {
       title: transaction.title,
       description: transaction.description,
-      // `like` only needs SQL, but the field is typed as a column.
-      category: (locale ? searchableCategoryName(locale) : category.name) as unknown as AnySQLiteColumn,
+      category: locale ? searchableCategoryName(locale) : category.name,
     }),
   )
 }
