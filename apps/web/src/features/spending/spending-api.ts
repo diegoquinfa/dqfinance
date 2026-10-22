@@ -13,3 +13,15 @@ export const safeToSpendQuery = queryOptions({
 export function useSafeToSpend(options?: { enabled?: boolean }) {
   return useQuery({ ...safeToSpendQuery, enabled: options?.enabled ?? true })
 }
+
+export type Forecast = InferResponseType<typeof api.api.spending.forecast.$get, 200>
+
+export const forecastQuery = queryOptions({
+  queryKey: ['forecast'],
+  queryFn: async () => unwrap(api.api.spending.forecast.$get()),
+})
+
+/** The projected balance of each day until the end of the month. */
+export function useForecast(options?: { enabled?: boolean }) {
+  return useQuery({ ...forecastQuery, enabled: options?.enabled ?? true })
+}

@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { useRecurringExpenses, useSkipRecurring, useConfirmRecurring } from '#/features/recurring-expenses/recurring-expenses-api'
 import { useSettings } from '#/features/settings/settings-api'
 import { SafeToSpendCard } from '#/features/spending/safe-to-spend-card'
+import { ForecastChart } from '#/features/spending/forecast-chart'
 import { TransactionRow } from '#/features/transactions/transaction-row'
 import { useTransactions } from '#/features/transactions/transactions-api'
 import { formatDay } from '#/shared/dates'
@@ -138,7 +139,12 @@ export function OverviewPage() {
         </div>
       </section>
 
-      <Section index="02" label={m.overview_net_worth()}>
+      <Section index="02" label={m.forecast_title()}>
+        <p className="mb-6 max-w-prose text-sm text-muted-foreground">{m.forecast_hint()}</p>
+        <ForecastChart />
+      </Section>
+
+      <Section index="03" label={m.overview_net_worth()}>
         <ul className="grid gap-8">
           {worth.map((entry) => (
             <li key={entry.currency} className="grid gap-4">
@@ -160,7 +166,7 @@ export function OverviewPage() {
         <BalanceChart className="mt-10" currency={primary} />
       </Section>
 
-      <Section index="03" label={m.overview_accounts()} action={<ViewAll to="/accounts" />}>
+      <Section index="04" label={m.overview_accounts()} action={<ViewAll to="/accounts" />}>
         {accounts.length === 0 ? (
           <Empty>
             <EmptyHeader>
@@ -183,7 +189,7 @@ export function OverviewPage() {
         )}
       </Section>
 
-      <Section index="04" label={m.overview_cards()}>
+      <Section index="05" label={m.overview_cards()}>
         {creditCards.length === 0 ? (
           <p className="text-sm text-muted-foreground">{m.overview_no_cards()}</p>
         ) : (
@@ -208,7 +214,7 @@ export function OverviewPage() {
         )}
       </Section>
 
-      <Section index="05" label={m.overview_pending()} action={<ViewAll to="/recurring" />}>
+      <Section index="06" label={m.overview_pending()} action={<ViewAll to="/recurring" />}>
         {pending.isPending ? (
           <ListSkeleton rows={2} />
         ) : (pending.data ?? []).length === 0 ? (
@@ -259,7 +265,7 @@ export function OverviewPage() {
         )}
       </Section>
 
-      <Section index="06" label={m.overview_recent()} action={<ViewAll to="/transactions" />}>
+      <Section index="07" label={m.overview_recent()} action={<ViewAll to="/transactions" />}>
         {recent.isPending ? (
           <ListSkeleton rows={4} />
         ) : (recent.data ?? []).length === 0 ? (
@@ -279,7 +285,7 @@ export function OverviewPage() {
       </Section>
 
       {inTransit.length > 0 && (
-        <Section index="07" label={m.overview_in_transit()}>
+        <Section index="08" label={m.overview_in_transit()}>
           <ul className={rowsClass}>
             {inTransit.map((transfer) => (
               <li key={transfer.currency} className="flex items-baseline justify-between py-4">
