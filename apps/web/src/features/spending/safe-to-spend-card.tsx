@@ -110,7 +110,11 @@ export function SafeToSpendCard() {
         <p className={`type-display font-medium break-words tabular-nums ${over ? 'text-destructive' : 'text-ink'}`}>
           {formatMoney(data.allowed, data.currency)}
         </p>
-        <p className="label-mono text-muted-foreground">{m.spending_days_left({ days: data.daysLeft })}</p>
+        <p className="label-mono text-muted-foreground">
+          {data.expectedIncome > 0
+            ? m.spending_days_until_income({ days: data.daysLeft })
+            : m.spending_days_left({ days: data.daysLeft })}
+        </p>
       </div>
 
       <dl className="grid gap-y-3">
@@ -122,6 +126,12 @@ export function SafeToSpendCard() {
           <dt className="label-mono text-muted-foreground">{m.spending_bills()}</dt>
           <dd className="text-soft tabular-nums">{formatMoney(data.pendingBills, data.currency)}</dd>
         </div>
+        {data.expectedIncome > 0 && (
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="label-mono text-muted-foreground">{m.spending_expected()}</dt>
+            <dd className="text-soft tabular-nums">{formatMoney(data.expectedIncome, data.currency)}</dd>
+          </div>
+        )}
         {data.setAsides > 0 && (
           <div className="flex items-baseline justify-between gap-4">
             <dt className="label-mono text-muted-foreground">{m.spending_set_aside()}</dt>

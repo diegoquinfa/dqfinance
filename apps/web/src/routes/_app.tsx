@@ -36,6 +36,7 @@ const links = [
   { to: '/recurring', label: m.nav_recurring },
   { to: '/calendar', label: m.nav_calendar },
   { to: '/savings', label: m.nav_savings },
+  { to: '/incomes', label: m.nav_incomes },
   { to: '/contacts', label: m.nav_contacts },
   { to: '/settings', label: m.nav_settings },
 ] as const

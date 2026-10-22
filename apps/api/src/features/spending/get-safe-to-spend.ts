@@ -4,11 +4,13 @@ import { todayIn } from '../../shared/dates'
 import { fromCents, toCents } from '../../shared/money'
 import { assetsAndLiabilities } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
+import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { monthlySetAside } from '../recurring-expenses/monthly-set-aside'
 import { listGoals } from '../savings-goals/list-goals'
 import { requireSettings } from '../settings/get-settings'
 import { transaction } from '../transactions/transaction.schema'
+import { incomePeriod } from './income-period'
 import { safeToSpend } from './safe-to-spend'
 import { monthPeriod } from './spending-period'
 
@@ -22,7 +24,17 @@ export async function getSafeToSpend(db: Db, userId: string) {
   const currency = settings.primaryCurrency
   const today = todayIn(settings.timezone)
   const month = monthPeriod(today)
-  const period = month
+
+  // The period ends at the next payday when there is one before the end of the month: the money
+  // that arrives during the period is part of what the days can be spent on.
+  const incomes = await listExpectedIncomes(db, userId)
+  const period = incomePeriod(
+    today,
+    month.end,
+    incomes
+      .filter((income) => income.currency === currency)
+      .map((income) => ({ amountCents: toCents(income.amount), nextOn: income.nextOn })),
+  )
 
   const balances = await getBalances(db, userId)
   const totals = assetsAndLiabilities(balances).find((total) => total.currency === currency)
@@ -78,7 +90,8 @@ export async function getSafeToSpend(db: Db, userId: string) {
       .reduce((sum, goal) => sum + toCents(goal.monthly), 0)
 
   const result = safeToSpend({
-    availableCents: inHandCents,
+    // The money in hand plus what arrives before the period ends.
+    availableCents: inHandCents + period.expectedCents,
     pendingBillsCents,
     setAsidesCents,
     spentCents,
@@ -92,6 +105,7 @@ export async function getSafeToSpend(db: Db, userId: string) {
     periodEnd: period.end,
     daysLeft: result.daysLeft,
     available: fromCents(inHandCents),
+    expectedIncome: fromCents(period.expectedCents),
     pendingBills: fromCents(pendingBillsCents),
     setAsides: fromCents(setAsidesCents),
     free: fromCents(result.freeCents),
