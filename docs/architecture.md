@@ -21,9 +21,10 @@ Folders whose name says what they own are not listed below.
 - `accounts/`: banks, bank accounts, products, cash wallets, and cards. `source.ts` is the one place for where money is: ownership checks, currency, and the three-nullable-FK shape. `product-yield.ts` (pure) estimates what a product's balance earns from its annual rate.
 - `transfers/`: also fees, the in-transit state, and FX settlement.
 - `documents/`: files attached to a source (contract, terms, fee table) in R2. `document-rules.ts` (pure) holds the accepted types and the size limit; upload and download stay in the web app, since agents cannot carry binary.
+- `transactions/`: the movements, their source and their date. `installments.ts` (pure) holds how an expense the user spread over several months is seen in parts; `search-terms.ts` (pure) holds which words of a search carry meaning.
 - `balances/`: `compute-balances.ts` (pure) is the one place for every balance, debt, cost basis, in-transit rule, and the as-of-date history. Also owns the list tools (`list_accounts`, `get_balance_history`).
 - `calendar/`: per day of the user's timezone, what moved and which recurring expenses fall due. `calendar-days.ts` (pure) does the day grouping and the projection.
-- `spending/`: how much the user may spend today. `safe-to-spend.ts` and `spending-period.ts` (pure) hold the rule and the days left in the month.
+- `spending/`: how much the user may spend today. `safe-to-spend.ts` and `spending-period.ts` (pure) hold the rule and the days left in the month; `income-period.ts` (pure) holds the payday the period ends on.
 - `savings-goals/`: what the user is saving for and what they put into it. `goal-progress.ts` (pure) holds how much of a goal is saved and what it asks for every month.
 - `expected-incomes/`: the money the user expects, with how often it arrives. `next-income-date.ts` (pure) holds the next payday, counted from the anchor so the day of the month never drifts.
 - `mcp/`: the MCP server; collects every feature's tools and guards `/mcp`. `guest-rule.ts` (pure) keeps a guest away from the tools.

@@ -13,6 +13,7 @@ const current: CreateTransactionInput = {
   counterpartyId: 'jose',
   title: 'Lunch',
   description: 'Lunch with the team',
+  installmentMonths: undefined,
   occurredAt: '2026-10-18T17:00:00.000Z',
 }
 
@@ -52,4 +53,10 @@ test('a new source keeps the currency and primary amount the patch names', () =>
   })
   assert.equal(merged.currency, 'EUR')
   assert.equal(merged.primaryAmount, 90000)
+})
+
+test('the months of a spread expense can be set and taken away', () => {
+  assert.equal(mergeTransactionUpdate(current, { installmentMonths: 6 }).installmentMonths, 6)
+  assert.equal(mergeTransactionUpdate(current, { installmentMonths: 6, amount: 25 }).installmentMonths, 6)
+  assert.equal(mergeTransactionUpdate(current, { installmentMonths: null }).installmentMonths, undefined)
 })
