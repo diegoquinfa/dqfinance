@@ -66,7 +66,7 @@ export function AdjustBalanceDialog({
         >
           <FieldGroup>
             <p className="text-sm text-muted-foreground">
-              {m.label_balance()}: {formatMoney(currentBalance, selected)}
+              {m.label_balance()}: {formatMoney(currentBalance, currency)}
             </p>
             {currencies.length > 1 && (
               <Field>

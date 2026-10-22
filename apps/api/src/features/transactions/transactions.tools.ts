@@ -48,7 +48,7 @@ export const transactionTools = [
   toolDefinition({
     name: 'search_transactions',
     description:
-      "Find the user's movements by what they were: the title, the description or the category. Every word of the query must appear. Returns one line per movement, newest first; use list_transactions for the detail of one.",
+      "Find the user's movements by what they were: the title, the description or the category. Every word of the query must appear. Returns one line per movement, newest first; there is no lookup by id, so call list_transactions with the same filters to read one in full.",
     inputSchema: searchTransactionsInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({
