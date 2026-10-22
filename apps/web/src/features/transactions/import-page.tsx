@@ -83,6 +83,7 @@ export function ImportPage() {
 
   const previewRows = preview.data?.rows ?? []
   const duplicates = previewRows.filter((row) => row.duplicate).length
+  const possible = previewRows.filter((row) => row.possibleDuplicate).length
   // Duplicates stay visible but out of the import.
   const fresh = rows.filter((_, index) => !previewRows[index]?.duplicate)
   const ready = Boolean(preview.data) && !preview.isFetching
@@ -254,6 +255,7 @@ export function ImportPage() {
                       <span className="flex flex-wrap items-center gap-2">
                         {row.title || row.categoryName}
                         {row.duplicate && <Badge variant="outline">{m.import_duplicate()}</Badge>}
+                        {row.possibleDuplicate && <Badge variant="outline">{m.import_possible_duplicate()}</Badge>}
                         {/* The category column drops below sm so four columns fit a phone. */}
                         <span className="label-mono text-muted-foreground sm:hidden">{row.categoryName}</span>
                       </span>
@@ -275,7 +277,8 @@ export function ImportPage() {
             </Table>
             <p className="text-sm text-muted-foreground">
               {skipped > 0 && <span>{m.import_rows_skipped({ count: skipped })} </span>}
-              {duplicates > 0 && <span>{m.import_duplicates({ count: duplicates })}</span>}
+              {duplicates > 0 && <span>{m.import_duplicates({ count: duplicates })} </span>}
+              {possible > 0 && <span>{m.import_possible_duplicates({ count: possible })}</span>}
             </p>
           </div>
         )}

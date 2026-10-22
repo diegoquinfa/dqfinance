@@ -8,8 +8,9 @@ import { moneyAmount, toCents } from '../../shared/money'
 import { resolveSource, sourceColumns, sourceRef, type SourceRef } from '../accounts/source'
 import { category } from '../categories/category.schema'
 import { categoryName, systemCategoryId } from '../categories/system-categories'
+import { requireSettings } from '../settings/get-settings'
 import { DESCRIPTION_MAX, TITLE_MAX } from './create-transaction'
-import { duplicateFlags, type MovementFingerprint } from './duplicate'
+import { dayWindow, duplicateFlags, instantOfDay, type MovementFingerprint } from './duplicate.ts'
 import { TRANSACTION_TYPES, transaction } from './transaction.schema'
 
 export const MAX_IMPORT_ROWS = 500
@@ -55,7 +56,10 @@ export type ImportRowView = {
   description: string | null
   categoryId: string
   categoryName: string
+  /** The movement is already recorded: it is not imported. */
   duplicate: boolean
+  /** Nothing says it is the same movement, so it is imported and only shown as a possible one. */
+  possibleDuplicate: boolean
 }
 
 export type ImportView = { created: number; skipped: number; rows: ImportRowView[] }
@@ -71,8 +75,9 @@ type ParsedRow = {
 }
 
 /**
- * Records many movements of one source from a statement. Rows that look like a movement already
- * recorded there are skipped. With dryRun nothing is written: the preview says which rows those are.
+ * Records many movements of one source from a statement. A row that is a movement already
+ * recorded there is skipped. With dryRun nothing is written: the preview says which rows
+ * those are, and which ones only look like one.
  */
 export async function importTransactions(
   db: Db,
@@ -81,23 +86,31 @@ export async function importTransactions(
   input: ImportTransactionsInput,
 ): Promise<ImportView> {
   const source = await resolveSource(db, userId, input.source)
+  const { timezone } = await requireSettings(db, userId)
   const rows: ParsedRow[] = input.rows.map((row) => ({
     type: row.type,
     amount: row.amount,
     amountCents: toCents(row.amount),
-    at: parseOccurredAt(row.occurredAt),
+    at: parseOccurredAt(row.occurredAt, timezone),
     title: row.title || null,
     description: row.description || null,
     categoryId: row.categoryId,
   }))
 
   const [existing, categories] = await Promise.all([
-    existingMovements(db, userId, source.ref, rows),
+    existingMovements(db, userId, source.ref, rows, timezone),
     categoriesOf(db, userId, locale, rows),
   ])
-  const duplicates = duplicateFlags(
-    rows.map((row) => ({ type: row.type, amountCents: row.amountCents, occurredAt: row.at, title: row.title })),
+  const verdicts = duplicateFlags(
+    rows.map((row) => ({
+      type: row.type,
+      amountCents: row.amountCents,
+      occurredAt: row.at,
+      title: row.title,
+      description: row.description,
+    })),
     existing,
+    timezone,
   )
   const preview = rows.map((row, index) => ({
     type: row.type,
@@ -107,11 +120,14 @@ export async function importTransactions(
     description: row.description,
     categoryId: categories[index]!.id,
     categoryName: categories[index]!.name,
-    duplicate: duplicates[index]!,
+    duplicate: verdicts[index]!.duplicate,
+    possibleDuplicate: verdicts[index]!.possible,
   }))
   if (input.dryRun) return { created: 0, skipped: 0, rows: preview }
 
-  const fresh = rows.flatMap((row, index) => (duplicates[index] ? [] : [{ row, categoryId: categories[index]!.id }]))
+  const fresh = rows.flatMap((row, index) =>
+    verdicts[index]!.duplicate ? [] : [{ row, categoryId: categories[index]!.id }],
+  )
   // D1 allows 100 bound parameters per statement, so the rows go in chunks; one batch keeps them atomic.
   if (fresh.length) {
     const statements = chunks(fresh, ROWS_PER_STATEMENT).map((chunk) =>
@@ -134,8 +150,9 @@ export async function importTransactions(
   return { created: fresh.length, skipped: rows.length - fresh.length, rows: preview }
 }
 
-/** A calendar date is midnight UTC; a datetime keeps its instant. */
-const parseOccurredAt = (value: string) => (value.length === 10 ? new Date(`${value}T00:00:00Z`) : new Date(value))
+/** A calendar date is the day it is in the user's timezone; a datetime keeps its instant. */
+const parseOccurredAt = (value: string, timeZone: string) =>
+  value.length === 10 ? instantOfDay(timeZone, value) : new Date(value)
 
 /** 10 bound columns per row, kept well under D1's 100-variable statement limit. */
 const ROWS_PER_STATEMENT = 8
@@ -143,12 +160,15 @@ const ROWS_PER_STATEMENT = 8
 const chunks = <T>(rows: T[], size: number) =>
   Array.from({ length: Math.ceil(rows.length / size) }, (_, index) => rows.slice(index * size, (index + 1) * size))
 
-/** One source's movements, narrowed to the calendar days the batch touches. */
-async function existingMovements(db: Db, userId: string, ref: SourceRef, rows: ParsedRow[]): Promise<MovementFingerprint[]> {
-  const days = rows.map((row) => row.at.toISOString().slice(0, 10)).sort()
-  const from = new Date(`${days[0]}T00:00:00Z`)
-  const to = new Date(`${days[days.length - 1]}T00:00:00Z`)
-  to.setUTCDate(to.getUTCDate() + 1)
+/** One source's movements, narrowed to the calendar days the batch touches, in the user's timezone. */
+async function existingMovements(
+  db: Db,
+  userId: string,
+  ref: SourceRef,
+  rows: ParsedRow[],
+  timeZone: string,
+): Promise<MovementFingerprint[]> {
+  const window = dayWindow(timeZone, rows.map((row) => row.at))
 
   return db
     .select({
@@ -156,6 +176,7 @@ async function existingMovements(db: Db, userId: string, ref: SourceRef, rows: P
       amountCents: transaction.amountCents,
       occurredAt: transaction.occurredAt,
       title: transaction.title,
+      description: transaction.description,
     })
     .from(transaction)
     .where(
@@ -166,8 +187,8 @@ async function existingMovements(db: Db, userId: string, ref: SourceRef, rows: P
           : ref.type === 'card'
             ? eq(transaction.cardId, ref.id)
             : eq(transaction.cashWalletId, ref.id),
-        gte(transaction.occurredAt, from),
-        lt(transaction.occurredAt, to),
+        gte(transaction.occurredAt, window.start),
+        lt(transaction.occurredAt, window.end),
       ),
     )
 }
