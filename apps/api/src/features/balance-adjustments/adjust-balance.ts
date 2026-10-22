@@ -3,10 +3,10 @@ import type { Db } from '../../db'
 import { isoDateTime } from '../../shared/dates'
 import { AppError } from '../../shared/http'
 import { currencyCode, fromCents, toCents } from '../../shared/money'
-import { resolveSource, sourceColumns, sourceRef } from '../accounts/source'
+import { resolveSource, sourceRef } from '../accounts/source'
 import { currentBalanceOf } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
-import { balanceAdjustment } from './balance-adjustment.schema'
+import { claimAdjustment } from './adjustment-claim'
 
 export const adjustBalanceInput = z.object({
   source: sourceRef.describe('A product, cash wallet or credit card'),
@@ -35,6 +35,8 @@ export async function adjustBalance(db: Db, userId: string, input: z.infer<typeo
   if (source.cardKind === 'debit') throw new AppError('credit_card_required')
   const currency = source.cardKind === 'credit' ? (input.currency ?? source.currency) : source.currency
 
+  // The instant the balance is read, so the write can refuse a correction that read the same one.
+  const readAt = Date.now()
   const current = currentBalanceOf(await getBalances(db, userId), source.ref, currency)
   // The balance the user saw is the one the adjustment was made against. When it has moved, the
   // difference would be wrong, so the adjustment waits for the user to see the new balance.
@@ -45,14 +47,24 @@ export async function adjustBalance(db: Db, userId: string, input: z.infer<typeo
   const delta = observed - current
   if (delta === 0) return { delta: 0, balance: fromCents(observed) }
 
-  await db.insert(balanceAdjustment).values({
-    userId,
-    ...sourceColumns(source.ref),
-    currency,
-    observedBalanceCents: observed,
-    deltaCents: delta,
-    note: input.note || null,
-    adjustedAt: input.adjustedAt ? new Date(input.adjustedAt) : new Date(),
-  })
+  const result = await db.run(
+    claimAdjustment(
+      {
+        id: crypto.randomUUID(),
+        userId,
+        ref: source.ref,
+        currency,
+        observedCents: observed,
+        deltaCents: delta,
+        note: input.note || null,
+        adjustedAt: (input.adjustedAt ? new Date(input.adjustedAt) : new Date()).getTime(),
+        createdAt: Date.now(),
+      },
+      readAt,
+    ),
+  )
+  // The row is written only when nothing adjusted this balance after the read, so two tabs that
+  // sent the same correction write one row, not two.
+  if ((result.meta.changes ?? 0) === 0) throw new AppError('balance_changed', 409)
   return { delta: fromCents(delta), balance: fromCents(observed) }
 }
