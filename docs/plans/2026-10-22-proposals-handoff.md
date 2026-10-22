@@ -202,6 +202,11 @@ Still open:
 - A movement dated in the future is included in `getBalances`, so `safe-to-spend`'s money in hand can already carry
   a purchase that has not happened, while the installment credit stops at tomorrow.
 - Merging two categories that both have a budget keeps the target's and drops the source's. The copy now says so.
+- `transfer.cost_basis_cents` is computed when the transfer is created, so a transfer written before the backdated
+  adjustment fix keeps the old (phantom-inflated) basis. It self-clears when the card is paid in full; a migration
+  would need the history that produced it.
+- The merge and delete batches still have no test at the SQL level: only the pure `mergeBlock` / `budgetMerge` rules
+  are covered. The D1 shim in `apps/api/src/test/` would close it, as it did for the two money queries.
 
 ## Next, in order
 
