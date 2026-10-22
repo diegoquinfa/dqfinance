@@ -494,6 +494,9 @@ export function SettingsPage() {
                       />
                     ))}
                 </ul>
+                {(categories.data ?? []).filter((category) => category.kind === kind).length === 0 && (
+                  <p className="text-sm text-muted-foreground">{m.settings_categories_empty()}</p>
+                )}
               </div>
             ))}
           </div>

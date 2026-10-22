@@ -3,6 +3,7 @@ import { cn } from "cn"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
+import { m } from "#/shared/i18n"
 import { Button } from "#/shared/ui/button.tsx"
 
 function Dialog({
@@ -71,7 +72,7 @@ function DialogContent({
             className="absolute top-3 right-3 inline-flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-ink disabled:pointer-events-none sm:top-5 sm:right-5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{m.action_close()}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
@@ -109,7 +110,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="outline">Close</Button>
+          <Button variant="outline">{m.action_close()}</Button>
         </DialogPrimitive.Close>
       )}
     </div>

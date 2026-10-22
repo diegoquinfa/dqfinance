@@ -21,7 +21,7 @@ import { FieldError } from '#/shared/ui/field'
 import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
 import { TransactionForm } from './new-transaction-dialog'
-import { sourceLabel } from './source-label'
+import { sourceLabel } from '#/shared/source-label'
 import { useDeleteTransaction, type Transaction } from './transactions-api'
 
 /**

@@ -123,8 +123,6 @@
   "label_primary_amount": "Valor en {currency} el día de la compra",
   "label_balance": "Saldo",
   "label_observed_balance": "Saldo real",
-  "label_total": "Total",
-  "label_available": "Disponible",
   "label_debt": "Deuda",
   "label_country": "País",
   "label_timezone": "Zona horaria",
