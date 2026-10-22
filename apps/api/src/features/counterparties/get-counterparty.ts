@@ -1,24 +1,23 @@
 import { and, eq, gte, lt, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
-import { isoDate } from '../../shared/dates'
+import { isoDate, todayIn } from '../../shared/dates'
+import { startOfDayIn } from '../../shared/day-range.ts'
 import { AppError } from '../../shared/http'
 import type { Locale } from '../../shared/locale'
 import { fromCents } from '../../shared/money'
 import { card } from '../accounts/account.schema'
 import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
 import { category } from '../categories/category.schema'
+import { requireSettings } from '../settings/get-settings'
 import { transaction } from '../transactions/transaction.schema'
-import { contactCategories, contactTotals } from './contact-breakdown'
+import { contactCategories, contactTotals, offsetSecondsAt } from './contact-breakdown'
 import { counterparty } from './counterparty.schema'
 
 export const getCounterpartyInput = z.object({
-  from: isoDate.optional().describe('Inclusive start date, YYYY-MM-DD (UTC)'),
-  to: isoDate.optional().describe('Exclusive end date, YYYY-MM-DD (UTC)'),
+  from: isoDate.optional().describe("Inclusive start day, YYYY-MM-DD, on the user's calendar"),
+  to: isoDate.optional().describe("Exclusive end day, YYYY-MM-DD, on the user's calendar"),
 })
-
-/** The month of a movement, in UTC: the chart groups by it. */
-const month = sql<string>`strftime('%Y-%m', ${transaction.occurredAt} / 1000, 'unixepoch')`
 
 /**
  * One contact in full: the money it moved, what it moved it for, and how it moved month by
@@ -40,13 +39,15 @@ export async function getCounterparty(
   if (!contact) throw new AppError('counterparty_not_found', 404)
 
   // The movements of this contact. The period compares the same way the transaction list does:
-  // an inclusive start and an exclusive end, both in UTC. The totals are the whole history, the
-  // way the list shows them; the period only shapes the breakdown and the monthly series.
+  // an inclusive start day and an exclusive end day, both on the user's clock. The totals are the
+  // whole history, the way the list shows them; the period only shapes the breakdown and the
+  // monthly series.
+  const settings = await requireSettings(db, userId)
   const history = and(eq(transaction.userId, userId), eq(transaction.counterpartyId, contact.id))
   const scope = and(
     history,
-    input.from ? gte(transaction.occurredAt, new Date(input.from)) : undefined,
-    input.to ? lt(transaction.occurredAt, new Date(input.to)) : undefined,
+    input.from ? gte(transaction.occurredAt, startOfDayIn(settings.timezone, input.from)) : undefined,
+    input.to ? lt(transaction.occurredAt, startOfDayIn(settings.timezone, input.to)) : undefined,
   )
   const amount = movementAmount
   const currency = movementCurrency
@@ -86,6 +87,13 @@ export async function getCounterparty(
     .where(scope)
     .groupBy(transaction.categoryId, category.name, category.systemKey, category.kind, currency)
 
+  // The monthly series buckets by the user's month, not the UTC one: SQLite reads the stored
+  // instant after shifting it by the offset in effect at the period's start (today, when the period
+  // is open). shortcut: a movement within an hour of a daylight-saving change can land in the
+  // previous month; upgrade to a per-row offset when that matters.
+  const periodStart = startOfDayIn(settings.timezone, input.from ?? todayIn(settings.timezone))
+  const offsetSeconds = offsetSecondsAt(settings.timezone, periodStart)
+  const month = sql<string>`strftime('%Y-%m', ${transaction.occurredAt} / 1000 + ${offsetSeconds}, 'unixepoch')`
   const monthly = await db
     .select({
       month,

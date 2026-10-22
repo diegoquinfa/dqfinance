@@ -43,6 +43,28 @@ export type ContactCategory = {
 }
 
 /**
+ * The zone's offset from UTC at an instant, in seconds: how far its wall clock is ahead of UTC.
+ * Intl reads the offset in effect at that instant, so a zone with daylight saving time reports
+ * the summer or the winter one, whichever the instant falls in.
+ */
+export const offsetSecondsAt = (timeZone: string, instant: Date): number => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(instant)
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  const part = (type: string) => Number(values[type])
+  const wall = Date.UTC(part('year'), part('month') - 1, part('day'), part('hour'), part('minute'), part('second'))
+  return Math.round((wall - instant.getTime()) / 1000)
+}
+
+/**
  * The money a contact moved, per currency, and when it moved. Money never mixes currencies, so
  * each one has its own line and its own average.
  */
