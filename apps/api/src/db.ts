@@ -5,6 +5,7 @@ import * as balanceAdjustmentSchema from './features/balance-adjustments/balance
 import * as categorySchema from './features/categories/category.schema'
 import * as counterpartySchema from './features/counterparties/counterparty.schema'
 import * as documentsSchema from './features/documents/document.schema'
+import * as expectedIncomeSchema from './features/expected-incomes/expected-income.schema'
 import * as pushSubscriptionSchema from './features/push/push-subscription.schema'
 import * as recurringExpenseSchema from './features/recurring-expenses/recurring-expense.schema'
 import * as savingsGoalSchema from './features/savings-goals/savings-goal.schema'
@@ -26,6 +27,7 @@ export const schema = {
   ...pushSubscriptionSchema,
   ...documentsSchema,
   ...savingsGoalSchema,
+  ...expectedIncomeSchema,
 }
 
 export const createDb = (d1: D1Database) => drizzle(d1, { schema })
