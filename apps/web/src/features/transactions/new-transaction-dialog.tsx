@@ -35,6 +35,14 @@ export function TransactionForm({
   const [type, setType] = useState<NewTransaction['type']>(transaction?.type ?? 'expense')
   const [sourceKey, setSourceKey] = useState(transaction ? keyOf(transaction.source) : '')
   const [currency, setCurrency] = useState(transaction?.currency ?? '')
+  // The months the expense is spread over; "none" means it is paid in one go.
+  const [installments, setInstallments] = useState(
+    transaction?.installmentMonths ? String(transaction.installmentMonths) : 'none',
+  )
+  // The months to offer: the usual ones, plus the ones this movement already has.
+  const installmentOptions = [
+    ...new Set([3, 6, 12, transaction?.installmentMonths ?? 0].filter((months) => months > 0)),
+  ].sort((a, b) => a - b)
   const { sources } = useSources()
   const settings = useSettings()
   const categories = useCategories(type)
@@ -67,6 +75,8 @@ export function TransactionForm({
     const counterpartyId = String(form.get('counterpartyId'))
     const title = String(form.get('title'))
     const description = String(form.get('description'))
+    // Only an expense can be spread over months; "none" leaves the movement paid in one go.
+    const months = type === 'expense' && installments !== 'none' ? Number(installments) : undefined
     if (transaction) {
       update.mutate(
         {
@@ -78,6 +88,9 @@ export function TransactionForm({
             counterpartyId: counterpartyId || null,
             title: title || null,
             description: description || null,
+            // An edit that leaves the field alone keeps the months it had; picking "in one go"
+            // puts the expense back in one payment.
+            installmentMonths: months ?? null,
             // An unchanged day keeps the original time, and with it the order within the day.
             occurredAt: day === originalDay ? undefined : dayToIso(day),
           },
@@ -98,6 +111,7 @@ export function TransactionForm({
         counterpartyId: counterpartyId || undefined,
         title: title || undefined,
         description: description || undefined,
+        installmentMonths: months,
         occurredAt: dayToIso(day),
       },
       {
@@ -231,6 +245,26 @@ export function TransactionForm({
             </SelectContent>
           </Select>
         </Field>
+
+        {type === 'expense' && (
+          <Field>
+            <FieldLabel htmlFor="transaction-installments">{m.transaction_installments()}</FieldLabel>
+            <Select value={installments} onValueChange={setInstallments}>
+              <SelectTrigger id="transaction-installments">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{m.transaction_installments_none()}</SelectItem>
+                {installmentOptions.map((months) => (
+                  <SelectItem key={months} value={String(months)}>
+                    {m.transaction_installments_months({ months })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldDescription>{m.transaction_installments_hint()}</FieldDescription>
+          </Field>
+        )}
 
         <Field>
           <FieldLabel htmlFor="transaction-counterparty">{`${m.label_contact()} (${m.label_optional()})`}</FieldLabel>

@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, sql } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, lte, sql } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
 import { fromCents, toCents } from '../../shared/money'
@@ -10,6 +10,7 @@ import { monthlySetAside } from '../recurring-expenses/monthly-set-aside'
 import { listGoals } from '../savings-goals/list-goals'
 import { requireSettings } from '../settings/get-settings'
 import { transaction } from '../transactions/transaction.schema'
+import { futureShares, monthOf, monthsBetween } from '../transactions/installments'
 import { incomePeriod } from './income-period'
 import { safeToSpend } from './safe-to-spend'
 import { monthPeriod } from './spending-period'
@@ -39,6 +40,31 @@ export async function getSafeToSpend(db: Db, userId: string) {
   const balances = await getBalances(db, userId)
   const totals = assetsAndLiabilities(balances).find((total) => total.currency === currency)
   const inHandCents = (totals?.assetsCents ?? 0) - (totals?.liabilitiesCents ?? 0)
+
+  // An expense the user spread over several months: the money already left the account, but the
+  // months that have not come yet are still the user's.
+  const installments = await db
+    .select({
+      amountCents: transaction.amountCents,
+      months: transaction.installmentMonths,
+      occurredAt: transaction.occurredAt,
+    })
+    .from(transaction)
+    .where(
+      and(
+        eq(transaction.userId, userId),
+        eq(transaction.type, 'expense'),
+        eq(transaction.currency, currency),
+        isNotNull(transaction.installmentMonths),
+        lte(transaction.occurredAt, new Date(`${today}T23:59:59Z`)),
+      ),
+    )
+  const currentMonth = today.slice(0, 7)
+  const futureCents = installments.reduce(
+    (sum, item) =>
+      sum + futureShares(item.amountCents, item.months!, monthsBetween(monthOf(item.occurredAt), currentMonth)),
+    0,
+  )
 
   const bills = await db
     .select({ amountCents: recurringExpense.amountCents })
@@ -90,8 +116,9 @@ export async function getSafeToSpend(db: Db, userId: string) {
       .reduce((sum, goal) => sum + toCents(goal.monthly), 0)
 
   const result = safeToSpend({
-    // The money in hand plus what arrives before the period ends.
-    availableCents: inHandCents + period.expectedCents,
+    // The money in hand, plus what arrives before the period ends, plus the months of a spread
+    // expense that have not come yet.
+    availableCents: inHandCents + period.expectedCents + futureCents,
     pendingBillsCents,
     setAsidesCents,
     spentCents,
@@ -106,6 +133,7 @@ export async function getSafeToSpend(db: Db, userId: string) {
     daysLeft: result.daysLeft,
     available: fromCents(inHandCents),
     expectedIncome: fromCents(period.expectedCents),
+    futureInstallments: fromCents(futureCents),
     pendingBills: fromCents(pendingBillsCents),
     setAsides: fromCents(setAsidesCents),
     free: fromCents(result.freeCents),

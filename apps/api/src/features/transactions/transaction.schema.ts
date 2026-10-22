@@ -1,4 +1,4 @@
-import { check, index, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { check, index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { ownerId } from '../auth/owner'
 import { card, cashWallet, product } from '../accounts/account.schema'
 import { category } from '../categories/category.schema'
@@ -34,6 +34,9 @@ export const transaction = sqliteTable(
     // The short label that names the movement; the details live in `description`.
     title: text('title'),
     description: text('description'),
+    // When the user spreads the expense over several months for budgeting; null when it is paid
+    // in one go.
+    installmentMonths: integer('installment_months'),
     occurredAt: timestamp('occurred_at').notNull(),
     createdAt: createdAt(),
   },

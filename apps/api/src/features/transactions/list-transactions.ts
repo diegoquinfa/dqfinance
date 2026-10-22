@@ -123,6 +123,7 @@ export async function listTransactions(db: Db, userId: string, locale: Locale, i
       : null,
     title: t.title,
     description: t.description,
+    installmentMonths: t.installmentMonths,
     transferId: t.transferId,
     recurringExpenseId: t.recurringExpenseId,
     occurredAt: t.occurredAt.toISOString(),
