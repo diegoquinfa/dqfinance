@@ -149,6 +149,56 @@ test('an adjustment in a currency with no debt yet has no rate to apply and stay
   assert.equal(balances.creditCards[0]!.totalCents, 100_000_00)
 })
 
+test('a backdated adjustment keeps the rate of its own instant when a later charge arrives', () => {
+  // January: 100 USD at 4,000. The +50 USD adjustment is dated January 15, after that charge.
+  // March: another 100 USD, now at 5,000.
+  const point: LedgerPoint = {
+    ...ledger({
+      transactions: [
+        { ...none, type: 'expense', amountCents: 100_00, currency: 'USD', primaryAmountCents: 400_000_00, cardId: 'visa', occurredAt: at('2026-01-10T12:00:00Z') },
+        { ...none, type: 'expense', amountCents: 100_00, currency: 'USD', primaryAmountCents: 500_000_00, cardId: 'visa', occurredAt: at('2026-03-10T12:00:00Z') },
+      ],
+      adjustments: [{ ...none, cardId: 'visa', currency: 'USD', deltaCents: 50_00, adjustedAt: at('2026-01-15T12:00:00Z') }],
+    }),
+    at: at('2026-04-01T00:00:00Z'),
+  }
+
+  // February: 100 USD at 4,000 plus 50 USD at that same rate = 600,000 COP of cost basis.
+  const february = computeBalancesAt({ ...point, at: at('2026-02-01T00:00:00Z') })
+  assert.deepEqual(cardDebtOf(february, 'visa', 'USD'), { units: 150_00, basis: 600_000_00 })
+  // April: the March charge adds 500,000 on top; the adjustment keeps its 200,000.
+  const april = computeBalancesAt(point)
+  assert.deepEqual(cardDebtOf(april, 'visa', 'USD'), { units: 250_00, basis: 1_100_000_00 })
+
+  // The debt that reaches assetsAndLiabilities moves exactly the March charge, with no phantom.
+  const februaryLiabilities = assetsAndLiabilities(february)[0]!.liabilitiesCents
+  const aprilLiabilities = assetsAndLiabilities(april)[0]!.liabilitiesCents
+  assert.equal(februaryLiabilities, 600_000_00)
+  assert.equal(aprilLiabilities, 1_100_000_00)
+  assert.equal(aprilLiabilities - februaryLiabilities, 500_000_00)
+})
+
+test('a refund leaves negative units and basis, and an adjustment on that credit keeps a positive rate', () => {
+  // 100 USD at 4,000, then a refund of 150 USD at 5,000: the card is in credit, so both signs flip.
+  const point: LedgerPoint = {
+    ...ledger({
+      transactions: [
+        { ...none, type: 'expense', amountCents: 100_00, currency: 'USD', primaryAmountCents: 400_000_00, cardId: 'visa', occurredAt: at('2026-01-10T12:00:00Z') },
+        { ...none, type: 'income', amountCents: 150_00, currency: 'USD', primaryAmountCents: 750_000_00, cardId: 'visa', occurredAt: at('2026-01-20T12:00:00Z') },
+        { ...none, type: 'expense', amountCents: 10_00, currency: 'USD', primaryAmountCents: 60_000_00, cardId: 'visa', occurredAt: at('2026-02-10T12:00:00Z') },
+      ],
+      adjustments: [{ ...none, cardId: 'visa', currency: 'USD', deltaCents: 10_00, adjustedAt: at('2026-01-25T12:00:00Z') }],
+    }),
+    at: at('2026-03-01T00:00:00Z'),
+  }
+
+  // −50 USD for −350,000 COP is still +7,000 per USD: the +10 USD adjustment adds 70,000.
+  const january = computeBalancesAt({ ...point, at: at('2026-01-31T00:00:00Z') })
+  assert.deepEqual(cardDebtOf(january, 'visa', 'USD'), { units: -40_00, basis: -280_000_00 })
+  // The February charge adds its own 60,000 and never re-values the January adjustment.
+  assert.deepEqual(cardDebtOf(computeBalancesAt(point), 'visa', 'USD'), { units: -30_00, basis: -220_000_00 })
+})
+
 const historyLedger = (overrides: Partial<LedgerPoint> = {}): LedgerPoint => ({
   ...ledger({
     transactions: [
