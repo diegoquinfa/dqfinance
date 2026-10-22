@@ -22,6 +22,7 @@ import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppContactsRouteImport } from './routes/_app/contacts'
 import { Route as AppOverviewRouteImport } from './routes/_app/overview'
 import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
+import { Route as AppSavingsRouteImport } from './routes/_app/savings'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
 import { Route as AppTransfersRouteImport } from './routes/_app/transfers'
@@ -96,6 +97,11 @@ const AppRecurringRoute = AppRecurringRouteImport.update({
   path: '/recurring',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSavingsRoute = AppSavingsRouteImport.update({
+  id: '/savings',
+  path: '/savings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof AppContactsRoute
   '/overview': typeof AppOverviewRoute
   '/recurring': typeof AppRecurringRoute
+  '/savings': typeof AppSavingsRoute
   '/settings': typeof AppSettingsRoute
   '/transactions': typeof AppTransactionsRoute
   '/transfers': typeof AppTransfersRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByTo {
   '/contacts': typeof AppContactsRoute
   '/overview': typeof AppOverviewRoute
   '/recurring': typeof AppRecurringRoute
+  '/savings': typeof AppSavingsRoute
   '/settings': typeof AppSettingsRoute
   '/transactions': typeof AppTransactionsRoute
   '/transfers': typeof AppTransfersRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/_app/contacts': typeof AppContactsRoute
   '/_app/overview': typeof AppOverviewRoute
   '/_app/recurring': typeof AppRecurringRoute
+  '/_app/savings': typeof AppSavingsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/transactions': typeof AppTransactionsRoute
   '/_app/transfers': typeof AppTransfersRoute
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/overview'
     | '/recurring'
+    | '/savings'
     | '/settings'
     | '/transactions'
     | '/transfers'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/overview'
     | '/recurring'
+    | '/savings'
     | '/settings'
     | '/transactions'
     | '/transfers'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/_app/contacts'
     | '/_app/overview'
     | '/_app/recurring'
+    | '/_app/savings'
     | '/_app/settings'
     | '/_app/transactions'
     | '/_app/transfers'
@@ -390,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecurringRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/savings': {
+      id: '/_app/savings'
+      path: '/savings'
+      fullPath: '/savings'
+      preLoaderRoute: typeof AppSavingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -462,6 +481,7 @@ interface AppRouteChildren {
   AppContactsRoute: typeof AppContactsRoute
   AppOverviewRoute: typeof AppOverviewRoute
   AppRecurringRoute: typeof AppRecurringRoute
+  AppSavingsRoute: typeof AppSavingsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTransactionsRoute: typeof AppTransactionsRoute
   AppTransfersRoute: typeof AppTransfersRoute
@@ -479,6 +499,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppContactsRoute: AppContactsRoute,
   AppOverviewRoute: AppOverviewRoute,
   AppRecurringRoute: AppRecurringRoute,
+  AppSavingsRoute: AppSavingsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTransactionsRoute: AppTransactionsRoute,
   AppTransfersRoute: AppTransfersRoute,

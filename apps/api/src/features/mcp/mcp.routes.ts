@@ -14,6 +14,7 @@ import { documentTools } from '../documents/documents.tools'
 import { recurringExpenseTools } from '../recurring-expenses/recurring-expenses.tools'
 import { pushConfigFrom } from '../push/push-config'
 import { getSettings } from '../settings/get-settings'
+import { savingsGoalTools } from '../savings-goals/savings-goals.tools'
 import { settingTools } from '../settings/settings.tools'
 import { spendingTools } from '../spending/spending.tools'
 import { transactionTools } from '../transactions/transactions.tools'
@@ -36,6 +37,7 @@ const mcpServer = createMCPServer({
     ...recurringExpenseTools,
     ...documentTools,
     ...calendarTools,
+    ...savingsGoalTools,
     ...spendingTools,
   ],
 })
