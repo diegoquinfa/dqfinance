@@ -7,6 +7,7 @@ import { MCP_SCOPES, mcpResource } from '../auth/auth'
 import { accountTools } from '../accounts/accounts.tools'
 import { balanceAdjustmentTools } from '../balance-adjustments/balance-adjustments.tools'
 import { balanceTools } from '../balances/balances.tools'
+import { budgetTools } from '../budgets/budgets.tools'
 import { calendarTools } from '../calendar/calendar.tools'
 import { categoryTools } from '../categories/categories.tools'
 import { counterpartyTools } from '../counterparties/counterparties.tools'
@@ -43,6 +44,7 @@ const mcpServer = createMCPServer({
     ...savingsGoalTools,
     ...spendingTools,
     ...webhookTools,
+    ...budgetTools,
   ],
 })
 

@@ -8,6 +8,7 @@ import { authConfigRoutes } from './features/auth/auth-config.routes'
 import { calendarRoutes } from './features/calendar/calendar.routes'
 import { balanceAdjustmentsRoutes } from './features/balance-adjustments/balance-adjustments.routes'
 import { balancesRoutes } from './features/balances/balances.routes'
+import { budgetsRoutes } from './features/budgets/budgets.routes'
 import { categoriesRoutes } from './features/categories/categories.routes'
 import { counterpartiesRoutes } from './features/counterparties/counterparties.routes'
 import { demoRoutes } from './features/demo/demo.routes'
@@ -63,6 +64,7 @@ const app = new Hono<AppEnv>()
   .route('/api/savings', savingsGoalsRoutes)
   .route('/api/spending', spendingRoutes)
   .route('/api/webhooks', webhooksRoutes)
+  .route('/api/budgets', budgetsRoutes)
   .route('/api/push-subscriptions', pushRoutes)
   .route('/api/demo', demoRoutes)
   .route('/mcp', mcpRoutes)

@@ -18,6 +18,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
+import { Route as AppBudgetsRouteImport } from './routes/_app/budgets'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppContactsRouteImport } from './routes/_app/contacts'
 import { Route as AppIncomesRouteImport } from './routes/_app/incomes'
@@ -76,6 +77,11 @@ const SignUpRoute = SignUpRouteImport.update({
 const AppAccountsRoute = AppAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBudgetsRoute = AppBudgetsRouteImport.update({
+  id: '/budgets',
+  path: '/budgets',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCalendarRoute = AppCalendarRouteImport.update({
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/accounts': typeof AppAccountsRoute
+  '/budgets': typeof AppBudgetsRoute
   '/calendar': typeof AppCalendarRoute
   '/contacts': typeof AppContactsRoute
   '/incomes': typeof AppIncomesRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/accounts': typeof AppAccountsRoute
+  '/budgets': typeof AppBudgetsRoute
   '/calendar': typeof AppCalendarRoute
   '/contacts': typeof AppContactsRoute
   '/incomes': typeof AppIncomesRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/_app/accounts': typeof AppAccountsRoute
+  '/_app/budgets': typeof AppBudgetsRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/contacts': typeof AppContactsRoute
   '/_app/incomes': typeof AppIncomesRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/accounts'
+    | '/budgets'
     | '/calendar'
     | '/contacts'
     | '/incomes'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/accounts'
+    | '/budgets'
     | '/calendar'
     | '/contacts'
     | '/incomes'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/_app/accounts'
+    | '/_app/budgets'
     | '/_app/calendar'
     | '/_app/contacts'
     | '/_app/incomes'
@@ -384,6 +396,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts'
       fullPath: '/accounts'
       preLoaderRoute: typeof AppAccountsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/budgets': {
+      id: '/_app/budgets'
+      path: '/budgets'
+      fullPath: '/budgets'
+      preLoaderRoute: typeof AppBudgetsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/calendar': {
@@ -496,6 +515,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAccountsRoute: typeof AppAccountsRoute
+  AppBudgetsRoute: typeof AppBudgetsRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppContactsRoute: typeof AppContactsRoute
   AppIncomesRoute: typeof AppIncomesRoute
@@ -515,6 +535,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountsRoute: AppAccountsRoute,
+  AppBudgetsRoute: AppBudgetsRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppContactsRoute: AppContactsRoute,
   AppIncomesRoute: AppIncomesRoute,
