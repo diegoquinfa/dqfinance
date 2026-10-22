@@ -39,14 +39,19 @@ export function LandingPage() {
   return (
     <div className="min-h-dvh overflow-x-clip">
       <header className="sticky top-0 z-40 border-b border-line bg-canvas">
-        <div className="container-page flex h-16 items-center justify-between gap-6">
-          <img src="/logo.svg" alt={m.app_name()} className="h-7 w-auto" />
-          <div className="flex items-center gap-4">
+        <div className="container-page flex h-16 items-center justify-between gap-3 sm:gap-6">
+          <img src="/logo.svg" alt={m.app_name()} className="h-6 w-auto sm:h-7" />
+          <div className="flex items-center gap-3 sm:gap-4">
             <LocaleLinks />
-            <Link to="/sign-in" className="label-mono link-draw text-muted-foreground hover:text-ink max-sm:hidden">
+            {/* bg-origin-content keeps the drawn underline under the text while the padding widens the tap target. */}
+            <Link
+              to="/sign-in"
+              className="label-mono link-draw bg-origin-content -my-2 py-2 text-muted-foreground hover:text-ink"
+            >
               {m.auth_submit_sign_in()}
             </Link>
-            <Button variant="outline" size="sm" asChild>
+            {/* On a phone the top bar keeps sign in; the hero right below carries the create-account call. */}
+            <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
               <Link to="/sign-up">{m.auth_submit_sign_up()}</Link>
             </Button>
           </div>
