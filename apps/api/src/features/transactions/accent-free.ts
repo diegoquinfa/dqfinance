@@ -20,11 +20,16 @@ const FOLDED: ReadonlyArray<readonly [string, string]> = [
 
 const byLetter = new Map(FOLDED)
 
+/**
+ * The ASCII letters lowered the way SQLite's `lower()` does it. A lower-case accented letter stays
+ * untouched here so the table below is the only thing that folds it, exactly like the stored side:
+ * "Škoda" keeps its "Š", which no table pair covers, and so does the column it is compared to.
+ */
+const asciiLower = (value: string) => value.replace(/[A-Z]/g, (letter) => letter.toLowerCase())
+
 /** The word without its diacritics, the way the user types it: "Educación" → "educacion". */
 export const accentFree = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[\u00c0-\u024f]/g, (letter) => byLetter.get(letter) ?? letter)
+  asciiLower(value).replace(/[\u00c0-\u024f]/g, (letter) => byLetter.get(letter) ?? letter)
 
 /**
  * A text expression with its diacritics folded, so `like` compares the word the user typed against
