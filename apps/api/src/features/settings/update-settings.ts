@@ -12,6 +12,8 @@ export const updateSettingsInput = z.object({
   currencies: z.array(currencyCode).min(1).optional(),
   // The cap on what the user spends in a month; null clears it.
   spendingTarget: z.number().nonnegative().multipleOf(0.01).nullish(),
+  // How many days before a bill falls due the app warns; null stops the warning.
+  reminderLeadDays: z.number().int().min(0).max(60).nullish(),
 })
 
 export async function updateSettings(db: Db, userId: string, input: z.infer<typeof updateSettingsInput>) {
@@ -23,6 +25,12 @@ export async function updateSettings(db: Db, userId: string, input: z.infer<type
     await db
       .update(userSettings)
       .set({ spendingTargetCents: input.spendingTarget === null ? null : toCents(input.spendingTarget) })
+      .where(eq(userSettings.userId, userId))
+  }
+  if (input.reminderLeadDays !== undefined) {
+    await db
+      .update(userSettings)
+      .set({ reminderLeadDays: input.reminderLeadDays })
       .where(eq(userSettings.userId, userId))
   }
   if (input.currencies) {

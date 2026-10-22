@@ -48,6 +48,7 @@ import { toast } from 'sonner'
 import { PasswordSection } from './password-section'
 import { PushSection } from './push-section'
 import { useSettings, useUpdateSettings } from './settings-api'
+import { WebhooksBlock } from './webhooks-block'
 
 function NewCategoryForm({ close }: { close: () => void }) {
   const [kind, setKind] = useState<'expense' | 'income'>('expense')
@@ -503,7 +504,9 @@ export function SettingsPage() {
 
       <PasswordSection />
 
-      <Section index="06" label={m.settings_session()}>
+      <WebhooksBlock />
+
+      <Section index="07" label={m.settings_session()}>
         <Button variant="outline" onClick={() => void authClient.signOut()}>
           {m.action_sign_out()}
         </Button>

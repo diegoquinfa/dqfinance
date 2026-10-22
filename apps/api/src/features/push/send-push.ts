@@ -2,8 +2,8 @@ import { buildPushPayload, type PushMessage } from '@block65/webcrypto-web-push'
 import { eq } from 'drizzle-orm'
 import type { Db } from '../../db'
 import type { Locale } from '../../shared/locale'
+import { publicUrl } from '../../shared/public-url'
 import { expiredPushStatus } from './expired-push-status'
-import { pushEndpointUrl } from './push-endpoint'
 import type { PushConfig } from './push-config'
 import { pushSubscription } from './push-subscription.schema'
 import { pushCopy, type PushKind } from './push-copy'
@@ -31,7 +31,7 @@ export async function sendPush(
         try {
           // The endpoint was checked when it was stored; it is checked again here, so a row that
           // no longer points at a public https URL is skipped instead of fetched.
-          if (!pushEndpointUrl(row.endpoint)) {
+          if (!publicUrl(row.endpoint)) {
             console.error(`push subscription ${row.id} has an endpoint that is not a public https URL`)
             return
           }
