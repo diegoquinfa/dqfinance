@@ -6,7 +6,7 @@ import { assetsAndLiabilities } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
 import { shiftDay } from '../calendar/calendar-days.ts'
 import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
-import { nextIncomeDate } from '../expected-incomes/next-income-date.ts'
+import { incomeDatesIn } from '../expected-incomes/next-income-date.ts'
 import { nextDueDate } from '../recurring-expenses/next-due-date.ts'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { requireSettings } from '../settings/get-settings'
@@ -55,16 +55,18 @@ export async function getForecast(db: Db, userId: string) {
     let day = bill.nextDueOn
     while (day <= month.end) {
       add(expenseByDay, day, bill.amountCents)
-      day = nextDueDate(bill.startsOn, day, bill.frequency)
+      const next = nextDueDate(bill.startsOn, day, bill.frequency)
+      // A due date that does not move on would add the bill for ever.
+      if (next <= day) break
+      day = next
     }
   }
 
   const incomes = (await listExpectedIncomes(db, userId)).filter((income) => income.currency === currency)
   for (const income of incomes) {
-    let day = income.nextOn
-    while (day <= month.end) {
+    // An irregular income arrives once; the recurring ones on each date they fall due.
+    for (const day of incomeDatesIn(income.frequency, income.nextOn, income.nextOn, month.end)) {
       add(incomeByDay, day, toCents(income.amount))
-      day = nextIncomeDate(income.frequency, income.nextOn, shiftDay(day, 1))
     }
   }
 

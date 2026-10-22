@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { shareInMonth } from '../transactions/installments.ts'
 import { budgetProgress } from './budget-progress.ts'
 
 test('a budget that was not touched has all of it left', () => {
@@ -30,4 +31,13 @@ test('a budget without a limit has no ratio', () => {
   const progress = budgetProgress(0, 50000)
   assert.equal(progress.ratio, 0)
   assert.equal(progress.close, false)
+})
+
+test('a spread purchase weighs its share on the budget, this month and the next', () => {
+  // 600,000 over six months against a 200,000 limit: 100,000 belongs to each of those months.
+  const now = budgetProgress(200000, shareInMonth(600000, 6, 0))
+  assert.equal(now.spentCents, 100000)
+  assert.equal(now.leftCents, 100000)
+  assert.equal(now.ratio, 0.5)
+  assert.equal(budgetProgress(200000, shareInMonth(600000, 6, 1)).spentCents, 100000)
 })
