@@ -53,11 +53,13 @@ export const guestOwnedTables = [
  *
  * Signing into an existing account moves the guest too, and that account may already own a row
  * whose unique key the guest also holds: `user_settings` (one row per user), `user_currency`
- * (`user_id, code`) and the system categories (`user_id, system_key`). A plain UPDATE collides
- * on those keys, the hook rejects, and the guest is left behind, so the conflict rule is: the
- * target's row wins, the guest's duplicate is dropped, and every other row still moves. Ledger
- * rows that point at a dropped system category are re-pointed to the target's category of the
- * same key first, so deleting the guest's copy never hits the `restrict` foreign keys.
+ * (`user_id, code`), the system categories (`user_id, system_key`) and the push subscription
+ * endpoint (globally unique, so a browser that used the demo and then signed in keeps one row).
+ * A plain UPDATE collides on those keys, the hook rejects, and the guest is left behind, so the
+ * conflict rule is: the target's row wins, the guest's duplicate is dropped, and every other row
+ * still moves. Ledger rows that point at a dropped system category are re-pointed to the target's
+ * category of the same key first, so deleting the guest's copy never hits the `restrict` foreign
+ * keys.
  */
 export async function moveGuestData(db: Db, fromUserId: string, toUserId: string) {
   const guest = await db
@@ -109,6 +111,17 @@ export async function moveGuestData(db: Db, fromUserId: string, toUserId: string
         ).map((row) => row.categoryId)
       : [],
   )
+  const endpoints = await db
+    .select({ userId: pushSubscription.userId, endpoint: pushSubscription.endpoint })
+    .from(pushSubscription)
+    .where(inArray(pushSubscription.userId, [fromUserId, toUserId]))
+  const targetEndpoints = new Set(
+    endpoints.filter((row) => row.userId === toUserId).map((row) => row.endpoint),
+  )
+  const sharedEndpoints = endpoints
+    .filter((row) => row.userId === fromUserId && targetEndpoints.has(row.endpoint))
+    .map((row) => row.endpoint)
+
   const settings = await db
     .select({ userId: userSettings.userId })
     .from(userSettings)
@@ -124,6 +137,18 @@ export async function moveGuestData(db: Db, fromUserId: string, toUserId: string
       db
         .delete(userCurrency)
         .where(and(eq(userCurrency.userId, fromUserId), inArray(userCurrency.code, sharedCodes))),
+    )
+  }
+  if (sharedEndpoints.length) {
+    statements.push(
+      db
+        .delete(pushSubscription)
+        .where(
+          and(
+            eq(pushSubscription.userId, fromUserId),
+            inArray(pushSubscription.endpoint, sharedEndpoints),
+          ),
+        ),
     )
   }
   for (const { guestId, targetId } of duplicates) {
