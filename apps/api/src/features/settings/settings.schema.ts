@@ -1,4 +1,4 @@
-import { primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { primaryKey, sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 import { user } from '../auth/auth.schema'
 import { ownerId } from '../auth/owner'
 import { cents, createdAt, timestamp } from '../../shared/schema-columns'
@@ -17,6 +17,8 @@ export const userSettings = sqliteTable('user_settings', {
   primaryCurrency: text('primary_currency').notNull(),
   // What the user wants to spend in a month; null when they set no cap.
   spendingTargetCents: cents('spending_target_cents'),
+  // How many days before a bill falls due the app warns; null when it does not warn.
+  reminderLeadDays: integer('reminder_lead_days'),
   onboardedAt: timestamp('onboarded_at').notNull(),
 })
 

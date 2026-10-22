@@ -12,6 +12,7 @@ import * as savingsGoalSchema from './features/savings-goals/savings-goal.schema
 import * as settingsSchema from './features/settings/settings.schema'
 import * as transactionSchema from './features/transactions/transaction.schema'
 import * as transferSchema from './features/transfers/transfer.schema'
+import * as webhookSchema from './features/webhooks/webhook.schema'
 
 // Composition root for the database: every feature's *.schema.ts is registered here.
 export const schema = {
@@ -28,6 +29,7 @@ export const schema = {
   ...documentsSchema,
   ...savingsGoalSchema,
   ...expectedIncomeSchema,
+  ...webhookSchema,
 }
 
 export const createDb = (d1: D1Database) => drizzle(d1, { schema })

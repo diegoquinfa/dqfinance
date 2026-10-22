@@ -23,6 +23,7 @@ import { settingsRoutes } from './features/settings/settings.routes'
 import { spendingRoutes } from './features/spending/spending.routes'
 import { transactionsRoutes } from './features/transactions/transactions.routes'
 import { transfersRoutes } from './features/transfers/transfers.routes'
+import { webhooksRoutes } from './features/webhooks/webhooks.routes'
 import { onError } from './shared/http'
 import { resolveLocale } from './shared/locale'
 
@@ -61,6 +62,7 @@ const app = new Hono<AppEnv>()
   .route('/api/incomes', expectedIncomesRoutes)
   .route('/api/savings', savingsGoalsRoutes)
   .route('/api/spending', spendingRoutes)
+  .route('/api/webhooks', webhooksRoutes)
   .route('/api/push-subscriptions', pushRoutes)
   .route('/api/demo', demoRoutes)
   .route('/mcp', mcpRoutes)

@@ -26,6 +26,8 @@ export const recurringExpense = sqliteTable(
     // Calendar dates (YYYY-MM-DD) in the user's timezone.
     startsOn: text('starts_on').notNull(),
     nextDueOn: text('next_due_on').notNull(),
+    // The due date that was already announced to the user's webhooks; null when it was not.
+    notifiedOn: text('notified_on'),
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
     createdAt: createdAt(),
   },

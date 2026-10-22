@@ -1,7 +1,7 @@
 /**
- * A Web Push endpoint is a public https URL. The Worker fetches it, so an endpoint on a
- * loopback, private or link-local address would let an account make the server call inside
- * its own network, and plain http would send the payload in the clear.
+ * A URL the Worker fetches on the user's behalf is a public https URL. One on a loopback, private
+ * or link-local address would let an account make the server call inside its own network, and
+ * plain http would send the payload in the clear.
  */
 
 /** The IPv4 ranges a request must never reach: loopback, private, link-local and CGNAT. */
@@ -41,10 +41,10 @@ export const publicHost = (host: string): boolean => {
 }
 
 /**
- * The endpoint as a URL, or null when it is not a public https URL.
+ * The URL as a URL, or null when it is not a public https URL.
  * The same check guards the write and the send, so a row that no longer passes is skipped.
  */
-export const pushEndpointUrl = (value: string): URL | null => {
+export const publicUrl = (value: string): URL | null => {
   let url: URL
   try {
     url = new URL(value)

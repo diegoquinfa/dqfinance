@@ -27,6 +27,7 @@ Folders whose name says what they own are not listed below.
 - `spending/`: how much the user may spend today. `safe-to-spend.ts` and `spending-period.ts` (pure) hold the rule and the days left in the month; `income-period.ts` (pure) holds the payday the period ends on.
 - `savings-goals/`: what the user is saving for and what they put into it. `goal-progress.ts` (pure) holds how much of a goal is saved and what it asks for every month.
 - `expected-incomes/`: the money the user expects, with how often it arrives. `next-income-date.ts` (pure) holds the next payday, counted from the anchor so the day of the month never drifts.
+- `webhooks/`: the places the user asked the app to call when a bill falls due. `webhook-signature.ts` (pure) holds the HMAC of the body; the endpoint goes through `shared/public-url.ts`, the same check the push endpoints use.
 - `mcp/`: the MCP server; collects every feature's tools and guards `/mcp`. `guest-rule.ts` (pure) keeps a guest away from the tools.
 
 Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rules.
@@ -36,7 +37,7 @@ Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rule
 - `auth/`: also the OAuth consent card, and the anonymous client that signs a guest in.
 - `landing/`: the signed-out home at `/`.
 - `demo/`: the "Try the demo" button and the seed call.
-- `settings/`: also manages categories; `categories/` holds only the query hooks.
+- `settings/`: also manages categories; `categories/` holds only the query hooks. Also the webhooks block: the hooks the app calls when a bill falls due, and the days before it the app warns.
 - `accounts/`: also the adjust-balance dialog and the source picker other forms reuse.
 - `balances/`: the overview and the source detail page (`/accounts/$type/$id`).
 - `documents/`: the file section on the source detail page, which `balances/source-page.tsx` renders. No page of its own, and it imports only the `SourceRef` type from `accounts/`.
@@ -54,7 +55,7 @@ A feature imports only from features earlier in this order:
 ```
 categories → settings → accounts → documents → counterparties → transactions
            → recurring-expenses → balances → balance-adjustments → transfers → calendar
-           → savings-goals → expected-incomes → spending → demo
+           → savings-goals → expected-incomes → spending → webhooks → demo
 ```
 
 `auth/` is a foundation in both apps (the API's `mcp/` and `push/` too), outside the order: any feature may import it.
