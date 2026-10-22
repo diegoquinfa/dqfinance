@@ -71,6 +71,13 @@
       "when": 1792652757286,
       "tag": "0009_nebulous_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1792653348368,
+      "tag": "0010_quick_wither",
+      "breakpoints": true
     }
   ]
 }

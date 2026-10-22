@@ -1,11 +1,12 @@
 import { and, eq, gte, lte, sql } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
-import { fromCents } from '../../shared/money'
+import { fromCents, toCents } from '../../shared/money'
 import { assetsAndLiabilities } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { monthlySetAside } from '../recurring-expenses/monthly-set-aside'
+import { listGoals } from '../savings-goals/list-goals'
 import { requireSettings } from '../settings/get-settings'
 import { transaction } from '../transactions/transaction.schema'
 import { safeToSpend } from './safe-to-spend'
@@ -20,11 +21,12 @@ export async function getSafeToSpend(db: Db, userId: string) {
   const settings = await requireSettings(db, userId)
   const currency = settings.primaryCurrency
   const today = todayIn(settings.timezone)
-  const period = monthPeriod(today)
+  const month = monthPeriod(today)
+  const period = month
 
   const balances = await getBalances(db, userId)
   const totals = assetsAndLiabilities(balances).find((total) => total.currency === currency)
-  const availableCents = (totals?.assetsCents ?? 0) - (totals?.liabilitiesCents ?? 0)
+  const inHandCents = (totals?.assetsCents ?? 0) - (totals?.liabilitiesCents ?? 0)
 
   const bills = await db
     .select({ amountCents: recurringExpense.amountCents })
@@ -68,10 +70,15 @@ export async function getSafeToSpend(db: Db, userId: string) {
         eq(recurringExpense.frequency, 'yearly'),
       ),
     )
-  const setAsidesCents = yearly.reduce((sum, item) => sum + monthlySetAside(item.amountCents), 0)
+  const setAsidesCents =
+    yearly.reduce((sum, item) => sum + monthlySetAside(item.amountCents), 0) +
+    // The goals ask for their own share every month, on top of the yearly bills.
+    (await listGoals(db, userId))
+      .filter((goal) => goal.currency === currency)
+      .reduce((sum, goal) => sum + toCents(goal.monthly), 0)
 
   const result = safeToSpend({
-    availableCents,
+    availableCents: inHandCents,
     pendingBillsCents,
     setAsidesCents,
     spentCents,
@@ -84,7 +91,7 @@ export async function getSafeToSpend(db: Db, userId: string) {
     day: today,
     periodEnd: period.end,
     daysLeft: result.daysLeft,
-    available: fromCents(availableCents),
+    available: fromCents(inHandCents),
     pendingBills: fromCents(pendingBillsCents),
     setAsides: fromCents(setAsidesCents),
     free: fromCents(result.freeCents),

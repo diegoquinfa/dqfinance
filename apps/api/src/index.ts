@@ -17,6 +17,7 @@ import { mcpRoutes } from './features/mcp/mcp.routes'
 import { onboardingRoutes } from './features/onboarding/onboarding.routes'
 import { pushRoutes } from './features/push/push.routes'
 import { recurringExpensesRoutes } from './features/recurring-expenses/recurring-expenses.routes'
+import { savingsGoalsRoutes } from './features/savings-goals/savings-goals.routes'
 import { settingsRoutes } from './features/settings/settings.routes'
 import { spendingRoutes } from './features/spending/spending.routes'
 import { transactionsRoutes } from './features/transactions/transactions.routes'
@@ -56,6 +57,7 @@ const app = new Hono<AppEnv>()
   .route('/api/balance-adjustments', balanceAdjustmentsRoutes)
   .route('/api/recurring-expenses', recurringExpensesRoutes)
   .route('/api/calendar', calendarRoutes)
+  .route('/api/savings', savingsGoalsRoutes)
   .route('/api/spending', spendingRoutes)
   .route('/api/push-subscriptions', pushRoutes)
   .route('/api/demo', demoRoutes)
