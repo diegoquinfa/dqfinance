@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { AppError } from '../../shared/http'
-import { pushEndpointUrl } from './push-endpoint'
+import { publicUrl } from '../../shared/public-url'
 import { pushSubscription } from './push-subscription.schema'
 
 export const savePushSubscriptionInput = z.object({
@@ -11,7 +11,7 @@ export const savePushSubscriptionInput = z.object({
     .trim()
     .min(1)
     .max(2048)
-    .refine((value) => pushEndpointUrl(value) !== null, 'The push endpoint must be a public https URL'),
+    .refine((value) => publicUrl(value) !== null, 'The push endpoint must be a public https URL'),
   p256dh: z.string().min(1).max(200).describe('Base64url client public key from PushSubscription.getKey'),
   auth: z.string().min(1).max(100).describe('Base64url auth secret from PushSubscription.getKey'),
 })

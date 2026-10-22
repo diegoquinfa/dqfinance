@@ -34,6 +34,7 @@ export const ERROR_CODES = [
   'recurring_not_found',
   'savings_goal_not_found',
   'expected_income_not_found',
+  'webhook_not_found',
   'recurring_already_confirmed',
   'push_not_configured',
   'push_subscription_owned',

@@ -7,6 +7,7 @@ import { authClient } from '#/features/auth/auth-client'
 import { useSettings } from '#/features/settings/settings-api'
 import { usePushUpdates } from '#/features/settings/push-api'
 import { useSeedDemo } from '#/features/demo/demo-api'
+import { useCheckDueBills } from '#/features/settings/webhooks-api'
 import { NewTransactionDialog } from '#/features/transactions/new-transaction-dialog'
 import { ApiError } from '#/shared/api'
 import { currentLocale, m, switchLocale } from '#/shared/i18n'
@@ -60,6 +61,8 @@ function AppLayout() {
   const isGuest = Boolean(session?.user.isAnonymous)
   const seed = useSeedDemo()
   const { mutate: seedDemo } = seed
+  const check = useCheckDueBills()
+  const { mutate: checkDueBills } = check
 
   // The user's saved language wins over the browser's, once per change.
   useEffect(() => {
@@ -74,6 +77,14 @@ function AppLayout() {
     if (seed.isPending || seed.isError) return
     seedDemo()
   }, [isGuest, settings.isPending, settings.isFetching, settings.data, seed.isPending, seed.isError, seedDemo])
+
+  // The app tells the user's own automation when a bill falls due. The check runs when the app
+  // opens and only calls the hooks for a bill that has not been announced yet.
+  useEffect(() => {
+    if (!settings.data) return
+    if (check.isPending || check.isError) return
+    checkDueBills()
+  }, [settings.data, check.isPending, check.isError, checkDueBills])
 
   if (isPending || (session && settings.isPending)) return <div className="min-h-dvh" aria-busy="true" />
   if (!session) return <Navigate to="/sign-in" />
