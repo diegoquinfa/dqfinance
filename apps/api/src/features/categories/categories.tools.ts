@@ -36,7 +36,7 @@ export const categoryTools = [
   toolDefinition({
     name: 'delete_category',
     description:
-      'Delete a category that has no movements. A category with movements cannot be deleted: merge it into another one instead.',
+      'Delete a category that no movement, no recurring expense and no budget uses. A movement, a recurring expense or a budget still using it blocks the delete: merge the category into another one instead.',
     inputSchema: deleteCategoryInput,
   }).server<McpContext>((input, ctx) => deleteCategory(ctx.context.db, ctx.context.userId, input.id)),
 
