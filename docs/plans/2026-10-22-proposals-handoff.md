@@ -177,7 +177,11 @@ Still open, deliberately:
   name from that screen (the list, the search tool and the summary do pass it).
 - The `tools/list` size was not re-measured (needs a run outside the sandbox).
 - The accent-folded search cannot use an index; it scans with string folding, which is fine at personal-ledger
-  size and is the thing to revisit if a user reaches tens of thousands of movements.
+  size and is the thing to revisit if a user reaches tens of thousands of movements. Each search term adds ~3.2 KB
+  of SQL, so a 40-word query could hit D1's statement limit; a realistic query is a few kilobytes.
+- The adjustment guard is a timestamp window, not a lock: a request can read after another write and still get a
+  spurious 409 if the sibling lands before its `getBalances` round-trip. The retry succeeds and no correction is
+  applied twice; the window is tens of milliseconds.
 
 ## Next, in order
 
