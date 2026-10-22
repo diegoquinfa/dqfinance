@@ -8,7 +8,7 @@ export const spendingTools = [
   toolDefinition({
     name: 'safe_to_spend',
     description:
-      "How much the user may spend today, in their primary currency: the money in hand minus the fixed bills still due, divided by the days left in the month. The cap the user set for the month holds it down when it is lower.",
+      "How much the user may spend today, in their primary currency: the money in hand, plus the income expected before the next payday and the months of a spread expense still to come, minus the bills still due, the yearly set-asides and the savings-goal shares, divided by the days until that payday (or the end of the month). The cap the user set for the month holds it down when it is lower.",
     inputSchema: z.object({}),
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (_input, ctx) => getSafeToSpend(ctx.context.db, ctx.context.userId)),

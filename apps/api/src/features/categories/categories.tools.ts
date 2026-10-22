@@ -43,7 +43,7 @@ export const categoryTools = [
   toolDefinition({
     name: 'merge_categories',
     description:
-      'Merge a category into another one of the same kind: its movements, its recurring expenses and its budget move over and it disappears. Use it to rename a category that is already in use.',
+      'Merge a category into another one of the same kind: its movements, its recurring expenses and its budget move over and it disappears; when both have a budget, the source limit is dropped and the target one wins. Use it to rename a category that is already in use.',
     inputSchema: mergeCategoriesInput,
   }).server<McpContext>((input, ctx) => mergeCategories(ctx.context.db, ctx.context.userId, input)),
 ] as const
