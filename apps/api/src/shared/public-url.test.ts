@@ -28,6 +28,15 @@ test('an IPv4-mapped IPv6 literal is judged by the IPv4 it carries', () => {
   assert.equal(publicUrl('https://[::ffff:808:808]/push')?.hostname, '[::ffff:808:808]')
 })
 
+test('IPv4-compatible and IPv4-translated literals are judged by the IPv4 they carry', () => {
+  assert.equal(publicUrl('https://[::10.0.0.1]/push'), null)
+  assert.equal(publicUrl('https://[::ffff:0:c0a8:101]/push'), null)
+  assert.equal(publicHost('::a00:1'), false)
+  // A literal that carries a public IPv4 is still public.
+  assert.equal(publicUrl('https://[::808:808]/push')?.hostname, '[::808:808]')
+  assert.equal(publicUrl('https://[::ffff:0:808:808]/push')?.hostname, '[::ffff:0:808:808]')
+})
+
 test('NAT64 and 6to4 literals do not smuggle a private IPv4', () => {
   assert.equal(publicUrl('https://[64:ff9b::7f00:1]/push'), null)
   assert.equal(publicUrl('https://[64:ff9b:1::a00:1]/push'), null)
