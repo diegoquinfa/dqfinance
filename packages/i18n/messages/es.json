@@ -289,6 +289,8 @@
   "spending_days_left": "Quedan {days} días del mes",
   "spending_money": "Dinero en mano",
   "spending_bills": "Cuentas fijas por pagar",
+  "spending_set_aside": "Reservado",
+  "spending_set_aside_hint": "La doceava parte de cada cuenta anual",
   "spending_capped": "Tu objetivo mensual lo baja",
   "spending_over": "Gastaste más de lo que tenías",
   "spending_set_target": "Fija el objetivo",
