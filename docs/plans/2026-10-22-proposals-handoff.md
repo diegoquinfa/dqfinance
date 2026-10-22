@@ -141,8 +141,10 @@ change; see the batch table below.
 
 ## What the fix batch changed (2026-10-22, after the review)
 
-Thirteen commits fix all eleven code blockers and all three documentation blockers. Each commit carries its own
-scope; the money, security and data ones were re-checked by an independent verifier.
+Eighteen fix commits — 27 over the base counting the setup, the docs and this handoff — close all eleven code
+blockers and all three documentation blockers, and then a second pass closed every advisory that had a clear
+answer. Each commit carries its own scope; the money, security and data ones were re-checked by an independent
+verifier.
 
 | Commit | What |
 | --- | --- |
@@ -159,6 +161,11 @@ scope; the money, security and data ones were re-checked by an independent verif
 | `84fa474` | demo: the guest move survives a target that already owns settings, currencies and system categories |
 | `bbc9db0` | search: the comparison folds the diacritics on both sides, so "educacion" finds "Educación" — in SQL, no migration |
 | `5e5622e` | balances: the adjustment is a conditional insert, so a second correction that read the same balance writes nothing and gets 409 |
+| `7e3df9c` | demo: the guest move drops a push subscription the target already owns (the endpoint is unique across users) |
+| `6ccd356` | categories: deleting a category a budget uses is refused with 409 instead of silently dropping the limit |
+| `6734c1c` | budgets: the month is bounded above too, so a movement dated next month cannot eat this month's budget |
+| `b0bf6c1` | counterparties: the contact period and its monthly series read the user's calendar, not UTC |
+| `5a70886` | balances: an adjustment is valued at the rate of its own instant, so a later foreign charge cannot re-value a backdated one (the 25,000 phantom) |
 
 The two decisions the review left to the user were taken the cheap way: no schema change in either case. The
 adjustment guard is a single `insert ... select ... where not exists` (the guard is the write), and the accent
@@ -166,28 +173,33 @@ folding is a `replace` chain over the stored text, because SQLite has no `unacce
 have meant a migration plus every write path. Both statements are tested against a real SQLite table with
 `node:sqlite`, so the SQL itself is exercised, not only a pure function around it.
 
-Gate after the batch: **269 API tests, 29 web, 5 scripts, `tsc` clean on both apps, i18n 708/708**. `pnpm build`
-still could not run in the sandbox.
+Gate after the two batches: **273 API tests, 29 web, 5 scripts, `tsc` clean on both apps, i18n 708/708**, and the
+build is green package by package (`i18n` build, web `check-types` with `tsr generate`, `vite build` in 4.71 s).
+`turbo` itself cannot run here: it spawns `pnpm.cmd` for each package and that child is denied the store lock, so
+the root command fails before doing any work. Run the package scripts, or the root command on a machine without
+that lock problem.
 
-Still open, deliberately:
+Still open:
 
-- `pushSubscription.endpoint` is globally unique, so the same browser endpoint owned by both the guest and the
-  target can still collide on sign-in (`move-guest-data.ts` handles settings, currencies and system categories).
-- `get-calendar.ts` still calls the filters without the locale, so a system category is not findable by its shown
-  name from that screen (the list, the search tool and the summary do pass it).
-- The `tools/list` size was not re-measured (needs a run outside the sandbox).
-- The accent-folded search cannot use an index; it scans with string folding, which is fine at personal-ledger
-  size and is the thing to revisit if a user reaches tens of thousands of movements. Each search term adds ~3.2 KB
-  of SQL, so a 40-word query could hit D1's statement limit; a realistic query is a few kilobytes.
+- The forecast adds an expected income dated **today** on top of a balance that may already hold it, while
+  safe-to-spend treats today's money as already in the balance. One of the two is wrong; it is a product call.
+- `POST /webhooks/check` returns `failures`, and the web discards them: an endpoint that answers 500 is retried on
+  the next app open, silently.
+- The `tools/list` size was not re-measured (the measurement recipe needs a spawn the sandbox denies).
+- The accent-folded search cannot use an index, and each term adds ~3.2 KB of SQL; a 40-word query could hit D1's
+  statement limit, a realistic one is a few kilobytes.
 - The adjustment guard is a timestamp window, not a lock: a request can read after another write and still get a
-  spurious 409 if the sibling lands before its `getBalances` round-trip. The retry succeeds and no correction is
-  applied twice; the window is tens of milliseconds.
+  spurious 409 if the sibling lands before its `getBalances` round-trip. The retry succeeds; the window is tens of
+  milliseconds.
+- The contact month bucket uses the offset of the period's start, so a movement within an hour of a DST change can
+  land in the previous month (marked `shortcut:` in `contact-breakdown.ts`).
+- Merging two categories that both have a budget keeps the target's and drops the source's. The copy now says so.
 
 ## Next, in order
 
-1. `pnpm check-types && pnpm test && pnpm build` outside the sandbox — the one gate this session could not close.
-2. Push once the credentials for `diegoquinfa` are in place (today `git push` answers 403).
-3. Proposals 8, 10 and 12 are still open; 10 (federated contacts) is the gate for 8 and 12.
+1. Push once the credentials for `diegoquinfa` are in place (today `git push` answers 403).
+2. Decide the forecast "income dated today" rule, and whether a failed webhook delivery should surface in the UI.
+3. Proposals 8, 10 and 12 are explicitly **not** started: the user chose to stop at what exists.
 
 
 ## Gotchas (do not rediscover)
