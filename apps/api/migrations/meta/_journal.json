@@ -50,6 +50,13 @@
       "when": 1792544735548,
       "tag": "0006_keen_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792650895599,
+      "tag": "0007_noisy_madame_masque",
+      "breakpoints": true
     }
   ]
 }

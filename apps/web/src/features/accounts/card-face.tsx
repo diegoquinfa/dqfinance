@@ -35,12 +35,12 @@ export const cardBrands = Object.keys(brandLabels) as CardBrand[]
 export const brandLabel = (brand: CardBrand | null) => (brand ? brandLabels[brand]() : null)
 
 const colorLabels = {
-  ink: m.card_color_ink,
-  signal: m.card_color_signal,
-  sand: m.card_color_sand,
-  moss: m.card_color_moss,
-  clay: m.card_color_clay,
-  ocean: m.card_color_ocean,
+  ink: m.color_ink,
+  signal: m.color_signal,
+  sand: m.color_sand,
+  moss: m.color_moss,
+  clay: m.color_clay,
+  ocean: m.color_ocean,
 } satisfies Record<CardColor, () => string>
 
 export const colorLabel = (color: CardColor) => colorLabels[color]()

@@ -4,7 +4,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./app-type": "./src/index.ts"
+    "./app-type": "./src/index.ts",
+    "./appearance": "./src/shared/appearance.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",

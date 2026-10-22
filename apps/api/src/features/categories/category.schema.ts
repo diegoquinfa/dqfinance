@@ -1,5 +1,6 @@
 import { sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { ownerId } from '../auth/owner'
+import { CATEGORY_ICONS, PALETTE_COLORS } from '../../shared/appearance'
 import { createdAt, id } from '../../shared/schema-columns'
 
 export const CATEGORY_KINDS = ['expense', 'income'] as const
@@ -17,6 +18,9 @@ export const category = sqliteTable(
     name: text('name'),
     kind: text('kind', { enum: CATEGORY_KINDS }).notNull(),
     systemKey: text('system_key', { enum: SYSTEM_CATEGORY_KEYS }),
+    // Presentation only: the UI maps the name to a mark.
+    icon: text('icon', { enum: CATEGORY_ICONS }),
+    color: text('color', { enum: PALETTE_COLORS }),
     createdAt: createdAt(),
   },
   (table) => [uniqueIndex('category_user_system_key_idx').on(table.userId, table.systemKey)],
