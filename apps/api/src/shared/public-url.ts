@@ -15,15 +15,49 @@ const PRIVATE_IPV4 = [
   /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./, // 100.64/10
 ]
 
-/** The IPv6 ranges a request must never reach: unspecified, loopback, unique local and link-local. */
+/** The 16 bytes of an IPv6 literal, or null when it does not parse. */
+const ipv6Bytes = (address: string): number[] | null => {
+  const [head, tail, extra] = address.split('::')
+  if (extra !== undefined) return null
+  const groups = (part: string | undefined): number[] => {
+    if (!part) return []
+    return part.split(':').flatMap((group) => {
+      const octets = group.split('.').map(Number)
+      if (octets.length === 4 && octets.every((octet) => Number.isInteger(octet) && octet >= 0 && octet <= 255)) {
+        return [(octets[0]! << 8) | octets[1]!, (octets[2]! << 8) | octets[3]!]
+      }
+      return group.includes('.') ? [Number.NaN] : [Number.parseInt(group, 16)]
+    })
+  }
+  const headWords = groups(head)
+  const tailWords = groups(tail)
+  const zeros = 8 - headWords.length - tailWords.length
+  if (tail === undefined ? headWords.length !== 8 : zeros < 0) return null
+  const words = [...headWords, ...Array<number>(tail === undefined ? 0 : zeros).fill(0), ...tailWords]
+  if (!words.every((word) => Number.isInteger(word) && word >= 0 && word <= 0xffff)) return null
+  return words.flatMap((word) => [word >> 8, word & 0xff])
+}
+
+/**
+ * The IPv6 ranges a request must never reach: unspecified, loopback, unique local, link-local,
+ * IPv4-mapped, NAT64 and 6to4 that carries a private IPv4.
+ */
 const isPrivateIpv6 = (address: string) => {
-  const value = address.toLowerCase()
-  if (value === '::' || value === '::1') return true
-  if (/^f[cd][0-9a-f]{0,2}:/.test(value)) return true // fc00::/7
-  if (/^fe[89ab][0-9a-f]?:/.test(value)) return true // fe80::/10
-  // An IPv4-mapped address is as private as the IPv4 it carries (::ffff:127.0.0.1).
-  const mapped = value.match(/(\d{1,3}(\.\d{1,3}){3})$/)?.[1]
-  return mapped ? PRIVATE_IPV4.some((pattern) => pattern.test(mapped)) : false
+  const bytes = ipv6Bytes(address)
+  if (!bytes) return false
+  const startsWith = (...prefix: number[]) => prefix.every((byte, index) => bytes[index] === byte)
+  const privateEmbedded = (embedded: number[]) => PRIVATE_IPV4.some((pattern) => pattern.test(embedded.join('.')))
+  if (bytes.every((byte) => byte === 0)) return true // ::
+  if (bytes.slice(0, 15).every((byte) => byte === 0) && bytes[15] === 1) return true // ::1
+  if ((bytes[0]! & 0xfe) === 0xfc) return true // fc00::/7
+  if (bytes[0] === 0xfe && (bytes[1]! & 0xc0) === 0x80) return true // fe80::/10
+  if (startsWith(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff)) return privateEmbedded(bytes.slice(-4)) // ::ffff:0:0/96
+  if (startsWith(0, 0x64, 0xff, 0x9b)) {
+    const nat64 = bytes.slice(4, 12).every((byte) => byte === 0) || (bytes[4] === 0 && bytes[5] === 1) // 64:ff9b::/96 or 64:ff9b:1::/48
+    if (nat64) return true
+  }
+  if (startsWith(0x20, 0x02)) return privateEmbedded(bytes.slice(2, 6)) // 2002::/16 carries its IPv4 at bytes 2-5
+  return false
 }
 
 const isIpv4 = (host: string) => /^\d{1,3}(\.\d{1,3}){3}$/.test(host)
