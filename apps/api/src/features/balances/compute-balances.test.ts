@@ -199,6 +199,21 @@ test('a refund leaves negative units and basis, and an adjustment on that credit
   assert.deepEqual(cardDebtOf(computeBalancesAt(point), 'visa', 'USD'), { units: -30_00, basis: -220_000_00 })
 })
 
+test('an adjustment dated before the first debt in its currency adds units with no basis', () => {
+  // The +50 USD is dated January 5; the first USD charge lands January 10. There is no rate at the
+  // adjustment's instant, so those units stay out of the card's COP total, by design (627c642).
+  const point: LedgerPoint = {
+    ...ledger({
+      transactions: [
+        { ...none, type: 'expense', amountCents: 100_00, currency: 'USD', primaryAmountCents: 400_000_00, cardId: 'visa', occurredAt: at('2026-01-10T12:00:00Z') },
+      ],
+      adjustments: [{ ...none, cardId: 'visa', currency: 'USD', deltaCents: 50_00, adjustedAt: at('2026-01-05T12:00:00Z') }],
+    }),
+    at: at('2026-02-01T00:00:00Z'),
+  }
+  assert.deepEqual(cardDebtOf(computeBalancesAt(point), 'visa', 'USD'), { units: 150_00, basis: 400_000_00 })
+})
+
 const historyLedger = (overrides: Partial<LedgerPoint> = {}): LedgerPoint => ({
   ...ledger({
     transactions: [
