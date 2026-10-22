@@ -108,46 +108,74 @@ export function computeBalances(ledger: Ledger): Balances {
     return owner?.kind === 'debit' ? { type: 'product', id: owner.productId } : null
   }
 
-  for (const t of ledger.transactions) {
-    const sign = t.type === 'income' ? 1 : -1
-    const ref = balanceRef(t)
-    if (ref) {
-      addBalance(ref, sign * t.amountCents)
-      continue
-    }
-    const owner = cards.get(t.cardId!)
-    if (!owner) continue
-    const foreign = t.currency !== owner.currency
-    addDebt(owner.id, t.currency, -sign * t.amountCents, foreign ? -sign * (t.primaryAmountCents ?? 0) : 0)
-  }
+  // One walk in date order. An adjustment must be valued at the rate of the debt outstanding at its
+  // own instant, so a later movement never re-values it. A transfer counts at each of its two dates;
+  // a charge dated exactly at the adjustment's instant counts for it, like the old loop order.
+  type Movement =
+    | { at: number; rank: 0; kind: 'transaction'; row: Ledger['transactions'][number] }
+    | { at: number; rank: 0; kind: 'transferSent'; row: Ledger['transfers'][number] }
+    | { at: number; rank: 0; kind: 'transferReceived'; row: Ledger['transfers'][number] }
+    | { at: number; rank: 1; kind: 'adjustment'; row: Ledger['adjustments'][number] }
+  const movements: Movement[] = [
+    ...ledger.transactions.map((row): Movement => ({ at: row.occurredAt.getTime(), rank: 0, kind: 'transaction', row })),
+    ...ledger.transfers.map((row): Movement => ({ at: row.sentAt.getTime(), rank: 0, kind: 'transferSent', row })),
+    ...ledger.transfers.flatMap((row): Movement[] =>
+      row.receivedAt ? [{ at: row.receivedAt.getTime(), rank: 0, kind: 'transferReceived', row }] : [],
+    ),
+    ...ledger.adjustments.map((row): Movement => ({ at: row.adjustedAt.getTime(), rank: 1, kind: 'adjustment', row })),
+  ].sort((a, b) => a.at - b.at || a.rank - b.rank)
 
-  for (const t of ledger.transfers) {
-    const from: SourceRef = t.fromProductId
-      ? { type: 'product', id: t.fromProductId }
-      : { type: 'cash_wallet', id: t.fromCashWalletId! }
-    addBalance(from, -t.sentAmountCents)
-    if (!t.receivedAt) {
-      inTransit.set(t.sentCurrency, (inTransit.get(t.sentCurrency) ?? 0) + t.sentAmountCents)
-    } else if (t.toCardId) {
-      addDebt(t.toCardId, t.receivedCurrency, -t.receivedAmountCents, -(t.costBasisCents ?? 0))
-    } else {
-      addBalance(
-        t.toProductId ? { type: 'product', id: t.toProductId } : { type: 'cash_wallet', id: t.toCashWalletId! },
-        t.receivedAmountCents,
-      )
-    }
-  }
-
-  for (const a of ledger.adjustments) {
-    const ref = balanceRef(a)
-    if (ref) addBalance(ref, a.deltaCents)
-    else {
-      const owner = cards.get(a.cardId!)
-      const entry = debt.get(a.cardId!)?.get(a.currency)
-      // Foreign debt is valued at the average cost of the debt already outstanding; with no debt in
-      // that currency there is no rate, so the units stay in their own currency and out of the card total.
-      const rate = owner && a.currency !== owner.currency && entry && entry.units !== 0 ? entry.basis / entry.units : 0
-      addDebt(a.cardId!, a.currency, a.deltaCents, Math.round(a.deltaCents * rate))
+  for (const movement of movements) {
+    switch (movement.kind) {
+      case 'transaction': {
+        const t = movement.row
+        const sign = t.type === 'income' ? 1 : -1
+        const ref = balanceRef(t)
+        if (ref) {
+          addBalance(ref, sign * t.amountCents)
+          break
+        }
+        const owner = cards.get(t.cardId!)
+        if (!owner) break
+        const foreign = t.currency !== owner.currency
+        addDebt(owner.id, t.currency, -sign * t.amountCents, foreign ? -sign * (t.primaryAmountCents ?? 0) : 0)
+        break
+      }
+      case 'transferSent': {
+        const t = movement.row
+        const from: SourceRef = t.fromProductId
+          ? { type: 'product', id: t.fromProductId }
+          : { type: 'cash_wallet', id: t.fromCashWalletId! }
+        addBalance(from, -t.sentAmountCents)
+        if (!t.receivedAt) inTransit.set(t.sentCurrency, (inTransit.get(t.sentCurrency) ?? 0) + t.sentAmountCents)
+        break
+      }
+      case 'transferReceived': {
+        const t = movement.row
+        if (t.toCardId) addDebt(t.toCardId, t.receivedCurrency, -t.receivedAmountCents, -(t.costBasisCents ?? 0))
+        else
+          addBalance(
+            t.toProductId ? { type: 'product', id: t.toProductId } : { type: 'cash_wallet', id: t.toCashWalletId! },
+            t.receivedAmountCents,
+          )
+        break
+      }
+      case 'adjustment': {
+        const a = movement.row
+        const ref = balanceRef(a)
+        if (ref) {
+          addBalance(ref, a.deltaCents)
+          break
+        }
+        const owner = cards.get(a.cardId!)
+        const entry = debt.get(a.cardId!)?.get(a.currency)
+        // Foreign debt is valued at the average cost of the debt outstanding at this instant; with no
+        // debt in that currency there is no rate, so the units stay in their own currency and out of the
+        // card total. The running total already holds every earlier adjustment.
+        const rate = owner && a.currency !== owner.currency && entry && entry.units !== 0 ? entry.basis / entry.units : 0
+        addDebt(a.cardId!, a.currency, a.deltaCents, Math.round(a.deltaCents * rate))
+        break
+      }
     }
   }
 
