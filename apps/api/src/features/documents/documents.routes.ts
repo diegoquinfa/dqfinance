@@ -19,9 +19,19 @@ export const documentsRoutes = new Hono<AppEnv>()
     return c.body(file.body, 200, {
       'content-type': file.contentType,
       // Always an attachment: an uploaded file must never render in the API's origin.
-      'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+      'content-disposition': contentDisposition(file.name),
     })
   })
   .delete('/:id', async (c) =>
     c.json(await deleteDocument(c.env.DOCUMENTS, c.var.db, c.var.userId, c.req.param('id'))),
   )
+
+/**
+ * The download name in both forms: the plain one keeps only ASCII letters, digits, dots,
+ * dashes and spaces, so no parser trips over it, and the encoded one carries the real name.
+ */
+function contentDisposition(name: string) {
+  const limited = [...name].slice(0, 120).join('')
+  const ascii = limited.replace(/[^A-Za-z0-9._ -]/g, '').trim() || 'document'
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(limited)}`
+}

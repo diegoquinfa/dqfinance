@@ -2,10 +2,11 @@ import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { isoDateTime } from '../../shared/dates'
-import { found } from '../../shared/http'
+import { AppError, found } from '../../shared/http'
 import { fromCents, moneyAmount } from '../../shared/money'
 import { sourceRefOf } from '../accounts/source'
-import { createTransaction } from '../transactions/create-transaction'
+import { toTransactionView, transactionValues } from '../transactions/create-transaction'
+import { transaction } from '../transactions/transaction.schema'
 import { nextDueDate } from './next-due-date'
 import { recurringExpense } from './recurring-expense.schema'
 
@@ -30,41 +31,58 @@ async function loadOwned(db: Db, userId: string, id: string) {
 }
 
 /** Advances the due date only if nobody else did it first (guards a double click). */
-async function advance(db: Db, item: typeof recurringExpense.$inferSelect) {
+async function advance(db: Db, userId: string, item: typeof recurringExpense.$inferSelect) {
   const next = nextDueDate(item.startsOn, item.nextDueOn, item.frequency)
-  await db
+  const advanced = await db
     .update(recurringExpense)
     .set({ nextDueOn: next })
-    .where(and(eq(recurringExpense.id, item.id), eq(recurringExpense.nextDueOn, item.nextDueOn)))
+    .where(
+      and(
+        eq(recurringExpense.id, item.id),
+        eq(recurringExpense.userId, userId),
+        eq(recurringExpense.nextDueOn, item.nextDueOn),
+      ),
+    )
+    .returning({ nextDueOn: recurringExpense.nextDueOn })
+  // Somebody else moved it already: this confirmation (or skip) is not the one that counts.
+  if (advanced.length === 0) throw new AppError('recurring_already_confirmed', 409)
   return next
 }
 
 /** Records this occurrence as a real expense and moves to the next due date (design D11). */
 export async function confirmRecurringExpense(db: Db, userId: string, input: z.infer<typeof confirmRecurringExpenseInput>) {
   const item = await loadOwned(db, userId, input.id)
-  // shortcut: the transaction and the date advance are two statements; a failure between them leaves the
-  // item pending again (visible, not lost). Batch them if createTransaction ever exposes its insert.
-  const created = await createTransaction(
-    db,
-    userId,
-    {
-      type: 'expense',
-      amount: input.amount ?? fromCents(item.amountCents),
-      source: sourceRefOf(item),
-      currency: item.currency,
-      primaryAmount: input.primaryAmount,
-      categoryId: item.categoryId,
-      counterpartyId: item.counterpartyId ?? undefined,
-      title: item.name,
-      occurredAt: input.occurredAt,
-    },
-    { recurringExpenseId: item.id },
-  )
-  return { transaction: created, nextDueOn: await advance(db, item) }
+  const values = await transactionValues(db, userId, {
+    type: 'expense',
+    amount: input.amount ?? fromCents(item.amountCents),
+    source: sourceRefOf(item),
+    currency: item.currency,
+    primaryAmount: input.primaryAmount,
+    categoryId: item.categoryId,
+    counterpartyId: item.counterpartyId ?? undefined,
+    title: item.name,
+    occurredAt: input.occurredAt,
+  })
+  // The date moves first, so a second click finds it already moved and stops. If the movement then
+  // fails, the date goes back where it was: the bill waits to be confirmed again.
+  const next = await advance(db, userId, item)
+  try {
+    const [row] = await db
+      .insert(transaction)
+      .values({ userId, ...values, recurringExpenseId: item.id })
+      .returning()
+    return { transaction: toTransactionView(row!), nextDueOn: next }
+  } catch (error) {
+    await db
+      .update(recurringExpense)
+      .set({ nextDueOn: item.nextDueOn })
+      .where(and(eq(recurringExpense.id, item.id), eq(recurringExpense.nextDueOn, next)))
+    throw error
+  }
 }
 
 export async function skipRecurringExpense(db: Db, userId: string, input: z.infer<typeof skipRecurringExpenseInput>) {
-  return { nextDueOn: await advance(db, await loadOwned(db, userId, input.id)) }
+  return { nextDueOn: await advance(db, userId, await loadOwned(db, userId, input.id)) }
 }
 
 export async function deleteRecurringExpense(db: Db, userId: string, id: string) {

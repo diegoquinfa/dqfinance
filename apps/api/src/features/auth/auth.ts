@@ -113,6 +113,22 @@ export function createAuth(
         },
       }),
     },
+    // The limiter only turns on when NODE_ENV is production, and a Worker never sets it:
+    // without this the whole auth surface (sign-in, password reset, OAuth registration) is unthrottled.
+    rateLimit: {
+      enabled: true,
+      storage: 'database',
+      window: 60,
+      max: 60,
+      customRules: {
+        '/sign-in/email': { window: 300, max: 10 },
+        '/request-password-reset': { window: 3600, max: 5 },
+      },
+    },
+    advanced: {
+      // Cloudflare sets the real client IP here; without it every visitor shares one bucket.
+      ipAddress: { ipAddressHeaders: ['cf-connecting-ip'] },
+    },
     hooks: { before: beforeEndpoint(origin) },
     // The OAuth provider issues tokens through /oauth2/token; the session JWT endpoint is not needed.
     disabledPaths: ['/token'],

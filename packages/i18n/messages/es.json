@@ -29,6 +29,7 @@
   "error_recurring_not_found": "Ese gasto recurrente no existe.",
   "error_savings_goal_not_found": "Esa meta de ahorro no existe.",
   "error_expected_income_not_found": "Ese ingreso esperado no existe.",
+  "error_recurring_already_confirmed": "Ese gasto recurrente ya está confirmado.",
   "error_push_not_configured": "Las notificaciones push no están configuradas en este servidor.",
   "error_push_subscription_owned": "Ese navegador ya está registrado en otra cuenta.",
   "error_document_not_found": "Ese documento no existe.",

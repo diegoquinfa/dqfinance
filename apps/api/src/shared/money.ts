@@ -6,8 +6,9 @@ export const toCents = (amount: number) => Math.round(amount * 100)
 
 export const fromCents = (cents: number) => cents / 100
 
-/** A positive decimal amount with at most 2 decimals, e.g. 45000.5. */
-export const moneyAmount = z.number().positive().multipleOf(0.01)
+/** A positive decimal amount with at most 2 decimals, e.g. 45000.5. The cap keeps the cents inside
+ * a 64-bit integer, so a wild amount fails as invalid input and not as a database error. */
+export const moneyAmount = z.number().positive().max(1e12).multipleOf(0.01)
 
 /** ISO 4217 code, normalized to upper case. */
 export const currencyCode = z

@@ -5,7 +5,10 @@ import { nextDueDate, type Frequency } from '../recurring-expenses/next-due-date
 /** A calendar date `days` away, YYYY-MM-DD. */
 export const shiftDay = (day: string, days: number) => {
   const [year, month, date] = day.split('-').map(Number) as [number, number, number]
-  return new Date(Date.UTC(year, month - 1, date + days)).toISOString().slice(0, 10)
+  // Date.UTC maps the years 0-99 onto 1900-1999, so the year is set after the date is built.
+  const shifted = new Date(0)
+  shifted.setUTCFullYear(year, month - 1, date + days)
+  return shifted.toISOString().slice(0, 10)
 }
 
 export type CalendarMovementRow = {

@@ -21,8 +21,12 @@ const scopeLabel = (scope: string) =>
 export function ConsentCard() {
   const params = new URLSearchParams(window.location.search)
   const clientId = params.get('client_id') ?? ''
+  // The authorization request is signed by the server, so its redirect URI is the one that
+  // will receive the code.
+  const requestedRedirectUri = params.get('redirect_uri') ?? ''
   const scopes = (params.get('scope') ?? '').split(' ').filter(scopeLabel)
   const [clientName, setClientName] = useState<string>()
+  const [redirectUri, setRedirectUri] = useState<string>()
   const [error, setError] = useState<string>()
   const [pending, setPending] = useState(false)
   // A guest may explore the app, but it never hands its ledger to an agent.
@@ -30,10 +34,19 @@ export function ConsentCard() {
   const isGuest = Boolean(session?.user.isAnonymous)
 
   useEffect(() => {
-    void authClient.oauth2.publicClient({ query: { client_id: clientId } }).then(({ data }) => {
+    void (async () => {
+      const { data } = await authClient.oauth2.publicClient({ query: { client_id: clientId } })
       setClientName(data?.client_name ?? undefined)
-    })
-  }, [clientId])
+      const registered = data?.redirect_uris ?? []
+      if (registered.length) {
+        setRedirectUri(registered[0])
+        return
+      }
+      // The public record hides the redirect URIs, so the auth client is asked for the full one.
+      const { data: full } = await authClient.oauth2.getClient({ query: { client_id: clientId } })
+      setRedirectUri(full?.redirect_uris?.[0] ?? requestedRedirectUri)
+    })()
+  }, [clientId, requestedRedirectUri])
 
   async function decide(accept: boolean) {
     setPending(true)
@@ -71,6 +84,19 @@ export function ConsentCard() {
         <CardDescription>{m.consent_description()}</CardDescription>
       </CardHeader>
       <CardContent>
+        {/* The name is the client's own, so the screen also says where the code goes and who asks. */}
+        <dl className="mb-6 grid gap-4">
+          {redirectUri ? (
+            <div className="grid gap-1">
+              <dt className="label-mono text-muted-foreground">{m.consent_redirect_label()}</dt>
+              <dd className="label-mono normal-case break-all text-ink">{redirectUri}</dd>
+            </div>
+          ) : null}
+          <div className="grid gap-1">
+            <dt className="label-mono text-muted-foreground">{m.consent_client_id_label()}</dt>
+            <dd className="label-mono normal-case break-all text-ink">{clientId}</dd>
+          </div>
+        </dl>
         <ul className="divide-y divide-line border-y border-line text-sm">
           {scopes.map((scope) => (
             <li key={scope} className="flex gap-3 py-3 text-ink">

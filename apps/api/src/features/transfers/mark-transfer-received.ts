@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { isoDateTime } from '../../shared/dates'
@@ -11,16 +11,24 @@ export const markTransferReceivedInput = z.object({
 })
 
 export async function markTransferReceived(db: Db, userId: string, input: z.infer<typeof markTransferReceivedInput>) {
-  const row = found(
-    await db
-      .select({ receivedAt: transfer.receivedAt })
-      .from(transfer)
-      .where(and(eq(transfer.id, input.id), eq(transfer.userId, userId)))
-      .get(),
-    'transfer_not_found',
-  )
-  if (row.receivedAt) throw new AppError('transfer_already_received', 409)
   const receivedAt = input.receivedAt ? new Date(input.receivedAt) : new Date()
-  await db.update(transfer).set({ receivedAt }).where(eq(transfer.id, input.id))
+  // The guard is in the write itself: two calls at once cannot both mark it received.
+  const updated = await db
+    .update(transfer)
+    .set({ receivedAt })
+    .where(and(eq(transfer.id, input.id), eq(transfer.userId, userId), isNull(transfer.receivedAt)))
+    .returning({ id: transfer.id })
+  if (updated.length === 0) {
+    // Either the transfer is not there, or somebody else already received it.
+    found(
+      await db
+        .select({ receivedAt: transfer.receivedAt })
+        .from(transfer)
+        .where(and(eq(transfer.id, input.id), eq(transfer.userId, userId)))
+        .get(),
+      'transfer_not_found',
+    )
+    throw new AppError('transfer_already_received', 409)
+  }
   return { id: input.id, receivedAt: receivedAt.toISOString() }
 }

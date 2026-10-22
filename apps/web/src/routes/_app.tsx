@@ -66,13 +66,14 @@ function AppLayout() {
     if (settings.data && settings.data.locale !== currentLocale()) switchLocale(settings.data.locale as Locale)
   }, [settings.data])
 
-  // A guest with no ledger gets the demo, not the wizard.
+  // A guest with no ledger gets the demo, not the wizard. A failed seed is not retried in a loop:
+  // the guest lands on an empty app and the error is shown instead.
   useEffect(() => {
     if (!isGuest) return
     if (settings.isPending || settings.isFetching || settings.data) return
-    if (seed.isPending) return
+    if (seed.isPending || seed.isError) return
     seedDemo()
-  }, [isGuest, settings.isPending, settings.isFetching, settings.data, seed.isPending, seedDemo])
+  }, [isGuest, settings.isPending, settings.isFetching, settings.data, seed.isPending, seed.isError, seedDemo])
 
   if (isPending || (session && settings.isPending)) return <div className="min-h-dvh" aria-busy="true" />
   if (!session) return <Navigate to="/sign-in" />
