@@ -37,6 +37,7 @@ export const ERROR_CODES = [
   'webhook_not_found',
   'recurring_already_confirmed',
   'balance_changed',
+  'budget_not_found',
   'push_not_configured',
   'push_subscription_owned',
   'document_not_found',

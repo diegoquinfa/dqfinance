@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import * as accountSchema from './features/accounts/account.schema'
 import * as authSchema from './features/auth/auth.schema'
 import * as balanceAdjustmentSchema from './features/balance-adjustments/balance-adjustment.schema'
+import * as budgetSchema from './features/budgets/budget.schema'
 import * as categorySchema from './features/categories/category.schema'
 import * as counterpartySchema from './features/counterparties/counterparty.schema'
 import * as documentsSchema from './features/documents/document.schema'
@@ -30,6 +31,7 @@ export const schema = {
   ...savingsGoalSchema,
   ...expectedIncomeSchema,
   ...webhookSchema,
+  ...budgetSchema,
 }
 
 export const createDb = (d1: D1Database) => drizzle(d1, { schema })

@@ -25,6 +25,7 @@ Folders whose name says what they own are not listed below.
 - `balances/`: `compute-balances.ts` (pure) is the one place for every balance, debt, cost basis, in-transit rule, and the as-of-date history. Also owns the list tools (`list_accounts`, `get_balance_history`).
 - `calendar/`: per day of the user's timezone, what moved and which recurring expenses fall due. `calendar-days.ts` (pure) does the day grouping and the projection.
 - `spending/`: how much the user may spend today, and what the balance looks like day by day. `safe-to-spend.ts` and `spending-period.ts` (pure) hold the rule and the days left in the month; `income-period.ts` (pure) holds the payday the period ends on; `forecast.ts` (pure) holds the running balance of the projection.
+- `budgets/`: what each category may spend in a month, and what it already spent. `budget-progress.ts` (pure) holds what is left of a limit and how close it is.
 - `savings-goals/`: what the user is saving for and what they put into it. `goal-progress.ts` (pure) holds how much of a goal is saved and what it asks for every month.
 - `expected-incomes/`: the money the user expects, with how often it arrives. `next-income-date.ts` (pure) holds the next payday, counted from the anchor so the day of the month never drifts.
 - `webhooks/`: the places the user asked the app to call when a bill falls due. `webhook-signature.ts` (pure) holds the HMAC of the body; the endpoint goes through `shared/public-url.ts`, the same check the push endpoints use.
@@ -45,6 +46,7 @@ Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rule
 - `spending/`: the card on the overview that says how much the user may spend today, and the forecast of the balance day by day.
 - `savings-goals/`: the savings goals page (`/savings`) and its query hooks.
 - `expected-incomes/`: the expected incomes page (`/incomes`) and its query hooks.
+- `budgets/`: the budgets page (`/budgets`) and its query hooks.
 
 `shared/api.ts` is the single Hono RPC client, with `unwrap()`.
 
@@ -55,7 +57,7 @@ A feature imports only from features earlier in this order:
 ```
 categories → settings → accounts → documents → counterparties → transactions
            → recurring-expenses → balances → balance-adjustments → transfers → calendar
-           → savings-goals → expected-incomes → spending → webhooks → demo
+           → savings-goals → expected-incomes → spending → webhooks → budgets → demo
 ```
 
 `auth/` is a foundation in both apps (the API's `mcp/` and `push/` too), outside the order: any feature may import it.
