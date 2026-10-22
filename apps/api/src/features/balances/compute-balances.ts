@@ -141,7 +141,14 @@ export function computeBalances(ledger: Ledger): Balances {
   for (const a of ledger.adjustments) {
     const ref = balanceRef(a)
     if (ref) addBalance(ref, a.deltaCents)
-    else addDebt(a.cardId!, a.currency, a.deltaCents, 0)
+    else {
+      const owner = cards.get(a.cardId!)
+      const entry = debt.get(a.cardId!)?.get(a.currency)
+      // Foreign debt is valued at the average cost of the debt already outstanding; with no debt in
+      // that currency there is no rate, so the units stay in their own currency and out of the card total.
+      const rate = owner && a.currency !== owner.currency && entry && entry.units !== 0 ? entry.basis / entry.units : 0
+      addDebt(a.cardId!, a.currency, a.deltaCents, Math.round(a.deltaCents * rate))
+    }
   }
 
   return {

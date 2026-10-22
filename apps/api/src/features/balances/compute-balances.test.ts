@@ -101,6 +101,54 @@ test('a fully paid currency disappears from the card debts', () => {
   assert.equal(balances.creditCards[0]!.totalCents, 0)
 })
 
+const foreignDebtLedger = (overrides: Partial<Ledger> = {}): Ledger =>
+  ledger({
+    // 100 USD bought at 4,000 COP: the card owes 400,000 COP for it.
+    transactions: [{ ...none, type: 'expense', amountCents: 100_00, currency: 'USD', primaryAmountCents: 400_000_00, cardId: 'visa' }],
+    ...overrides,
+  })
+
+test('an adjustment on foreign debt scales the cost basis at the average purchase rate', () => {
+  const balances = computeBalances(
+    foreignDebtLedger({ adjustments: [{ ...none, cardId: 'visa', currency: 'USD', deltaCents: 50_00 }] }),
+  )
+  assert.deepEqual(cardDebtOf(balances, 'visa', 'USD'), { units: 150_00, basis: 600_000_00 })
+  // The card total is in COP: the 50 USD added are worth 200,000 COP, not 0 and not 50 COP.
+  assert.equal(balances.creditCards[0]!.totalCents, 600_000_00)
+})
+
+test('a payment adjustment lowers the foreign units and the cost basis in the same proportion', () => {
+  const balances = computeBalances(
+    foreignDebtLedger({ adjustments: [{ ...none, cardId: 'visa', currency: 'USD', deltaCents: -50_00 }] }),
+  )
+  assert.deepEqual(cardDebtOf(balances, 'visa', 'USD'), { units: 50_00, basis: 200_000_00 })
+  assert.equal(balances.creditCards[0]!.totalCents, 200_000_00)
+})
+
+test('an adjustment in the card own currency keeps counting at nominal value', () => {
+  const balances = computeBalances(
+    ledger({
+      transactions: [{ ...none, type: 'expense', amountCents: 100_000_00, currency: 'COP', primaryAmountCents: null, cardId: 'visa' }],
+      adjustments: [{ ...none, cardId: 'visa', currency: 'COP', deltaCents: 50_000_00 }],
+    }),
+  )
+  assert.deepEqual(cardDebtOf(balances, 'visa', 'COP'), { units: 150_000_00, basis: 150_000_00 })
+  assert.equal(balances.creditCards[0]!.debts[0]!.costBasisCents, null)
+  assert.equal(balances.creditCards[0]!.totalCents, 150_000_00)
+})
+
+test('an adjustment in a currency with no debt yet has no rate to apply and stays in its own currency', () => {
+  const balances = computeBalances(
+    ledger({
+      transactions: [{ ...none, type: 'expense', amountCents: 100_000_00, currency: 'COP', primaryAmountCents: null, cardId: 'visa' }],
+      adjustments: [{ ...none, cardId: 'visa', currency: 'USD', deltaCents: 50_00 }],
+    }),
+  )
+  // Without a rate the USD debt is recorded as USD, with no cost basis: it is never mixed into the COP total.
+  assert.deepEqual(cardDebtOf(balances, 'visa', 'USD'), { units: 50_00, basis: 0 })
+  assert.equal(balances.creditCards[0]!.totalCents, 100_000_00)
+})
+
 const historyLedger = (overrides: Partial<LedgerPoint> = {}): LedgerPoint => ({
   ...ledger({
     transactions: [
