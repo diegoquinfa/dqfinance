@@ -9,8 +9,8 @@ Read first: [AGENTS.md](../../AGENTS.md), [docs/architecture.md](../architecture
 - Branch `fix/reviewer-findings` (HEAD is the last commit of this file), based on `main` at `538046a`. **Everything
   is local**: `git push` still answers 403 for `dquintana-kurbuo`; the `diegoquinfa` credential is not in this
   checkout.
-- 35 commits over `main` at `538046a`: the 22 of the stack, the worktree setup, this handoff, and the 11 fix
-  commits of the batch below. **Ten of the thirteen proposals are implemented**
+- 60 commits over `main` at `538046a` (38 over `25b6947`): the 22 of the stack, the worktree setup, this handoff
+  and the fix commits of both batches. **Ten of the thirteen proposals are implemented**
   (1, 2, 3, 4, 5, 6, 7, 9, 11, 13). Not implemented: 8 (shared expenses), 10 (federated contacts) and 12 (group
   projects); 10 blocks 8 and 12, which are a whole protocol, not a screen.
 - Working tree: `M skills-lock.json` and untracked `.agents/skills/handoff/` — the half-finished handoff work.
@@ -21,8 +21,8 @@ Read first: [AGENTS.md](../../AGENTS.md), [docs/architecture.md](../architecture
 `pnpm` and `turbo` do not run inside the DSH sandbox (pnpm cannot open its store lock, turbo spawns a child and
 gets EPERM). What was verified directly instead:
 
-- API: every `src/**/*.test.ts` run directly with `node` → **269/269 pass** (the runner itself spawns and the
-  sandbox denies it).
+- API: every `src/**/*.test.ts` run directly with `node` → **280/280 pass** over 50 files (the runner itself
+  spawns and the sandbox denies it).
 - Web: 29/29 pass. Root `scripts/`: 5/5 pass. `tsc --noEmit` in `apps/api` and `apps/web` → clean.
 - i18n: `en.json` and `es.json` have the same 708 flat keys.
 - **`pnpm build` was NOT verified**: `vite build` dies loading `@tailwindcss/oxide` (spawn EPERM). Run
@@ -57,9 +57,11 @@ RDD is not installed in this runtime: `gentle-ai review status` cannot even reso
 sandbox. So this was a manual candidate validation — no receipt, no approval claim, ordinary policy. Seven
 reviewers took one slice each; the blockers below were confirmed against the code (four by running a probe).
 
-**Status after the fix batch: all eleven code blockers and all three documentation blockers are fixed.** The two
-the review left open (#3, the adjustment guard, and #11, accent-insensitive search) were closed without a schema
-change; see the batch table below.
+**Status after the fix batches: every code blocker is fixed.** So are two of the three documentation blockers; the
+third — the shape of `odd/tasks/*.md` — is only half done: the docs were corrected and their tasks checked off with
+commit ids, but none has `## Specs` or `## Log`, and `statement-import.md` has no `## Tasks`. That is the remaining
+documentation debt. The two the review left open (#3, the adjustment guard, and #11, accent-insensitive search) were
+closed without a schema change; see the batch table below.
 
 ### Blockers — code (11)
 
@@ -173,26 +175,32 @@ folding is a `replace` chain over the stored text, because SQLite has no `unacce
 have meant a migration plus every write path. Both statements are tested against a real SQLite table with
 `node:sqlite`, so the SQL itself is exercised, not only a pure function around it.
 
-Gate after the two batches: **273 API tests, 29 web, 5 scripts, `tsc` clean on both apps, i18n 708/708**, and the
-build is green package by package (`i18n` build, web `check-types` with `tsr generate`, `vite build` in 4.71 s).
-`turbo` itself cannot run here: it spawns `pnpm.cmd` for each package and that child is denied the store lock, so
-the root command fails before doing any work. Run the package scripts, or the root command on a machine without
-that lock problem.
+Gate after the two batches: **280 API tests over 50 files, 29 web, 5 scripts, `tsc` clean on both apps, i18n
+708/708**, and the build is green package by package (`i18n` build, web `check-types` with `tsr generate`, `vite
+build` in 4.71 s). `turbo` itself cannot run here: it spawns `pnpm.cmd` for each package and that child is denied
+the store lock, so the root command fails before doing any work. Run the package scripts, or the root command on a
+machine without that lock problem.
 
 Still open:
 
 - The forecast adds an expected income dated **today** on top of a balance that may already hold it, while
   safe-to-spend treats today's money as already in the balance. One of the two is wrong; it is a product call.
 - `POST /webhooks/check` returns `failures`, and the web discards them: an endpoint that answers 500 is retried on
-  the next app open, silently.
+  the next app open, silently. A bill is announced only when **every** hook received it, so a retry repeats the
+  delivery to the hooks that already succeeded; a receiver that does not dedup by `X-DQFinance-Delivery` sees it
+  twice.
 - The `tools/list` size was not re-measured (the measurement recipe needs a spawn the sandbox denies).
 - The accent-folded search cannot use an index, and each term adds ~3.2 KB of SQL; a 40-word query could hit D1's
-  statement limit, a realistic one is a few kilobytes.
-- The adjustment guard is a timestamp window, not a lock: a request can read after another write and still get a
-  spurious 409 if the sibling lands before its `getBalances` round-trip. The retry succeeds; the window is tens of
-  milliseconds.
-- The contact month bucket uses the offset of the period's start, so a movement within an hour of a DST change can
-  land in the previous month (marked `shortcut:` in `contact-breakdown.ts`).
+  statement limit, a realistic one is a few kilobytes. Non-ASCII letters outside the fold table match case-exactly.
+- The adjustment guard is a timestamp window, not a lock, in both directions: a concurrent write can give a spurious
+  409, and a *transaction* that lands between the read and the insert makes the delta stale, so the final balance is
+  off by that movement. The window is the `getBalances` round-trip, tens of milliseconds.
+- The public-URL guard checks the host name only: a public name that resolves to a private address (`sslip.io`,
+  `nip.io`) passes. No reach on Workers (no private egress); it matters on a self-hosted Node run.
+- The contact month bucket uses the offset of the period's start, so at any month boundary whose offset differs from
+  that start a movement can land in either neighbouring month (marked `shortcut:` in `get-counterparty.ts`).
+- A movement dated in the future is included in `getBalances`, so `safe-to-spend`'s money in hand can already carry
+  a purchase that has not happened, while the installment credit stops at tomorrow.
 - Merging two categories that both have a budget keeps the target's and drops the source's. The copy now says so.
 
 ## Next, in order
@@ -207,7 +215,8 @@ Still open:
 - **A user's day is an instant.** `startOfDayIn` / `dayRangeIn` translate a calendar day with
   `user_settings.timezone`; a date-only import row is stored at that instant. The helper returns the earliest
   instant that reads as the requested day, so a zone that springs forward at 00:00 (Havana, Santiago, Azores)
-  is covered; it is verified across every zone-day of 2024–2028.
+  is covered. Its test covers every day of 2026 over 7 zones; a separate sweep of 418 zones × 2024–2028 found no
+  failure.
 - **Duplicate evidence must be positive.** Same type, amount and user day, plus a title or a description both
   carry. Unknown rows are imported and flagged; a statement without titles re-imports its rows on purpose.
 - **`move-guest-data` owns the table list** (20 tables) and its test scans `features/**/*.schema.ts` for `user_id`,
@@ -215,6 +224,13 @@ Still open:
 - **The guest guard is "the guest still exists"**, never `isAnonymous`: a guest created before migration 0005 has
   no such column and would lose its ledger.
 - **A D1 `db.batch` is atomic**: one FK failure rolls everything back and reaches `onError` as an opaque 500.
+- **Erasable syntax only in `apps/api/src`.** Node's strip-only TypeScript loader rejects constructor parameter
+  properties, enums and namespaces; `AppError` is written with explicit fields for that reason. A new one in a
+  module that tests import stops the whole file from loading.
+- **`apps/api/src/test/` drives real use cases.** `fake-d1.ts` implements the D1 slice Drizzle uses over
+  `node:sqlite` with the real migrations applied, and `ts-imports.ts` lets Node resolve the extensionless imports,
+  so a test can call `listBudgets` / `getSafeToSpend` and assert the real query. This is how the money query
+  regressions are caught now.
 - **SQLite `LIKE` is ASCII-only.** The search folds the diacritics itself, on both sides, with a `replace` chain
   (`transactions/accent-free.ts`); a new searched field must go through `accentFreeSql`, not a bare column.
 - **System categories store `name = NULL`** and are translated on read; never compare `category.name` for them.
