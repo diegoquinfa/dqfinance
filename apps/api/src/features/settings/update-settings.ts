@@ -2,7 +2,7 @@ import { and, eq, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { AppError } from '../../shared/http'
-import { currencyCode } from '../../shared/money'
+import { currencyCode, toCents } from '../../shared/money'
 import { requireSettings } from './get-settings'
 import { LOCALES, userCurrency, userSettings } from './settings.schema'
 
@@ -10,12 +10,20 @@ export const updateSettingsInput = z.object({
   locale: z.enum(LOCALES).optional(),
   // The full list of the user's currencies; must keep the primary one.
   currencies: z.array(currencyCode).min(1).optional(),
+  // The cap on what the user spends in a month; null clears it.
+  spendingTarget: z.number().nonnegative().multipleOf(0.01).nullish(),
 })
 
 export async function updateSettings(db: Db, userId: string, input: z.infer<typeof updateSettingsInput>) {
   const settings = await requireSettings(db, userId)
   if (input.locale) {
     await db.update(userSettings).set({ locale: input.locale }).where(eq(userSettings.userId, userId))
+  }
+  if (input.spendingTarget !== undefined) {
+    await db
+      .update(userSettings)
+      .set({ spendingTargetCents: input.spendingTarget === null ? null : toCents(input.spendingTarget) })
+      .where(eq(userSettings.userId, userId))
   }
   if (input.currencies) {
     const codes = [...new Set(input.currencies)]

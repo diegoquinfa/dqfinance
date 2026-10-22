@@ -2,6 +2,7 @@ import type * as React from 'react'
 import { Link } from '@tanstack/react-router'
 import { useRecurringExpenses, useSkipRecurring, useConfirmRecurring } from '#/features/recurring-expenses/recurring-expenses-api'
 import { useSettings } from '#/features/settings/settings-api'
+import { SafeToSpendCard } from '#/features/spending/safe-to-spend-card'
 import { TransactionRow } from '#/features/transactions/transaction-row'
 import { useTransactions } from '#/features/transactions/transactions-api'
 import { formatDay } from '#/shared/dates'
@@ -131,7 +132,8 @@ export function OverviewPage() {
             </ul>
           )}
         </div>
-        <div className="lg:col-span-6">
+        <div className="grid gap-10 lg:col-span-6">
+          <SafeToSpendCard />
           <CalendarPeriod currency={primary} />
         </div>
       </section>

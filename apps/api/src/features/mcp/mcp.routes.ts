@@ -15,6 +15,7 @@ import { recurringExpenseTools } from '../recurring-expenses/recurring-expenses.
 import { pushConfigFrom } from '../push/push-config'
 import { getSettings } from '../settings/get-settings'
 import { settingTools } from '../settings/settings.tools'
+import { spendingTools } from '../spending/spending.tools'
 import { transactionTools } from '../transactions/transactions.tools'
 import { transferTools } from '../transfers/transfers.tools'
 import { guestBlocksMcp } from './guest-access'
@@ -35,6 +36,7 @@ const mcpServer = createMCPServer({
     ...recurringExpenseTools,
     ...documentTools,
     ...calendarTools,
+    ...spendingTools,
   ],
 })
 
