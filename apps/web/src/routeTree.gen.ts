@@ -20,6 +20,7 @@ import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppContactsRouteImport } from './routes/_app/contacts'
+import { Route as AppIncomesRouteImport } from './routes/_app/incomes'
 import { Route as AppOverviewRouteImport } from './routes/_app/overview'
 import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
 import { Route as AppSavingsRouteImport } from './routes/_app/savings'
@@ -85,6 +86,11 @@ const AppCalendarRoute = AppCalendarRouteImport.update({
 const AppContactsRoute = AppContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIncomesRoute = AppIncomesRouteImport.update({
+  id: '/incomes',
+  path: '/incomes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOverviewRoute = AppOverviewRouteImport.update({
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/accounts': typeof AppAccountsRoute
   '/calendar': typeof AppCalendarRoute
   '/contacts': typeof AppContactsRoute
+  '/incomes': typeof AppIncomesRoute
   '/overview': typeof AppOverviewRoute
   '/recurring': typeof AppRecurringRoute
   '/savings': typeof AppSavingsRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/accounts': typeof AppAccountsRoute
   '/calendar': typeof AppCalendarRoute
   '/contacts': typeof AppContactsRoute
+  '/incomes': typeof AppIncomesRoute
   '/overview': typeof AppOverviewRoute
   '/recurring': typeof AppRecurringRoute
   '/savings': typeof AppSavingsRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/_app/accounts': typeof AppAccountsRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/contacts': typeof AppContactsRoute
+  '/_app/incomes': typeof AppIncomesRoute
   '/_app/overview': typeof AppOverviewRoute
   '/_app/recurring': typeof AppRecurringRoute
   '/_app/savings': typeof AppSavingsRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/calendar'
     | '/contacts'
+    | '/incomes'
     | '/overview'
     | '/recurring'
     | '/savings'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/calendar'
     | '/contacts'
+    | '/incomes'
     | '/overview'
     | '/recurring'
     | '/savings'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/_app/accounts'
     | '/_app/calendar'
     | '/_app/contacts'
+    | '/_app/incomes'
     | '/_app/overview'
     | '/_app/recurring'
     | '/_app/savings'
@@ -388,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContactsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/incomes': {
+      id: '/_app/incomes'
+      path: '/incomes'
+      fullPath: '/incomes'
+      preLoaderRoute: typeof AppIncomesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/overview': {
       id: '/_app/overview'
       path: '/overview'
@@ -479,6 +498,7 @@ interface AppRouteChildren {
   AppAccountsRoute: typeof AppAccountsRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppContactsRoute: typeof AppContactsRoute
+  AppIncomesRoute: typeof AppIncomesRoute
   AppOverviewRoute: typeof AppOverviewRoute
   AppRecurringRoute: typeof AppRecurringRoute
   AppSavingsRoute: typeof AppSavingsRoute
@@ -497,6 +517,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccountsRoute: AppAccountsRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppContactsRoute: AppContactsRoute,
+  AppIncomesRoute: AppIncomesRoute,
   AppOverviewRoute: AppOverviewRoute,
   AppRecurringRoute: AppRecurringRoute,
   AppSavingsRoute: AppSavingsRoute,
