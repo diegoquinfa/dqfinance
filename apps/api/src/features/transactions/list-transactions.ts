@@ -1,5 +1,5 @@
-import { and, desc, eq, or } from 'drizzle-orm'
-import { alias } from 'drizzle-orm/sqlite-core'
+import { and, desc, eq, or, sql } from 'drizzle-orm'
+import { alias, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { isoDate } from '../../shared/dates'
@@ -8,7 +8,7 @@ import { fromCents } from '../../shared/money'
 import { bank, bankAccount, card, cashWallet, product } from '../accounts/account.schema'
 import { cardProduct } from '../accounts/card-currency'
 import { SOURCE_TYPES, sourceRefOf } from '../accounts/source'
-import { category } from '../categories/category.schema'
+import { SYSTEM_CATEGORY_KEYS, category } from '../categories/category.schema'
 import { categoryName } from '../categories/system-categories'
 import { counterparty } from '../counterparties/counterparty.schema'
 import { requireSettings } from '../settings/get-settings'
@@ -42,14 +42,26 @@ const sourceBank = alias(bank, 'source_bank')
 const cardAccount = alias(bankAccount, 'card_account')
 const cardBank = alias(bank, 'card_bank')
 
+// A system category stores no name, so the search reads the name the list shows: its translation.
+const searchableCategoryName = (locale: Locale) => {
+  const systemNames = sql.join(
+    SYSTEM_CATEGORY_KEYS.map((key) => sql`when ${key} then ${categoryName({ name: null, systemKey: key }, locale)}`),
+    sql` `,
+  )
+  return sql`coalesce(${category.name}, case ${category.systemKey} ${systemNames} end)`
+}
+
 /**
  * The WHERE of a movement query. The query must left-join `card` on `transaction.cardId`.
  * The days are the user's: `timeZone` turns them into instants. It defaults to UTC, the calendar's own way.
+ * The search reads the category name as shown, so it needs the locale; without one only a stored name
+ * matches, which is all the callers that never search need.
  */
 export function transactionFilters(
   userId: string,
   input: Omit<z.infer<typeof listTransactionsInput>, 'limit'>,
   timeZone = 'UTC',
+  locale?: Locale,
 ) {
   const bySource =
     input.sourceType && input.sourceId
@@ -69,7 +81,8 @@ export function transactionFilters(
     searchFilter(searchTerms(input.q ?? ''), {
       title: transaction.title,
       description: transaction.description,
-      category: category.name,
+      // `like` only needs SQL, but the field is typed as a column.
+      category: (locale ? searchableCategoryName(locale) : category.name) as unknown as AnySQLiteColumn,
     }),
   )
 }
@@ -103,7 +116,7 @@ export async function listTransactions(db: Db, userId: string, locale: Locale, i
     .leftJoin(sourceBank, eq(sourceBank.id, sourceAccount.bankId))
     .leftJoin(cardAccount, eq(cardAccount.id, cardProduct.bankAccountId))
     .leftJoin(cardBank, eq(cardBank.id, cardAccount.bankId))
-    .where(transactionFilters(userId, input, timezone))
+    .where(transactionFilters(userId, input, timezone, locale))
     .orderBy(desc(transaction.occurredAt))
     .limit(input.limit ?? 50)
 
