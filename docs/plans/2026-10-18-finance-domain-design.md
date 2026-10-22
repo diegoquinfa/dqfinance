@@ -103,7 +103,7 @@ difference        = sent_amount − released_basis
 
 - `difference > 0` → expense in `fx_loss`; `difference < 0` → income in `fx_gain`; `0` → nothing.
 - The transfer stores `cost_basis_cents = released_basis`. The transfer, its fee, and its FX entry are written in one `db.batch` (atomic on D1).
-- Known limit: paying from a source whose currency differs from the card's currency books no FX difference. An adjustment on foreign debt scales the cost basis at the average rate of the debt already outstanding, so the rate does not shift; with no debt in that currency there is no rate, and the units stay in their own currency, out of the card total.
+- Known limit: paying from a source whose currency differs from the card's currency books no FX difference. An adjustment on foreign debt scales the cost basis at the average rate of the debt already outstanding **at the adjustment's own instant**, so a later charge never re-values it; with no debt in that currency at that instant there is no rate, and the units stay in their own currency, out of the card total.
 
 ## Transfer types (D8)
 
