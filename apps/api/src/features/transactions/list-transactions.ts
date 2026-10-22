@@ -11,7 +11,16 @@ import { SOURCE_TYPES, sourceRefOf } from '../accounts/source'
 import { category } from '../categories/category.schema'
 import { categoryName } from '../categories/system-categories'
 import { counterparty } from '../counterparties/counterparty.schema'
+import { searchFilter } from './search-filter'
+import { searchTerms } from './search-terms'
 import { TRANSACTION_TYPES, transaction } from './transaction.schema'
+
+/** The words to look for in a movement. */
+export const searchQuery = z
+  .string()
+  .trim()
+  .max(200)
+  .describe('Words to look for in the title, the description and the category; every word must appear')
 
 export const listTransactionsInput = z.object({
   type: z.enum(TRANSACTION_TYPES).optional(),
@@ -21,6 +30,7 @@ export const listTransactionsInput = z.object({
   counterpartyId: z.string().optional(),
   from: isoDate.optional().describe('Inclusive start date, YYYY-MM-DD (UTC)'),
   to: isoDate.optional().describe('Exclusive end date, YYYY-MM-DD (UTC)'),
+  q: searchQuery.optional(),
   limit: z.number().int().min(1).max(200).optional().describe('Defaults to 50'),
 })
 
@@ -48,6 +58,11 @@ export function transactionFilters(userId: string, input: Omit<z.infer<typeof li
     input.counterpartyId ? eq(transaction.counterpartyId, input.counterpartyId) : undefined,
     input.from ? gte(transaction.occurredAt, new Date(input.from)) : undefined,
     input.to ? lt(transaction.occurredAt, new Date(input.to)) : undefined,
+    searchFilter(searchTerms(input.q ?? ''), {
+      title: transaction.title,
+      description: transaction.description,
+      category: category.name,
+    }),
   )
 }
 
