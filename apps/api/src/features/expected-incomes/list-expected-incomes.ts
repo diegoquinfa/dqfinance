@@ -4,6 +4,7 @@ import { todayIn } from '../../shared/dates'
 import { fromCents } from '../../shared/money'
 import { requireSettings } from '../settings/get-settings'
 import { expectedIncome } from './expected-income.schema'
+import type { IncomeFrequency } from './income-frequency'
 import { nextIncomeDate } from './next-income-date'
 
 /** What an expected income looks like to the web and to an agent. */
@@ -11,7 +12,7 @@ export type ExpectedIncomeView = {
   id: string
   name: string
   currency: string
-  frequency: string
+  frequency: IncomeFrequency
   /** When the next one arrives. */
   nextOn: string
   amount: number
