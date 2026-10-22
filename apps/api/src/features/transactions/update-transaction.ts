@@ -12,6 +12,14 @@ export const updateTransactionInput = createTransactionInput.partial().extend({
   counterpartyId: z.string().min(1).nullable().optional().describe('From list_contacts; null removes it'),
   title: z.string().trim().max(TITLE_MAX).nullable().optional().describe('null removes the title'),
   description: z.string().trim().max(DESCRIPTION_MAX).nullable().optional().describe('null removes the description'),
+  installmentMonths: z
+    .number()
+    .int()
+    .min(2)
+    .max(24)
+    .nullable()
+    .optional()
+    .describe('null puts the expense back in one go'),
 })
 
 /** The MCP tool has no path to take the id from, so it carries it in the input. */
@@ -48,6 +56,7 @@ export async function updateTransaction(db: Db, userId: string, id: string, inpu
       counterpartyId: existing.counterpartyId ?? undefined,
       title: existing.title ?? undefined,
       description: existing.description ?? undefined,
+      installmentMonths: existing.installmentMonths ?? undefined,
       occurredAt: existing.occurredAt.toISOString(),
     },
     input,

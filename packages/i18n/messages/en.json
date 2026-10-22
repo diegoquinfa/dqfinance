@@ -295,6 +295,7 @@
   "spending_bills": "Fixed bills still due",
   "spending_set_aside": "Set aside",
   "spending_set_aside_hint": "A twelfth of every yearly bill, and your goals",
+  "spending_installments": "Still to be paid in the coming months",
   "spending_capped": "Your monthly target holds it down",
   "spending_over": "You spent more than you had",
   "spending_set_target": "Set the target",

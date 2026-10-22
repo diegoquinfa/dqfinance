@@ -34,6 +34,13 @@ export const createTransactionInput = z.object({
     .max(DESCRIPTION_MAX)
     .optional()
     .describe('Longer details about the movement'),
+  installmentMonths: z
+    .number()
+    .int()
+    .min(2)
+    .max(24)
+    .optional()
+    .describe('Spread the expense over this many months for the budget; the movement keeps its date and amount'),
   occurredAt: isoDateTime.optional().describe('ISO 8601 datetime; defaults to now'),
 })
 
@@ -92,6 +99,7 @@ export async function transactionValues(db: Db, userId: string, input: CreateTra
     counterpartyId: input.counterpartyId ?? null,
     title: input.title || null,
     description: input.description || null,
+    installmentMonths: input.installmentMonths ?? null,
     occurredAt: input.occurredAt ? new Date(input.occurredAt) : new Date(),
   }
 }
@@ -114,5 +122,6 @@ export const toTransactionView = (row: typeof transaction.$inferSelect) => ({
   counterpartyId: row.counterpartyId,
   title: row.title,
   description: row.description,
+  installmentMonths: row.installmentMonths,
   occurredAt: row.occurredAt.toISOString(),
 })

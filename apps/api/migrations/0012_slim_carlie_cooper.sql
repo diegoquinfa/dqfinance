@@ -1,0 +1,1 @@
+ALTER TABLE `transaction` ADD `installment_months` integer;

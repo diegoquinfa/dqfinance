@@ -132,6 +132,12 @@ export function SafeToSpendCard() {
             <dd className="text-soft tabular-nums">{formatMoney(data.expectedIncome, data.currency)}</dd>
           </div>
         )}
+        {data.futureInstallments > 0 && (
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="label-mono text-muted-foreground">{m.spending_installments()}</dt>
+            <dd className="text-soft tabular-nums">{formatMoney(data.futureInstallments, data.currency)}</dd>
+          </div>
+        )}
         {data.setAsides > 0 && (
           <div className="flex items-baseline justify-between gap-4">
             <dt className="label-mono text-muted-foreground">{m.spending_set_aside()}</dt>
