@@ -85,8 +85,10 @@ export async function importTransactions(
   locale: Locale,
   input: ImportTransactionsInput,
 ): Promise<ImportView> {
-  const source = await resolveSource(db, userId, input.source)
-  const { timezone } = await requireSettings(db, userId)
+  const [source, { timezone }] = await Promise.all([
+    resolveSource(db, userId, input.source),
+    requireSettings(db, userId),
+  ])
   const rows: ParsedRow[] = input.rows.map((row) => ({
     type: row.type,
     amount: row.amount,
