@@ -186,8 +186,9 @@ Still open, deliberately:
 ## Gotchas (do not rediscover)
 
 - **A user's day is an instant.** `startOfDayIn` / `dayRangeIn` translate a calendar day with
-  `user_settings.timezone`; a date-only import row is stored at that instant. The one hole is a zone whose
-  spring-forward is at 00:00 (Havana, Santiago, Azores).
+  `user_settings.timezone`; a date-only import row is stored at that instant. The helper returns the earliest
+  instant that reads as the requested day, so a zone that springs forward at 00:00 (Havana, Santiago, Azores)
+  is covered; it is verified across every zone-day of 2024–2028.
 - **Duplicate evidence must be positive.** Same type, amount and user day, plus a title or a description both
   carry. Unknown rows are imported and flagged; a statement without titles re-imports its rows on purpose.
 - **`move-guest-data` owns the table list** (20 tables) and its test scans `features/**/*.schema.ts` for `user_id`,
