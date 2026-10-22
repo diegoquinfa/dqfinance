@@ -5,7 +5,8 @@ import { fromCents } from '../../shared/money'
 import { shiftDay } from '../calendar/calendar-days'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { requireSettings } from '../settings/get-settings'
-import { deliverWebhook } from './deliver-webhook'
+import { isAnnounced } from './announcement-rule'
+import { billDeliveryId, deliverWebhook } from './deliver-webhook'
 import { webhook } from './webhook.schema'
 
 export type DueCheck = {
@@ -18,8 +19,10 @@ export type DueCheck = {
 }
 
 /**
- * Announces the bills that fall due inside the lead time the user set. A bill is announced once:
- * the due date it was announced for is kept, so the check does not call the hooks again.
+ * Announces the bills that fall due inside the lead time the user set. A bill is announced once a
+ * hook received it: the due date it was announced for is kept, so the check does not call the hooks
+ * again. With no active hook, or with every call failed, nothing is kept and the next check calls
+ * again, so a lost call does not lose the reminder.
  */
 export async function checkDueBills(db: Db, userId: string): Promise<DueCheck> {
   const settings = await requireSettings(db, userId)
@@ -60,17 +63,21 @@ export async function checkDueBills(db: Db, userId: string): Promise<DueCheck> {
         dueOn: bill.nextDueOn,
       },
     }
+    let received = 0
     for (const hook of hooks) {
-      const result = await deliverWebhook(hook, 'bill.due', payload)
-      if (result.delivered) delivered++
-      else failures.push(`${hook.url}: ${result.error ?? 'the call failed'}`)
+      const result = await deliverWebhook(hook, 'bill.due', payload, billDeliveryId(bill.id, bill.nextDueOn))
+      if (result.delivered) {
+        delivered++
+        received++
+      } else failures.push(`${hook.url}: ${result.error ?? 'the call failed'}`)
     }
-    // The bill was announced, whether the calls reached their endpoints or not: the app does not
-    // call the hooks again for the same due date.
+    // Only a bill some hook received is announced: with no hook, or with every call failed, the due
+    // date stays open and the next check calls the hooks again.
+    if (!isAnnounced(received)) continue
     await db
       .update(recurringExpense)
       .set({ notifiedOn: bill.nextDueOn })
-      .where(eq(recurringExpense.id, bill.id))
+      .where(and(eq(recurringExpense.id, bill.id), eq(recurringExpense.userId, userId)))
   }
   return { bills: bills.length, delivered, failures }
 }
