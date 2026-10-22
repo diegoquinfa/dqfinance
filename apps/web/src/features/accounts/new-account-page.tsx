@@ -135,7 +135,7 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
 
       const opening = Number(form.get('openingBalance') ?? 0)
       if (opening !== 0) {
-        await adjust.mutateAsync({ source: { type: 'product', id: product.id }, observedBalance: opening })
+        await adjust.mutateAsync({ source: { type: 'product', id: product.id }, observedBalance: opening, expectedBalance: 0 })
         created.push(m.toast_balance_adjusted())
       }
 

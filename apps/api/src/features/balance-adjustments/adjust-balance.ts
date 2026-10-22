@@ -16,6 +16,14 @@ export const adjustBalanceInput = z.object({
     .multipleOf(0.01)
     .describe('Real balance now (decimal, not cents); for a credit card the debt owed in `currency` (positive)'),
   currency: currencyCode.optional().describe("Credit cards only: which debt currency (defaults to the card's)"),
+  // The balance the user saw. When the balance moved since, the adjustment is refused: two of them
+  // must not both apply the same difference.
+  expectedBalance: z
+    .number()
+    .max(1e12)
+    .multipleOf(0.01)
+    .optional()
+    .describe('The balance the user saw (decimal, not cents); the adjustment is refused when it moved'),
   note: z.string().trim().max(200).optional(),
   adjustedAt: isoDateTime.optional(),
 })
@@ -28,6 +36,11 @@ export async function adjustBalance(db: Db, userId: string, input: z.infer<typeo
   const currency = source.cardKind === 'credit' ? (input.currency ?? source.currency) : source.currency
 
   const current = currentBalanceOf(await getBalances(db, userId), source.ref, currency)
+  // The balance the user saw is the one the adjustment was made against. When it has moved, the
+  // difference would be wrong, so the adjustment waits for the user to see the new balance.
+  if (input.expectedBalance !== undefined && toCents(input.expectedBalance) !== current) {
+    throw new AppError('balance_changed', 409)
+  }
   const observed = toCents(input.observedBalance)
   const delta = observed - current
   if (delta === 0) return { delta: 0, balance: fromCents(observed) }

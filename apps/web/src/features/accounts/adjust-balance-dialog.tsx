@@ -48,6 +48,10 @@ export function AdjustBalanceDialog({
               {
                 source,
                 observedBalance: Number(form.get('observedBalance')),
+                // The balance this dialog showed. A card's debt in another currency is not the one
+                // on screen, so the guard only applies to the currency the user actually sees.
+                expectedBalance:
+                  source.type === 'card' && selected !== currency ? undefined : currentBalance,
                 currency: currencies.length > 1 ? selected : undefined,
                 note: String(form.get('note')) || undefined,
               },

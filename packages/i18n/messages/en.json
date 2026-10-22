@@ -31,6 +31,7 @@
   "error_expected_income_not_found": "That expected income doesn't exist.",
   "error_webhook_not_found": "That webhook doesn't exist.",
   "error_recurring_already_confirmed": "That recurring expense is already confirmed.",
+  "error_balance_changed": "The balance moved while you were writing. Check it and try again.",
   "error_push_not_configured": "Push notifications aren't set up on this server.",
   "error_push_subscription_owned": "That browser is already registered to another account.",
   "error_document_not_found": "That document doesn't exist.",
