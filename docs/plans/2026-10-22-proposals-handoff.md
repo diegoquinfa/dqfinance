@@ -176,10 +176,13 @@ have meant a migration plus every write path. Both statements are tested against
 `node:sqlite`, so the SQL itself is exercised, not only a pure function around it.
 
 Gate after the two batches: **280 API tests over 50 files, 29 web, 5 scripts, `tsc` clean on both apps, i18n
-708/708**, and the build is green package by package (`i18n` build, web `check-types` with `tsr generate`, `vite
-build` in 4.71 s). `turbo` itself cannot run here: it spawns `pnpm.cmd` for each package and that child is denied
-the store lock, so the root command fails before doing any work. Run the package scripts, or the root command on a
-machine without that lock problem.
+708/708**, and `pnpm check-types && pnpm test && pnpm build` from the root passes.
+
+The root scripts run each package sequentially on purpose: `turbo` invokes `pnpm.cmd` for every task and that
+child is denied pnpm's version-manager store lock (`ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK`,
+`%LOCALAPPDATA%\pnpm-store-operation-locks\all-stores.lock`), while the same command run from a shell works. It is
+not the sandbox (it reproduces with full access), not `--env-mode`, and not concurrency; it is turbo's spawn
+context. `pnpm build:turbo` and `pnpm dev:turbo` keep the caching path for a machine where it works.
 
 Still open:
 
