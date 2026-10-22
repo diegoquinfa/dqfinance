@@ -361,7 +361,7 @@
   "budgets_delete_hint": "The limit is removed. The movements stay.",
   "nav_budgets": "Budgets",
   "webhooks_title": "Webhooks",
-  "webhooks_hint": "The app calls your URL when a bill falls due. Every call is signed with your secret.",
+  "webhooks_hint": "The app calls your URL when a bill falls due, within the days before it you set below. Every call is signed with your secret; with zero days it never calls.",
   "webhooks_url": "URL",
   "webhooks_secret": "Secret",
   "webhooks_secret_hint": "At least 8 characters. The app signs every call with it and never shows it again.",
