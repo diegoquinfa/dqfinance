@@ -5,6 +5,7 @@ import { createTransaction, createTransactionInput } from './create-transaction'
 import { deleteTransaction, deleteTransactionInput } from './delete-transaction'
 import { importTransactions, importTransactionsInput } from './import-transactions'
 import { listTransactions, listTransactionsInput } from './list-transactions'
+import { searchTransactions, searchTransactionsInput } from './search-transactions'
 import { summarizeTransactions, summarizeTransactionsInput } from './summarize-transactions'
 import { updateTransaction, updateTransactionToolInput } from './update-transaction'
 
@@ -36,11 +37,22 @@ export const transactionTools = [
 
   toolDefinition({
     name: 'list_transactions',
-    description: "List the user's income and expenses, newest first, with optional filters.",
+    description:
+      "List the user's income and expenses, newest first, with optional filters. q searches the title, the description and the category.",
     inputSchema: listTransactionsInput,
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (input, ctx) => ({
     transactions: await listTransactions(ctx.context.db, ctx.context.userId, ctx.context.locale, input),
+  })),
+
+  toolDefinition({
+    name: 'search_transactions',
+    description:
+      "Find the user's movements by what they were: the title, the description or the category. Every word of the query must appear. Returns one line per movement, newest first; use list_transactions for the detail of one.",
+    inputSchema: searchTransactionsInput,
+    metadata: { annotations: { readOnlyHint: true } },
+  }).server<McpContext>(async (input, ctx) => ({
+    results: await searchTransactions(ctx.context.db, ctx.context.userId, ctx.context.locale, input),
   })),
 
   toolDefinition({

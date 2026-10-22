@@ -8,6 +8,8 @@ const transactionsSearch = z.object({
   source: z.string().optional().catch(''),
   from: z.string().optional().catch(''),
   to: z.string().optional().catch(''),
+  // The words to look for in the title, the description and the category.
+  q: z.string().optional().catch(''),
   // A contact's page links here to see the movements it does not show.
   counterpartyId: z.string().optional().catch(''),
 })

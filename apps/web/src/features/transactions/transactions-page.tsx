@@ -1,5 +1,6 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { useSources, type SourceOption } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { formatDay, isoToDay } from '#/shared/dates'
@@ -116,6 +117,26 @@ export function TransactionsPage() {
   const setFilters = (patch: Partial<typeof search>) =>
     void navigate({ to: '/transactions', search: (previous) => ({ ...previous, ...patch }), replace: true })
 
+  // The words live in the URL, like the other filters, and the field follows it.
+  const q = search.q ?? ''
+  const [query, setQuery] = useState(q)
+  const pushed = useRef(q)
+  useEffect(() => {
+    // The URL moved on its own (a back navigation): the field follows it.
+    if (q === pushed.current) return
+    pushed.current = q
+    setQuery(q)
+  }, [q])
+  useEffect(() => {
+    if (query === q) return
+    // The words go to the URL as they are typed, but not on every keystroke.
+    const timer = setTimeout(() => {
+      pushed.current = query
+      setFilters({ q: query || undefined })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [query, q])
+
   const transactions = useTransactions({
     limit: 100,
     type: type === 'all' ? undefined : type,
@@ -124,6 +145,7 @@ export function TransactionsPage() {
     from: filters.from || undefined,
     to: filters.to || undefined,
     counterpartyId: counterpartyId || undefined,
+    q: q || undefined,
   })
 
   // On mobile the sheet hides the values, so each active filter shows as a chip that clears it.
@@ -131,6 +153,7 @@ export function TransactionsPage() {
     selected && { label: `${selected.group} · ${selected.label}`, clear: { source: '' } },
     filters.from && { label: `${m.label_date_from()} ${formatDay(filters.from)}`, clear: { from: '' } },
     filters.to && { label: `${m.label_date_to()} ${formatDay(filters.to)}`, clear: { to: '' } },
+    q && { label: `${m.transactions_search()} ${q}`, clear: { q: '' } },
   ].filter((chip) => !!chip)
 
   return (
@@ -158,6 +181,26 @@ export function TransactionsPage() {
       />
 
       <section aria-label={m.transactions_filters()} className="grid gap-3 pb-8 lg:grid-cols-4 lg:items-end lg:gap-4">
+        <div className="lg:col-span-4">
+          <Field>
+            <FieldLabel htmlFor="transactions-search">{m.transactions_search()}</FieldLabel>
+            <div className="relative">
+              <Search
+                aria-hidden
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                id="transactions-search"
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={m.transactions_search_placeholder()}
+                className="pl-9"
+              />
+            </div>
+          </Field>
+        </div>
+
         <ToggleGroup
           type="single"
           className="w-full"
@@ -199,8 +242,10 @@ export function TransactionsPage() {
       ) : transactions.data.length === 0 ? (
         <Empty>
           <EmptyHeader>
-            <EmptyTitle>{m.transactions_empty()}</EmptyTitle>
-            <EmptyDescription>{m.transactions_empty_description()}</EmptyDescription>
+            <EmptyTitle>{q ? m.transactions_search_empty() : m.transactions_empty()}</EmptyTitle>
+            <EmptyDescription>
+              {q ? m.transactions_search_empty_description() : m.transactions_empty_description()}
+            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (

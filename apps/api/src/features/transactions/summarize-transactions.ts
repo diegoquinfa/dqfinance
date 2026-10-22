@@ -3,6 +3,7 @@ import type { Db } from '../../db'
 import { fromCents } from '../../shared/money'
 import { card } from '../accounts/account.schema'
 import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
+import { category } from '../categories/category.schema'
 import { listTransactionsInput, transactionFilters } from './list-transactions'
 import { transaction } from './transaction.schema'
 
@@ -23,6 +24,8 @@ export async function summarizeTransactions(db: Db, userId: string, input: typeo
     .from(transaction)
     .leftJoin(card, eq(card.id, transaction.cardId))
     .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
+    // The search matches the category name, so the summary needs it too.
+    .leftJoin(category, eq(category.id, transaction.categoryId))
     .where(transactionFilters(userId, input))
     .groupBy(transaction.type, currency)
 
