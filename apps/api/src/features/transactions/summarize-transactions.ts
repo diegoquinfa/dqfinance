@@ -4,6 +4,7 @@ import { fromCents } from '../../shared/money'
 import { card } from '../accounts/account.schema'
 import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
 import { category } from '../categories/category.schema'
+import { requireSettings } from '../settings/get-settings'
 import { listTransactionsInput, transactionFilters } from './list-transactions'
 import { transaction } from './transaction.schema'
 
@@ -15,6 +16,7 @@ export const summarizeTransactionsInput = listTransactionsInput.omit({ limit: tr
  */
 export async function summarizeTransactions(db: Db, userId: string, input: typeof summarizeTransactionsInput._output) {
   const currency = movementCurrency
+  const { timezone } = await requireSettings(db, userId)
   const rows = await db
     .select({
       type: transaction.type,
@@ -26,7 +28,7 @@ export async function summarizeTransactions(db: Db, userId: string, input: typeo
     .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
     // The search matches the category name, so the summary needs it too.
     .leftJoin(category, eq(category.id, transaction.categoryId))
-    .where(transactionFilters(userId, input))
+    .where(transactionFilters(userId, input, timezone))
     .groupBy(transaction.type, currency)
 
   return rows.map((row) => ({ type: row.type, currency: row.currency, amount: fromCents(Number(row.cents)) }))
