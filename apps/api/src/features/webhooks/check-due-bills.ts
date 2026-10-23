@@ -1,4 +1,4 @@
-import { and, eq, gte, isNull, lt, lte, or } from 'drizzle-orm'
+import { and, eq, isNull, lt, lte, or } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
 import { fromCents } from '../../shared/money'
@@ -20,12 +20,13 @@ export type DueCheck = {
 }
 
 /**
- * Announces the bills that fall due inside the lead time the user set. A bill is announced only once
- * every active hook received it: then the due date it was announced for is kept, so the check does
- * not call the hooks again. With no active hook, or with any call failed, nothing is kept and the
- * next check calls every hook again, so a lost call does not lose the reminder. Retrying repeats
- * the delivery of the hooks that did succeed; the delivery id is the same, so a receiver that dedups
- * drops the repeat.
+ * Announces the bills due inside the lead time the user set, and the overdue ones too: a bill that
+ * fell due while the app was closed, or while every call failed, is still unannounced, so the next
+ * check announces it. A bill is announced only once every active hook received it: then the due
+ * date it was announced for is kept, so the check does not call the hooks again. With no active
+ * hook, or with any call failed, nothing is kept and the next check calls every hook again, so a
+ * lost call does not lose the reminder. Retrying repeats the delivery of the hooks that did succeed;
+ * the delivery id is the same, so a receiver that dedups drops the repeat.
  */
 export async function checkDueBills(db: Db, userId: string): Promise<DueCheck> {
   await refuseGuest(db, userId)
@@ -42,7 +43,6 @@ export async function checkDueBills(db: Db, userId: string): Promise<DueCheck> {
       and(
         eq(recurringExpense.userId, userId),
         eq(recurringExpense.active, true),
-        gte(recurringExpense.nextDueOn, today),
         lte(recurringExpense.nextDueOn, until),
         or(
           isNull(recurringExpense.notifiedOn),
