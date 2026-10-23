@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { authClient } from '#/features/auth/auth-client'
 import { m } from '#/shared/i18n'
 import {
   AlertDialog,
@@ -146,15 +147,20 @@ function WebhookRow({ hook }: { hook: Webhook }) {
 /** The places the app calls, and how early it warns before a bill falls due. */
 export function WebhooksBlock() {
   const webhooks = useWebhooks()
+  // A guest may not set up a webhook: the add action is hidden, and the API refuses it as well.
+  const { data: session } = authClient.useSession()
+  const isGuest = Boolean(session?.user.isAnonymous)
 
   return (
     <Section
       index="06"
       label={m.webhooks_title()}
       action={
-        <DialogPanel trigger={<Button variant="link">{m.webhooks_add()}</Button>} title={m.webhooks_add()}>
-          {(close) => <NewWebhookForm close={close} />}
-        </DialogPanel>
+        isGuest ? undefined : (
+          <DialogPanel trigger={<Button variant="link">{m.webhooks_add()}</Button>} title={m.webhooks_add()}>
+            {(close) => <NewWebhookForm close={close} />}
+          </DialogPanel>
+        )
       }
     >
       <div className="grid gap-8">
