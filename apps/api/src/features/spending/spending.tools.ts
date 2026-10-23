@@ -16,7 +16,7 @@ export const spendingTools = [
   toolDefinition({
     name: 'forecast',
     description:
-      "The projected balance of each day until the end of the month, and the day it is lowest: what the user has now, plus the bills that fall due and the incomes the user expects.",
+      "The projected balance of each day until the end of the month, and the day it is lowest: what the user has now, plus the bills that fall due and the incomes the user expects, minus this month's average daily spending from tomorrow on.",
     inputSchema: z.object({}),
     metadata: { annotations: { readOnlyHint: true } },
   }).server<McpContext>(async (_input, ctx) => getForecast(ctx.context.db, ctx.context.userId)),

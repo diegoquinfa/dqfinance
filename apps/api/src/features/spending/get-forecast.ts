@@ -1,7 +1,10 @@
-import { and, eq, lte } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, isNull, lt, lte, sql } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
+import { startOfDayIn } from '../../shared/day-range.ts'
 import { fromCents, toCents } from '../../shared/money'
+import { card } from '../accounts/account.schema'
+import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
 import { assetsAndLiabilities } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
 import { shiftDay } from '../calendar/calendar-days.ts'
@@ -9,13 +12,16 @@ import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
 import { incomeDatesIn } from '../expected-incomes/next-income-date.ts'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { requireSettings } from '../settings/get-settings'
+import { transaction } from '../transactions/transaction.schema'
 import { billOccurrences } from './bill-occurrences.ts'
-import { projectBalances, type ForecastDay } from './forecast'
+import { dailyPaceCents, projectBalances, type ForecastDay } from './forecast'
+import { monthSpentCents } from './safe-to-spend'
 import { monthPeriod } from './spending-period'
 
 /**
- * The balance of each day until the end of the month, and the day it is lowest. Only what is known
- * moves the line: the recurring expenses and the incomes the user expects.
+ * The balance of each day until the end of the month, and the day it is lowest. What is known moves
+ * the line: the recurring expenses and the incomes the user expects. What is not known is the
+ * user's pace: this month's spending so far, divided by the days elapsed, spent each day after today.
  */
 export async function getForecast(db: Db, userId: string) {
   const settings = await requireSettings(db, userId)
@@ -27,7 +33,52 @@ export async function getForecast(db: Db, userId: string) {
   const totals = assetsAndLiabilities(balances).find((total) => total.currency === currency)
   const startCents = (totals?.assetsCents ?? 0) - (totals?.liabilitiesCents ?? 0)
 
-  // What each day of the period brings and takes.
+  // The pace is read on every request, summed by the database: a stored average would need a refresh
+  // on every write path, while this is one indexed sum. A fixed bill is projected on its own dates,
+  // so its movements are left out; a spread expense counts its share of this month, so only those
+  // rows are loaded.
+  const daysElapsed = Number(today.slice(8))
+  const monthStart = `${today.slice(0, 8)}01`
+  const tomorrowStart = startOfDayIn(settings.timezone, shiftDay(today, 1))
+  const ordinary = await db
+    .select({ cents: sql<number>`coalesce(sum(${movementAmount}), 0)` })
+    .from(transaction)
+    .leftJoin(card, eq(card.id, transaction.cardId))
+    .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
+    .where(
+      and(
+        eq(transaction.userId, userId),
+        eq(transaction.type, 'expense'),
+        eq(movementCurrency, currency),
+        isNull(transaction.recurringExpenseId),
+        isNull(transaction.installmentMonths),
+        gte(transaction.occurredAt, startOfDayIn(settings.timezone, monthStart)),
+        lt(transaction.occurredAt, tomorrowStart),
+      ),
+    )
+  const spread = await db
+    .select({
+      amountCents: movementAmount,
+      months: transaction.installmentMonths,
+      occurredAt: transaction.occurredAt,
+    })
+    .from(transaction)
+    .leftJoin(card, eq(card.id, transaction.cardId))
+    .leftJoin(cardProduct, eq(cardProduct.id, card.productId))
+    .where(
+      and(
+        eq(transaction.userId, userId),
+        eq(transaction.type, 'expense'),
+        eq(movementCurrency, currency),
+        isNull(transaction.recurringExpenseId),
+        isNotNull(transaction.installmentMonths),
+        lt(transaction.occurredAt, tomorrowStart),
+      ),
+    )
+  const currentMonth = today.slice(0, 7)
+  const spentCents = Number(ordinary[0]?.cents ?? 0) + monthSpentCents(spread, settings.timezone, currentMonth)
+  const dailyAverageCents = dailyPaceCents(spentCents, daysElapsed)
+
   const expenseByDay = new Map<string, number>()
   const incomeByDay = new Map<string, number>()
   const add = (map: Map<string, number>, day: string, cents: number) =>
@@ -72,11 +123,13 @@ export async function getForecast(db: Db, userId: string) {
     })
   }
 
-  const { points, lowest } = projectBalances(startCents, days)
+  const { points, lowest } = projectBalances(startCents, days, { today, dailyCents: dailyAverageCents })
   return {
     currency,
     day: today,
     periodEnd: month.end,
+    dailyAverage: fromCents(dailyAverageCents),
+    daysElapsed,
     days: points.map((point) => ({ day: point.day, balance: fromCents(point.balanceCents) })),
     lowest: lowest ? { day: lowest.day, balance: fromCents(lowest.balanceCents) } : null,
   }
