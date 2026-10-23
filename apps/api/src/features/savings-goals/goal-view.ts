@@ -17,11 +17,22 @@ export type GoalView = {
   monthsLeft: number | null
   /** What the goal sets aside every month. */
   monthly: number
+  /** Whether what the user put in has reached the target. */
+  reached: boolean
+  /** Whether the web has already celebrated the goal being reached. */
+  celebrated: boolean
 }
 
 /** The goal with what it holds today and what it asks for every month. */
 export const goalView = (
-  goal: { id: string; name: string; currency: string; targetDate: string | null; targetCents: number },
+  goal: {
+    id: string
+    name: string
+    currency: string
+    targetDate: string | null
+    targetCents: number
+    celebratedAt: Date | null
+  },
   contributedCents: number,
   today: string,
 ): GoalView => {
@@ -40,5 +51,7 @@ export const goalView = (
     ratio: progress.ratio,
     monthsLeft: progress.monthsLeft,
     monthly: fromCents(progress.monthlyCents),
+    reached: contributedCents >= goal.targetCents,
+    celebrated: goal.celebratedAt !== null,
   }
 }
