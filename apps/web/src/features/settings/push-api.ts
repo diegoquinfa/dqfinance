@@ -4,7 +4,7 @@ import { api, unwrap } from '#/shared/api'
 import { m } from '#/shared/i18n'
 
 /** What a recorded expense changes. Balances are computed, so nothing is patched into the cache. */
-const FINANCE_QUERY_KEYS = ['transactions', 'balances', 'transfers', 'recurring-expenses'] as const
+const FINANCE_QUERY_KEYS = ['transactions', 'balances', 'transfers', 'recurring-expenses', 'forecast', 'safe-to-spend'] as const
 
 /** Standard base64 (what `atob` reads) to the base64url the server and Web Push speak. */
 function toBase64Url(bytes: Uint8Array): string {

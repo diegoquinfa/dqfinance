@@ -304,6 +304,8 @@
   "forecast_title": "Forecast",
   "forecast_hint": "What the balance looks like, day by day, until the end of the month.",
   "forecast_lowest": "Lowest on {day}: {amount}",
+  "forecast_pace": "At your pace this month: {amount} a day",
+  "forecast_pace_few_days": "Few days yet: the pace may change.",
   "forecast_aria": "The projected balance from {from} to {to}",
   "forecast_table_caption": "The projected balance, day by day",
   "forecast_day": "Day",

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, unwrap } from '#/shared/api'
 import { settingsQuery } from '#/features/settings/settings-api'
+import { invalidateSpending } from '#/shared/invalidate-spending'
 
 /**
  * The demo ledger. The API writes it once and does nothing after that, so this is safe to
@@ -10,6 +11,9 @@ export function useSeedDemo() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async () => await unwrap(api.api.demo.$post()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: settingsQuery.queryKey }),
+    onSuccess: () => {
+      invalidateSpending(queryClient)
+      return queryClient.invalidateQueries({ queryKey: settingsQuery.queryKey })
+    },
   })
 }
