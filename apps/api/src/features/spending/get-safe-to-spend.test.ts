@@ -73,7 +73,7 @@ test("another user's balances, bills, goals and expenses do not change the resul
   assert.deepEqual(await getSafeToSpend(db, USER_ID), before)
 })
 
-test('a savings goal holds back what it has plus this month\'s share', async () => {
+test('a savings goal holds back what it has plus what this month\'s share still lacks', async () => {
   pinClock()
   const { sqlite, d1 } = openTestDb()
   seedCardUser(sqlite)
@@ -83,17 +83,25 @@ test('a savings goal holds back what it has plus this month\'s share', async () 
   const db = createDb(d1)
   const before = await getSafeToSpend(db, USER_ID)
 
-  // A 30,000 COP car by December: 7,500 is saved, 22,500 is left, 7,500 a month for three months.
+  // A 30,000 COP car by December: 10,000 a month for three months, starting this one.
   sqlite.exec(`
     INSERT INTO savings_goal (id, user_id, name, target_cents, currency, target_date, active, created_at) VALUES ('goal-1', 'user-1', 'Car', 3000000, 'COP', '2026-12-31', 1, 1);
+  `)
+  const planned = await getSafeToSpend(db, USER_ID)
+  // 7,500 of this month's 10,000 is saved: 2,500 is still due, and the month does not ask again.
+  sqlite.exec(`
     INSERT INTO savings_contribution (id, user_id, goal_id, amount_cents, contributed_on, created_at) VALUES ('contribution-1', 'user-1', 'goal-1', 750000, '2026-10-01', 1);
   `)
-  const after = await getSafeToSpend(db, USER_ID)
+  const saved = await getSafeToSpend(db, USER_ID)
+  // Saved before this month, the 7,500 is held and the month asks for its share of the 22,500 left.
+  sqlite.exec(`UPDATE savings_contribution SET contributed_on = '2026-09-20' WHERE id = 'contribution-1'`)
+  const savedBefore = await getSafeToSpend(db, USER_ID)
 
   assert.equal(before.setAsides, 0)
-  // The reserved amount is the saved 7,500 plus the 7,500 due this month, and the free money falls by it.
-  assert.equal(after.setAsides, 15_000)
-  assert.equal(after.free, before.free - 15_000)
+  assert.equal(planned.setAsides, 10_000)
+  assert.equal(saved.setAsides, 10_000)
+  assert.equal(saved.free, before.free - 10_000)
+  assert.equal(savedBefore.setAsides, 15_000)
 })
 
 test('an overdue monthly bill is counted once in the pending bills', async () => {
