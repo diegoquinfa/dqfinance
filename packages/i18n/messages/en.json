@@ -297,7 +297,7 @@
   "spending_money": "Money in hand",
   "spending_bills": "Fixed bills still due",
   "spending_set_aside": "Set aside",
-  "spending_set_aside_hint": "A twelfth of every yearly bill, and your goals",
+  "spending_set_aside_hint": "What your yearly bills and your goals should already have put aside",
   "spending_installments": "Still to be paid in the coming months",
   "forecast_title": "Forecast",
   "forecast_hint": "What the balance looks like, day by day, until the end of the month.",

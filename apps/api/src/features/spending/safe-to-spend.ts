@@ -1,4 +1,3 @@
-import { monthlySetAside } from '../recurring-expenses/monthly-set-aside.ts'
 import { nextDueDate, type Frequency } from '../recurring-expenses/next-due-date.ts'
 import { monthOf, monthsBetween, shareInMonth } from '../transactions/installments.ts'
 
@@ -90,11 +89,29 @@ export const billsDueCents = (bills: Bill[], today: string, end: string): number
 }
 
 /**
- * What the yearly bills set aside every month. One due before the period ends is already counted
- * in full as a pending bill, so its share is not subtracted again.
+ * What the yearly bills should already have put aside by the end of this month. A bill's cycle
+ * starts twelve months before it falls due, so each month adds a twelfth: due next month, eleven
+ * twelfths are held; due in eleven months, one. A bill due before the period ends is already a
+ * pending bill in full, so it is not counted here.
  */
-export const yearlySetAsideCents = (bills: Pick<Bill, 'amountCents' | 'nextDueOn'>[], end: string): number =>
-  bills.reduce((sum, bill) => sum + (bill.nextDueOn > end ? monthlySetAside(bill.amountCents) : 0), 0)
+export const yearlySetAsideCents = (
+  bills: Pick<Bill, 'amountCents' | 'nextDueOn'>[],
+  end: string,
+  currentMonth: string,
+): number =>
+  bills.reduce((sum, bill) => {
+    if (bill.nextDueOn <= end) return sum
+    // The clamp keeps at least one twelfth, and never more than the whole bill.
+    const twelfths = Math.min(12, Math.max(1, 12 - monthsBetween(currentMonth, bill.nextDueOn.slice(0, 7))))
+    return sum + Math.floor((bill.amountCents * twelfths) / 12)
+  }, 0)
+
+/**
+ * What a savings goal holds back: what is already saved, plus this month's share of what is left.
+ * Never more than the target.
+ */
+export const goalReservationCents = (targetCents: number, contributedCents: number, monthlyCents: number): number =>
+  Math.min(targetCents, contributedCents + monthlyCents)
 
 export type MonthExpense = { amountCents: number; months: number | null; occurredAt: Date }
 

@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import { shareInMonth } from '../transactions/installments.ts'
 import {
   billsDueCents,
+  goalReservationCents,
   monthSpentCents,
   safeToSpend,
   yearlySetAsideCents,
@@ -91,11 +92,49 @@ test('an overdue bill counts once, and its occurrences from today on still count
   assert.equal(billsDueCents([due], '2026-10-10', '2026-10-31'), 90000)
 })
 
-test('a yearly bill due before the period ends is not set aside a second time', () => {
+test('a yearly bill due in eleven months holds one twelfth', () => {
+  const bill = { amountCents: 1200000, nextDueOn: '2027-09-20' }
+  assert.equal(yearlySetAsideCents([bill], '2026-10-31', '2026-10'), 100000)
+})
+
+test('a yearly bill due next month holds eleven twelfths', () => {
+  const bill = { amountCents: 1200000, nextDueOn: '2026-11-15' }
+  assert.equal(yearlySetAsideCents([bill], '2026-10-31', '2026-10'), 1100000)
+})
+
+test('a yearly bill due this month, after the period ends, holds all of it', () => {
+  const bill = { amountCents: 1200000, nextDueOn: '2026-10-28' }
+  assert.equal(yearlySetAsideCents([bill], '2026-10-25', '2026-10'), 1200000)
+})
+
+test('a yearly bill more than eleven months away still holds one twelfth', () => {
+  const bill = { amountCents: 1200000, nextDueOn: '2027-10-22' }
+  assert.equal(yearlySetAsideCents([bill], '2026-10-31', '2026-10'), 100000)
+})
+
+test('the twelfths held round down to the cent', () => {
+  // 100,001 × 11 / 12 = 91,667.58 cents: the 0.58 stays with the bill.
+  const bill = { amountCents: 100001, nextDueOn: '2026-11-15' }
+  assert.equal(yearlySetAsideCents([bill], '2026-10-31', '2026-10'), 91667)
+})
+
+test('a yearly bill due before the period ends is a pending bill, not held twice', () => {
   const due = { amountCents: 1200000, nextDueOn: '2026-10-20' }
-  assert.equal(yearlySetAsideCents([due], '2026-10-31'), 0)
-  const later = { amountCents: 1200000, nextDueOn: '2027-03-20' }
-  assert.equal(yearlySetAsideCents([later], '2026-10-31'), 100000)
+  assert.equal(yearlySetAsideCents([due], '2026-10-31', '2026-10'), 0)
+})
+
+test('a goal reserves what it holds plus the share of this month', () => {
+  // 3,000,000 target, 2,500,000 saved, 500,000 left over three months: 166,666 this month.
+  assert.equal(goalReservationCents(3000000, 2500000, 166666), 2666666)
+})
+
+test('a goal without a date reserves what it already holds', () => {
+  assert.equal(goalReservationCents(3000000, 2500000, 0), 2500000)
+})
+
+test('a goal never reserves more than its target', () => {
+  assert.equal(goalReservationCents(3000000, 2900000, 166666), 3000000)
+  assert.equal(goalReservationCents(3000000, 3500000, 0), 3000000)
 })
 
 test('a foreign card charge counts its value in the card currency', () => {

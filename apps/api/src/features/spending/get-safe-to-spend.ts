@@ -15,7 +15,13 @@ import { requireSettings } from '../settings/get-settings'
 import { transaction } from '../transactions/transaction.schema'
 import { futureShares, monthOf, monthsBetween } from '../transactions/installments'
 import { incomePeriod } from './income-period'
-import { billsDueCents, monthSpentCents, safeToSpend, yearlySetAsideCents } from './safe-to-spend'
+import {
+  billsDueCents,
+  goalReservationCents,
+  monthSpentCents,
+  safeToSpend,
+  yearlySetAsideCents,
+} from './safe-to-spend'
 import { monthPeriod } from './spending-period'
 
 /**
@@ -124,18 +130,23 @@ export async function getSafeToSpend(db: Db, userId: string) {
     )
   const spentCents = monthSpentCents(monthExpenses, settings.timezone, currentMonth)
 
-  // A yearly bill sets aside a twelfth of its amount every month, so the money is there when it
-  // comes. One due before the period ends is already a pending bill above, so its share is not
-  // subtracted again. The savings goals (proposal 6) add to this.
+  // The money already put aside stays in the accounts, so it is in the money in hand: it has to be
+  // held back in full, not just this month's share. A yearly bill holds the twelfths its cycle has
+  // earned so far; a savings goal holds what it already has, plus this month's share. One yearly
+  // bill due before the period ends is a pending bill above, so it is not held twice.
   const setAsidesCents =
     yearlySetAsideCents(
       bills.filter((bill) => bill.frequency === 'yearly'),
       period.end,
+      currentMonth,
     ) +
-    // The goals ask for their own share every month, on top of the yearly bills.
     (await listGoals(db, userId))
       .filter((goal) => goal.currency === currency)
-      .reduce((sum, goal) => sum + toCents(goal.monthly), 0)
+      .reduce(
+        (sum, goal) =>
+          sum + goalReservationCents(toCents(goal.target), toCents(goal.contributed), toCents(goal.monthly)),
+        0,
+      )
 
   const result = safeToSpend({
     // The money in hand, plus what arrives before the period ends, plus the months of a spread

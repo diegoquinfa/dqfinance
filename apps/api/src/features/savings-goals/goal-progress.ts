@@ -16,7 +16,7 @@ export const savedRatio = (targetCents: number, contributedCents: number): numbe
 
 /**
  * What a goal sets aside every month until it is reached: what is left of it, spread over the
- * months left. A goal without a date has no schedule, so it reserves nothing.
+ * months left. A goal without a date has no schedule, so it asks for nothing every month.
  */
 export const monthlySetAside = (remainingCents: number, months: number): number =>
   months <= 0 ? 0 : Math.floor(remainingCents / months)
