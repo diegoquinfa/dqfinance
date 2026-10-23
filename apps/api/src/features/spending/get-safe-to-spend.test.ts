@@ -104,6 +104,24 @@ test('a savings goal holds back what it has plus what this month\'s share still 
   assert.equal(savedBefore.setAsides, 15_000)
 })
 
+test('a savings goal that reached its target holds nothing back', async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  const db = createDb(d1)
+  const before = await getSafeToSpend(db, USER_ID)
+
+  // A 30,000 COP goal, fully saved this month: the money is in the accounts and free to spend.
+  sqlite.exec(`
+    INSERT INTO savings_goal (id, user_id, name, target_cents, currency, target_date, active, created_at) VALUES ('goal-1', 'user-1', 'Car', 3000000, 'COP', '2026-12-31', 1, 1);
+    INSERT INTO savings_contribution (id, user_id, goal_id, amount_cents, contributed_on, created_at) VALUES ('contribution-1', 'user-1', 'goal-1', 3000000, '2026-10-01', 1);
+  `)
+  const reached = await getSafeToSpend(db, USER_ID)
+
+  assert.equal(reached.setAsides, 0)
+  assert.equal(reached.free, before.free)
+})
+
 test('an overdue monthly bill is counted once in the pending bills', async () => {
   pinClock()
   const { sqlite, d1 } = openTestDb()
