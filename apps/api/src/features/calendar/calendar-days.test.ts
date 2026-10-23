@@ -41,9 +41,14 @@ test('projectDueDates keeps the start day of a monthly item, clamped', () => {
   assert.deepEqual(projectDueDates(item, '2026-02-01', '2026-04-01', '2026-01-15'), ['2026-02-28', '2026-03-31'])
 })
 
-test('projectDueDates keeps an overdue date and skips items past the range', () => {
+test('projectDueDates moves an overdue date to today and skips items past the range', () => {
   const overdue = { startsOn: '2026-10-05', nextDueOn: '2026-10-05', frequency: 'monthly' as const }
-  assert.deepEqual(projectDueDates(overdue, '2026-10-01', '2026-11-01', '2026-10-23'), ['2026-10-05'])
+  assert.deepEqual(projectDueDates(overdue, '2026-10-01', '2026-11-01', '2026-10-23'), ['2026-10-23'])
+  // A weekly one missed three times shows once today, then its next cycle.
+  const weekly = { startsOn: '2026-10-05', nextDueOn: '2026-10-05', frequency: 'weekly' as const }
+  assert.deepEqual(projectDueDates(weekly, '2026-10-01', '2026-11-01', '2026-10-23'), ['2026-10-23', '2026-10-26'])
+  // Seen from a past month, it keeps its date.
+  assert.deepEqual(projectDueDates(overdue, '2026-10-01', '2026-10-20', '2026-10-23'), ['2026-10-05'])
   const later = { startsOn: '2027-01-10', nextDueOn: '2027-01-10', frequency: 'yearly' as const }
   assert.deepEqual(projectDueDates(later, '2026-10-01', '2026-11-01', '2026-10-23'), [])
 })

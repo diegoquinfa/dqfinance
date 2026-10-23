@@ -51,8 +51,9 @@ export function groupByDay(rows: CalendarMovementRow[], timeZone: string, from: 
 
 /**
  * The due dates of a recurring expense from `from` (inclusive) to `to` (exclusive), starting at
- * its next due date. An overdue one keeps its date, since it still waits to be confirmed; when that
- * date falls before `from`, it is still owed, so it shows once, today (as the forecast counts it).
+ * its next due date. An overdue one is still owed: in a range that holds today it shows once, today,
+ * however many cycles were missed (as the forecast counts it); in a range before today it keeps its
+ * dates.
  */
 export function projectDueDates(
   item: { startsOn: string; nextDueOn: string; frequency: Frequency },
@@ -61,8 +62,9 @@ export function projectDueDates(
   today: string,
 ): string[] {
   const days: string[] = []
-  // Owed since before the range: one entry today stands for every missed cycle, so none repeats.
-  const owedToday = item.nextDueOn < from && from <= today && today < to
+  // Overdue, seen from a range that holds today: one entry today stands for every missed cycle, so
+  // none repeats, as safe to spend and the forecast count it.
+  const owedToday = item.nextDueOn < today && from <= today && today < to
   if (owedToday) days.push(today)
   for (let day = item.nextDueOn; day < to; day = nextDueDate(item.startsOn, day, item.frequency)) {
     if (day >= from && !(owedToday && day < today)) days.push(day)
