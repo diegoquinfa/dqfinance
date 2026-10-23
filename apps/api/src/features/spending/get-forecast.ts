@@ -1,4 +1,4 @@
-import { and, eq, gte, lte } from 'drizzle-orm'
+import { and, eq, lte } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
 import { fromCents, toCents } from '../../shared/money'
@@ -7,9 +7,9 @@ import { getBalances } from '../balances/get-balances'
 import { shiftDay } from '../calendar/calendar-days.ts'
 import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
 import { incomeDatesIn } from '../expected-incomes/next-income-date.ts'
-import { nextDueDate } from '../recurring-expenses/next-due-date.ts'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { requireSettings } from '../settings/get-settings'
+import { billOccurrences } from './bill-occurrences.ts'
 import { projectBalances, type ForecastDay } from './forecast'
 import { monthPeriod } from './spending-period'
 
@@ -46,19 +46,12 @@ export async function getForecast(db: Db, userId: string) {
         eq(recurringExpense.userId, userId),
         eq(recurringExpense.active, true),
         eq(recurringExpense.currency, currency),
-        gte(recurringExpense.nextDueOn, today),
         lte(recurringExpense.nextDueOn, month.end),
       ),
     )
   for (const bill of bills) {
-    // A weekly bill falls more than once in the period; each occurrence counts.
-    let day = bill.nextDueOn
-    while (day <= month.end) {
-      add(expenseByDay, day, bill.amountCents)
-      const next = nextDueDate(bill.startsOn, day, bill.frequency)
-      // A due date that does not move on would add the bill for ever.
-      if (next <= day) break
-      day = next
+    for (const occurrence of billOccurrences(bill, today, month.end)) {
+      add(expenseByDay, occurrence.day, occurrence.amountCents)
     }
   }
 
