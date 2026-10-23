@@ -18,6 +18,9 @@ export function periodRange(period: Period, offset: number, now = new Date()) {
   return { from: day(new Date(y, m, monday)), to: day(new Date(y, m, monday + 7)) }
 }
 
+/** The day after a YYYY-MM-DD day; UTC math, so no DST gap. The API's `to` is exclusive. */
+export const dayAfter = (value: string) => new Date(Date.parse(`${value}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
+
 /** From the first day of the month `months - 1` months ago; `to` is open (up to now). */
 export const lastMonths = (months: number, now = new Date()) => ({
   from: day(new Date(now.getFullYear(), now.getMonth() - months + 1, 1)),
