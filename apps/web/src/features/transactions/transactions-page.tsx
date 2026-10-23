@@ -5,6 +5,7 @@ import { useSources, type SourceOption } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { formatDay, isoToDay } from '#/shared/dates'
 import { m } from '#/shared/i18n'
+import { dayAfter } from '#/shared/periods'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
@@ -143,7 +144,8 @@ export function TransactionsPage() {
     sourceType: selected?.ref.type,
     sourceId: selected?.ref.id,
     from: filters.from || undefined,
-    to: filters.to || undefined,
+    // The API's `to` is exclusive: the picked end day is included by sending the day after it.
+    to: filters.to ? dayAfter(filters.to) : undefined,
     counterpartyId: counterpartyId || undefined,
     q: q || undefined,
   })
