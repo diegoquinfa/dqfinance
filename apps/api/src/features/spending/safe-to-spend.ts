@@ -1,5 +1,6 @@
-import { nextDueDate, type Frequency } from '../recurring-expenses/next-due-date.ts'
+import type { Frequency } from '../recurring-expenses/next-due-date.ts'
 import { monthOf, monthsBetween, shareInMonth } from '../transactions/installments.ts'
+import { billOccurrences } from './bill-occurrences.ts'
 
 /**
  * How much the user may spend today.
@@ -74,16 +75,7 @@ export type Bill = {
 export const billsDueCents = (bills: Bill[], today: string, end: string): number => {
   let cents = 0
   for (const bill of bills) {
-    // An overdue bill is still owed; count it once, not once per missed cycle.
-    if (bill.nextDueOn < today) cents += bill.amountCents
-    // A weekly bill falls more than once before the period ends; each occurrence from today counts.
-    for (let day = bill.nextDueOn; day <= end; ) {
-      if (day >= today) cents += bill.amountCents
-      const next = nextDueDate(bill.startsOn, day, bill.frequency)
-      // A due date that does not move on would add the bill for ever.
-      if (next <= day) break
-      day = next
-    }
+    for (const occurrence of billOccurrences(bill, today, end)) cents += occurrence.amountCents
   }
   return cents
 }

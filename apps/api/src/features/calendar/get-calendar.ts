@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
-import { isoDate } from '../../shared/dates'
+import { isoDate, todayIn } from '../../shared/dates'
 import type { Locale } from '../../shared/locale'
 import { card } from '../accounts/account.schema'
 import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
@@ -44,9 +44,10 @@ export async function getCalendar(db: Db, userId: string, locale: Locale, input:
     listRecurringExpenses(db, userId, locale),
   ])
 
+  const today = todayIn(timezone)
   const due = recurring
     .filter((item) => item.active)
-    .flatMap((item) => projectDueDates(item, input.from, input.to).map((day) => ({ day, ...item })))
+    .flatMap((item) => projectDueDates(item, input.from, input.to, today).map((day) => ({ day, ...item })))
     .sort((a, b) => a.day.localeCompare(b.day))
 
   return {

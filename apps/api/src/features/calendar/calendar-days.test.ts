@@ -33,17 +33,25 @@ test('groupByDay sums per day and currency, and drops days outside the range', (
 
 test('projectDueDates repeats a weekly item across the range', () => {
   const item = { startsOn: '2026-09-25', nextDueOn: '2026-10-30', frequency: 'weekly' as const }
-  assert.deepEqual(projectDueDates(item, '2026-11-01', '2026-12-01'), ['2026-11-06', '2026-11-13', '2026-11-20', '2026-11-27'])
+  assert.deepEqual(projectDueDates(item, '2026-11-01', '2026-12-01', '2026-10-23'), ['2026-11-06', '2026-11-13', '2026-11-20', '2026-11-27'])
 })
 
 test('projectDueDates keeps the start day of a monthly item, clamped', () => {
   const item = { startsOn: '2026-01-31', nextDueOn: '2026-01-31', frequency: 'monthly' as const }
-  assert.deepEqual(projectDueDates(item, '2026-02-01', '2026-04-01'), ['2026-02-28', '2026-03-31'])
+  assert.deepEqual(projectDueDates(item, '2026-02-01', '2026-04-01', '2026-01-15'), ['2026-02-28', '2026-03-31'])
 })
 
 test('projectDueDates keeps an overdue date and skips items past the range', () => {
   const overdue = { startsOn: '2026-10-05', nextDueOn: '2026-10-05', frequency: 'monthly' as const }
-  assert.deepEqual(projectDueDates(overdue, '2026-10-01', '2026-11-01'), ['2026-10-05'])
+  assert.deepEqual(projectDueDates(overdue, '2026-10-01', '2026-11-01', '2026-10-23'), ['2026-10-05'])
   const later = { startsOn: '2027-01-10', nextDueOn: '2027-01-10', frequency: 'yearly' as const }
-  assert.deepEqual(projectDueDates(later, '2026-10-01', '2026-11-01'), [])
+  assert.deepEqual(projectDueDates(later, '2026-10-01', '2026-11-01', '2026-10-23'), [])
+})
+
+test('projectDueDates shows an overdue item from before the range once, today', () => {
+  const overdue = { startsOn: '2025-09-05', nextDueOn: '2026-09-05', frequency: 'yearly' as const }
+  assert.deepEqual(projectDueDates(overdue, '2026-10-01', '2026-11-01', '2026-10-23'), ['2026-10-23'])
+  // Today outside the range: nothing to show.
+  assert.deepEqual(projectDueDates(overdue, '2026-11-01', '2026-12-01', '2026-10-23'), [])
+  assert.deepEqual(projectDueDates(overdue, '2026-08-01', '2026-09-01', '2026-10-23'), [])
 })
