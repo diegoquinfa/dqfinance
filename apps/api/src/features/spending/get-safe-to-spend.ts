@@ -1,4 +1,4 @@
-import { and, eq, gte, isNotNull, lt, or } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, lt, or, sum } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
 import { startOfDayIn } from '../../shared/day-range.ts'
@@ -11,6 +11,7 @@ import { shiftDay } from '../calendar/calendar-days.ts'
 import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { listGoals } from '../savings-goals/list-goals'
+import { savingsContribution } from '../savings-goals/savings-goal.schema'
 import { requireSettings } from '../settings/get-settings'
 import { transaction } from '../transactions/transaction.schema'
 import { futureShares, monthOf, monthsBetween } from '../transactions/installments'
@@ -132,8 +133,19 @@ export async function getSafeToSpend(db: Db, userId: string) {
 
   // The money already put aside stays in the accounts, so it is in the money in hand: it has to be
   // held back in full, not just this month's share. A yearly bill holds the twelfths its cycle has
-  // earned so far; a savings goal holds what it already has, plus this month's share. One yearly
+  // earned so far; a savings goal holds what it already has, plus what this month's share still lacks. One yearly
   // bill due before the period ends is a pending bill above, so it is not held twice.
+  // What each goal received this month: the month's share is the one it started with, so a share
+  // already saved this month is not asked for again.
+  const savedThisMonth = new Map(
+    (
+      await db
+        .select({ goalId: savingsContribution.goalId, cents: sum(savingsContribution.amountCents) })
+        .from(savingsContribution)
+        .where(and(eq(savingsContribution.userId, userId), gte(savingsContribution.contributedOn, monthStart)))
+        .groupBy(savingsContribution.goalId)
+    ).map((row) => [row.goalId, Number(row.cents ?? 0)]),
+  )
   const setAsidesCents =
     yearlySetAsideCents(
       bills.filter((bill) => bill.frequency === 'yearly'),
@@ -143,8 +155,14 @@ export async function getSafeToSpend(db: Db, userId: string) {
     (await listGoals(db, userId))
       .filter((goal) => goal.currency === currency)
       .reduce(
-        (sum, goal) =>
-          sum + goalReservationCents(toCents(goal.target), toCents(goal.contributed), toCents(goal.monthly)),
+        (total, goal) =>
+          total +
+          goalReservationCents({
+            targetCents: toCents(goal.target),
+            contributedCents: toCents(goal.contributed),
+            contributedThisMonthCents: savedThisMonth.get(goal.id) ?? 0,
+            monthsLeft: goal.monthsLeft,
+          }),
         0,
       )
 
