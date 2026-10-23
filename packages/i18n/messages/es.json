@@ -331,6 +331,7 @@
   "savings_empty_description": "Nombra para qué ahorras y la app lo saca de tu gasto diario.",
   "savings_created": "Meta creada.",
   "savings_contributed": "Aportación agregada.",
+  "savings_reached": "¡Meta alcanzada! Su dinero vuelve a estar libre.",
   "savings_deleted": "Meta eliminada.",
   "savings_delete": "Eliminar meta",
   "savings_delete_hint": "Se eliminan la meta y lo que aportaste.",
