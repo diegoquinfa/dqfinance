@@ -1,6 +1,7 @@
 import { and, eq, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
+import { isTimeZone } from '../../shared/dates'
 import { AppError } from '../../shared/http'
 import { currencyCode, toCents } from '../../shared/money'
 import { requireSettings } from './get-settings'
@@ -8,6 +9,8 @@ import { LOCALES, userCurrency, userSettings } from './settings.schema'
 
 export const updateSettingsInput = z.object({
   locale: z.enum(LOCALES).optional(),
+  // An IANA zone; the days the summaries count (budgets, calendar, filters) follow it.
+  timezone: z.string().refine(isTimeZone, 'Unknown IANA timezone').optional(),
   // The full list of the user's currencies; must keep the primary one.
   currencies: z.array(currencyCode).min(1).optional(),
   // The cap on what the user spends in a month; null clears it.
@@ -20,6 +23,9 @@ export async function updateSettings(db: Db, userId: string, input: z.infer<type
   const settings = await requireSettings(db, userId)
   if (input.locale) {
     await db.update(userSettings).set({ locale: input.locale }).where(eq(userSettings.userId, userId))
+  }
+  if (input.timezone) {
+    await db.update(userSettings).set({ timezone: input.timezone }).where(eq(userSettings.userId, userId))
   }
   if (input.spendingTarget !== undefined) {
     await db
