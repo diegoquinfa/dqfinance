@@ -13,6 +13,7 @@ import { useTransactions } from '#/features/transactions/transactions-api'
 import { NewTransferDialog } from '#/features/transfers/new-transfer-dialog'
 import { m } from '#/shared/i18n'
 import { formatMoney, formatNumber } from '#/shared/money'
+import { todayDate } from '#/shared/dates'
 import { lastMonths } from '#/shared/periods'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
 import { Button } from '#/shared/ui/button'
@@ -175,7 +176,7 @@ export function SourcePage({ type, id }: SourceRef) {
       >
         <PeriodTotals
           currency={source.currency}
-          filters={{ ...lastMonths(Number(months)), sourceType: type, sourceId: id }}
+          filters={{ ...lastMonths(Number(months), todayDate()), sourceType: type, sourceId: id }}
           showNet
         />
         <BalanceChart className="mt-10" currency={source.currency} source={ref} />

@@ -6,7 +6,7 @@ import { useSettings } from '#/features/settings/settings-api'
 import { sourceLabel } from '#/shared/source-label'
 import { TransactionRow } from '#/features/transactions/transaction-row'
 import { useTransactions } from '#/features/transactions/transactions-api'
-import { formatDay, isoToDay, today } from '#/shared/dates'
+import { formatDay, isoToDay, today, todayDate } from '#/shared/dates'
 import { currentLocale, m } from '#/shared/i18n'
 import { formatCompact, formatMoney, formatSignedAmount } from '#/shared/money'
 import { Badge } from '#/shared/ui/badge'
@@ -41,7 +41,7 @@ export function CalendarPage() {
   const search = useSearch({ from: '/_app/calendar' })
   const navigate = useNavigate()
   const offset = search.month ?? 0
-  const grid = monthGrid(offset)
+  const grid = monthGrid(offset, todayDate())
   const calendar = useCalendar({ from: grid.from, to: grid.to })
   const settings = useSettings()
   const currency = settings.data?.primaryCurrency ?? 'USD'
