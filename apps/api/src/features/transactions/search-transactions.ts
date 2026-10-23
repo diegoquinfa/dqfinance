@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { Db } from '../../db'
 import type { Locale } from '../../shared/locale'
+import { requireSettings } from '../settings/get-settings'
 import { listTransactions, listTransactionsInput, searchQuery } from './list-transactions'
 import { searchLine } from './search-line'
 
@@ -18,6 +19,9 @@ export async function searchTransactions(
   locale: Locale,
   input: z.infer<typeof searchTransactionsInput>,
 ) {
-  const movements = await listTransactions(db, userId, locale, { ...input, limit: input.limit ?? 20 })
-  return movements.map(searchLine)
+  const [movements, { timezone }] = await Promise.all([
+    listTransactions(db, userId, locale, { ...input, limit: input.limit ?? 20 }),
+    requireSettings(db, userId),
+  ])
+  return movements.map((row) => searchLine(row, timezone))
 }
