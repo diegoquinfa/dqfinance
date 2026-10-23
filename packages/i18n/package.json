@@ -8,9 +8,11 @@
     "./server": "./src/paraglide/server.js"
   },
   "scripts": {
-    "build": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy cookie preferredLanguage baseLocale --output-structure locale-modules --silent"
+    "build": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy cookie preferredLanguage baseLocale --output-structure locale-modules --silent && node -e \"if (!require('fs').readFileSync('src/paraglide/messages/_index.js', 'utf8').includes('app_name')) { console.error('i18n: the compiled catalog is empty; a plugin failed to load'); process.exit(1) }\""
   },
   "devDependencies": {
-    "@inlang/paraglide-js": "2.29.0"
+    "@inlang/paraglide-js": "2.29.0",
+    "@inlang/plugin-m-function-matcher": "2.3.4",
+    "@inlang/plugin-message-format": "4.5.5"
   }
 }
