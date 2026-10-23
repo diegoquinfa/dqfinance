@@ -61,9 +61,11 @@ export function projectDueDates(
   today: string,
 ): string[] {
   const days: string[] = []
-  if (item.nextDueOn < from && from <= today && today < to) days.push(today)
+  // Owed since before the range: one entry today stands for every missed cycle, so none repeats.
+  const owedToday = item.nextDueOn < from && from <= today && today < to
+  if (owedToday) days.push(today)
   for (let day = item.nextDueOn; day < to; day = nextDueDate(item.startsOn, day, item.frequency)) {
-    if (day >= from) days.push(day)
+    if (day >= from && !(owedToday && day < today)) days.push(day)
   }
   return days
 }
