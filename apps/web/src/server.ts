@@ -1,4 +1,4 @@
-import api from '@dqfinance/api'
+import api, { createDb, runScheduled } from '@dqfinance/api'
 import { paraglideMiddleware } from '@dqfinance/i18n/server'
 import handler from '@tanstack/react-start/server-entry'
 
@@ -16,5 +16,9 @@ export default {
     return paraglideMiddleware(request, () =>
       isApiPath(new URL(request.url).pathname) ? api.fetch(...args) : handler.fetch(request),
     )
+  },
+  // The daily cron (`triggers` in wrangler.jsonc): deletes abandoned guests and checks bill reminders.
+  scheduled(_controller: unknown, env: CloudflareBindings, ctx: { waitUntil(promise: Promise<unknown>): void }) {
+    ctx.waitUntil(runScheduled(createDb(env.DB)))
   },
 }

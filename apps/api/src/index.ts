@@ -70,6 +70,9 @@ const app = new Hono<AppEnv>()
   .route('/mcp', mcpRoutes)
   .onError(onError)
 
+export { createDb } from './db'
+export { runScheduled } from './features/scheduled/run-scheduled'
+
 export type AppType = typeof app
 
 export default app

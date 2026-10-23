@@ -57,7 +57,7 @@ A feature imports only from features earlier in this order:
 ```
 categories → settings → accounts → documents → counterparties → transactions
            → recurring-expenses → balances → balance-adjustments → transfers → calendar
-           → savings-goals → expected-incomes → spending → webhooks → budgets → demo
+           → savings-goals → expected-incomes → spending → webhooks → budgets → demo → scheduled
 ```
 
 `auth/` is a foundation in both apps (the API's `mcp/` and `push/` too), outside the order: any feature may import it.
@@ -74,6 +74,10 @@ Six dependencies the order cannot express, the first two long-standing:
 - **The web `balances/` and `spending/` slices reference each other.** The overview (`balances/`) opens with the safe-to-spend card, so `balances → spending`. The card only reads the spending API, and nothing in `spending/` reads the balances slice, so the edge does not close.
 
 Anything two features need that is not a domain noun moves to `shared/`, and `shared/` imports nothing from `features/`.
+
+## Scheduled work
+
+One daily cron trigger (`triggers` in `wrangler.jsonc`, 13:17 UTC) calls the Worker's `scheduled` handler, which runs `runScheduled` (`features/scheduled/run-scheduled.ts`). It deletes the guests created more than seven days ago, with every row they own, in one batch ordered children first: a `restrict` foreign key stops the cascade from the user row alone. Then it checks the bills of each user who set a reminder and has an active webhook, so a reminder no longer waits for the user to open the app. The web shell still calls `POST /api/webhooks/check` on load; both run the same check, which announces a bill once per due date.
 
 ## Turborepo
 
