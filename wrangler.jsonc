@@ -31,6 +31,8 @@
   "observability": {
     "enabled": true
   },
+  // Daily at 13:17 UTC: deletes abandoned guests and checks bill reminders (apps/web/src/server.ts `scheduled`).
+  "triggers": { "crons": ["17 13 * * *"] },
   // Declared so `cf-typegen` is deterministic without a local .dev.vars. VAPID keys stay optional
   // (see apps/api/src/app-env.ts): absent means push notifications are off.
   "secrets": {
