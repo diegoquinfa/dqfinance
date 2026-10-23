@@ -1,4 +1,3 @@
-import { useCallback, useState } from 'react'
 import { formatDay } from '#/shared/dates'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
@@ -22,7 +21,6 @@ import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { PageHeader, rowsClass } from '#/shared/ui/page'
 import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
-import { GoalConfetti } from './goal-confetti'
 import { reachesGoal } from './goal-reached'
 import {
   useAddSavingsContribution,
@@ -95,15 +93,7 @@ function NewGoalForm({ close }: { close: () => void }) {
 }
 
 /** What the user puts into the goal today. */
-function AddContributionForm({
-  goal,
-  close,
-  onReached,
-}: {
-  goal: SavingsGoal
-  close: () => void
-  onReached: () => void
-}) {
+function AddContributionForm({ goal, close }: { goal: SavingsGoal; close: () => void }) {
   const add = useAddSavingsContribution()
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -116,8 +106,8 @@ function AddContributionForm({
       {
         onSuccess: () => {
           close()
-          if (reached) onReached()
-          toast.success(reached ? m.savings_reached() : m.savings_contributed())
+          // A payment that reaches the goal is celebrated by the signed-in shell, with its own toast.
+          if (!reached) toast.success(m.savings_contributed())
         },
       },
     )
@@ -156,7 +146,7 @@ function AddContributionForm({
 }
 
 /** One goal: what it holds, what is left, and what it asks for every month. */
-function GoalRow({ goal, onReached }: { goal: SavingsGoal; onReached: () => void }) {
+function GoalRow({ goal }: { goal: SavingsGoal }) {
   const remove = useDeleteSavingsGoal()
   const percent = Math.round(goal.ratio * 100)
   const filled = Math.min(100, Math.max(0, percent))
@@ -204,7 +194,7 @@ function GoalRow({ goal, onReached }: { goal: SavingsGoal; onReached: () => void
           trigger={<Button variant="outline" size="sm">{m.savings_add()}</Button>}
           title={m.savings_contribution()}
         >
-          {(close) => <AddContributionForm goal={goal} close={close} onReached={onReached} />}
+          {(close) => <AddContributionForm goal={goal} close={close} />}
         </DialogPanel>
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -235,8 +225,6 @@ function GoalRow({ goal, onReached }: { goal: SavingsGoal; onReached: () => void
 
 export function SavingsGoalsPage() {
   const goals = useSavingsGoals()
-  const [celebrating, setCelebrating] = useState(false)
-  const finishCelebration = useCallback(() => setCelebrating(false), [])
 
   return (
     <>
@@ -265,11 +253,10 @@ export function SavingsGoalsPage() {
       ) : (
         <ul className={rowsClass}>
           {goals.data.map((goal) => (
-            <GoalRow key={goal.id} goal={goal} onReached={() => setCelebrating(true)} />
+            <GoalRow key={goal.id} goal={goal} />
           ))}
         </ul>
       )}
-      {celebrating && <GoalConfetti onDone={finishCelebration} />}
     </>
   )
 }
