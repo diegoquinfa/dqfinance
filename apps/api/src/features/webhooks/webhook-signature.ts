@@ -14,6 +14,13 @@ export const signBody = async (secret: string, body: string): Promise<string> =>
   return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-/** The header the app sends: the algorithm and the signature. */
-export const signatureHeader = async (secret: string, body: string): Promise<string> =>
-  `sha256=${await signBody(secret, body)}`
+/**
+ * The header the app sends: the time of the call, and the signature over that time and the body.
+ * The time is inside the signed bytes, so a captured call cannot be replayed with a fresh time; a
+ * receiver refuses a call whose time is more than five minutes old.
+ */
+export const signatureHeader = async (
+  secret: string,
+  body: string,
+  time = Math.floor(Date.now() / 1000),
+): Promise<string> => `t=${time},v1=${await signBody(secret, `${time}.${body}`)}`

@@ -16,7 +16,7 @@ export const billDeliveryId = (billId: string, dueOn: string) => `${billId}:${du
  * Calls one webhook with a signed body. A hook that fails is a failure of the call, not of the
  * app: the bill is still there and the app carries on.
  *
- * The signature covers the body exactly as it is sent. `X-DQFinance-Delivery` carries the delivery
+ * The signature covers the time and the body exactly as it is sent. `X-DQFinance-Delivery` carries the delivery
  * id from `billDeliveryId`, so a receiver can drop a repeated announcement. A redirect is a
  * failure: the public-url guard checked this URL only, so following it would reach a host it never
  * saw.
