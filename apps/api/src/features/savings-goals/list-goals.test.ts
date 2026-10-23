@@ -66,3 +66,27 @@ test("another user's goals and contributions are not counted", async () => {
   assert.deepEqual(goals.map((goal) => goal.id), ['goal-1'])
   assert.equal(goals[0]?.contributed, 7500)
 })
+
+test('a goal reports whether its contributions reached the target, and whether it was celebrated', async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  seedGoal(sqlite, 'reached', USER_ID, { active: 1, createdAt: 1, targetDate: null, targetCents: 1_000_000 })
+  contribute(sqlite, 'reached', USER_ID, 1_000_000)
+  seedGoal(sqlite, 'short', USER_ID, { active: 1, createdAt: 2, targetDate: null, targetCents: 1_000_000 })
+  contribute(sqlite, 'short', USER_ID, 999_999)
+  seedGoal(sqlite, 'celebrated', USER_ID, { active: 1, createdAt: 3, targetDate: null, targetCents: 1_000_000 })
+  contribute(sqlite, 'celebrated', USER_ID, 1_000_000)
+  sqlite.prepare('UPDATE savings_goal SET celebrated_at = 1 WHERE id = ?').run('celebrated')
+
+  const goals = await listGoals(createDb(d1), USER_ID)
+
+  assert.deepEqual(
+    goals.map(({ id, reached, celebrated }) => ({ id, reached, celebrated })),
+    [
+      { id: 'reached', reached: true, celebrated: false },
+      { id: 'short', reached: false, celebrated: false },
+      { id: 'celebrated', reached: true, celebrated: true },
+    ],
+  )
+})

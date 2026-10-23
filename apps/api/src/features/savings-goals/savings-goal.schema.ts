@@ -1,6 +1,6 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { ownerId } from '../auth/owner'
-import { cents, createdAt, id } from '../../shared/schema-columns'
+import { cents, createdAt, id, timestamp } from '../../shared/schema-columns'
 
 /** What the user is saving for. */
 export const savingsGoal = sqliteTable(
@@ -14,6 +14,8 @@ export const savingsGoal = sqliteTable(
     // The date the user wants it reached by; null when there is no date.
     targetDate: text('target_date'),
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
+    // When the web celebrated the goal being reached; null until then.
+    celebratedAt: timestamp('celebrated_at'),
     createdAt: createdAt(),
   },
   (table) => [index('savings_goal_user_idx').on(table.userId)],
