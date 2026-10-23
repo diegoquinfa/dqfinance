@@ -378,6 +378,7 @@
   "webhooks_lead_days_hint": "How many days before the due date. Zero turns the warning off.",
   "webhooks_lead_days_days": "{days} days before",
   "webhooks_lead_day": "{days} day before",
+  "webhooks_check_failed": "A webhook did not receive a bill reminder. It will be retried the next time you open the app.",
   "transaction_installments": "Spread over",
   "transaction_installments_hint": "The movement keeps its date and amount; only the budget sees it in parts.",
   "transaction_installments_none": "In one go",
