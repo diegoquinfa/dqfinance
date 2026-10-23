@@ -1,6 +1,7 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { InferRequestType, InferResponseType } from 'hono/client'
 import { api, unwrap } from '#/shared/api'
+import { invalidateSpending } from '#/shared/invalidate-spending'
 
 export type AccountsTree = InferResponseType<typeof api.api.accounts.$get, 200>
 
@@ -28,6 +29,7 @@ function useAccountMutation<TVariables, TResult = unknown>(
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: accountsQuery.queryKey })
       void queryClient.invalidateQueries({ queryKey: ['balances'] })
+      invalidateSpending(queryClient)
     },
   })
 }

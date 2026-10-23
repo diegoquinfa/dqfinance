@@ -304,6 +304,8 @@
   "forecast_title": "Pronóstico",
   "forecast_hint": "Cómo se ve el saldo, día a día, hasta fin de mes.",
   "forecast_lowest": "El más bajo el {day}: {amount}",
+  "forecast_pace": "A tu ritmo de este mes: {amount} al día",
+  "forecast_pace_few_days": "Pocos días aún: el ritmo puede cambiar.",
   "forecast_aria": "El saldo proyectado del {from} al {to}",
   "forecast_table_caption": "El saldo proyectado, día a día",
   "forecast_day": "Día",

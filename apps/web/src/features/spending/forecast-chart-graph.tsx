@@ -49,6 +49,11 @@ export default function ForecastChartGraph({ className }: { className?: string }
         )}
       </div>
 
+      <p className="text-sm text-muted-foreground">
+        {m.forecast_pace({ amount: formatMoney(data.dailyAverage, data.currency) })}
+        {data.daysElapsed < 7 && ` ${m.forecast_pace_few_days()}`}
+      </p>
+
       <ChartContainer
         config={config}
         className="h-56 w-full"
