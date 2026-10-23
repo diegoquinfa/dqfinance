@@ -2,8 +2,8 @@
 
 ## Objective
 
-A yearly bill stops surprising the user: a twelfth of its amount is set aside every month, so the money
-is there when it comes.
+A yearly bill stops surprising the user: the money for it is held back a twelfth at a time, every month
+from twelve months before it falls due, so the money is there when it comes.
 
 Proposal 4 in [2026-10-21-feature-proposals.md](../../docs/plans/2026-10-21-feature-proposals.md).
 
@@ -14,10 +14,11 @@ money. The user pays the whole bill in one go and the month's balance drops to z
 
 ## Why this shape
 
-- **A twelfth, not a twelfth of the month left.** The reservation is the same every month, so the number
-  the user learns does not move around.
-- **The cents that do not divide stay with the bill.** A bill of $100.01 sets aside $8.33 a month; the
-  five cents left over are the bill's.
+- **What the bill should already hold, not this month's twelfth.** The money put aside in earlier months
+  is still in the accounts, so a reservation that forgets it frees the money again. A bill due in
+  December holds one twelfth in January, two in February, and the whole bill in December.
+- **The cents that do not divide stay with the bill.** A bill of $100.01 due next month holds $91.67; the
+  cents left over are the bill's.
 - **The reservation is not a second account.** It is a rule on the safe-to-spend number, not money that
   moves anywhere. The bill still leaves the account when it is confirmed.
 
@@ -34,11 +35,11 @@ money. The user pays the whole bill in one go and the month's balance drops to z
 ## Constraints
 
 - The reservation counts the active yearly bills of the primary currency only.
-- The rule is one line of arithmetic, so it lives in its own file with a test beside it.
+- The rule is a few lines of arithmetic, so it lives in the pure `safe-to-spend.ts`, with its test beside it.
 
 ## TDD
 
-`monthly-set-aside.ts` (pure) with a `node:test` file beside it.
+`safe-to-spend.ts` (pure) with its `node:test` file beside it.
 
 ## Delivery
 
@@ -53,11 +54,13 @@ Chain strategy: `feature-branch-chain`.
 
 ## Tasks
 
-- [x] The rule: a twelfth a month, the rest stays with the bill. Commit `c5ec9cf`.
+- [x] The rule: the twelfths its cycle has earned, the rest stays with the bill. Commit `c5ec9cf` set a
+  twelfth a month; the fix that followed holds what the bill should already have put aside.
 - [x] The number and the card show the reservation. Commit `c5ec9cf`.
 
 ## Acceptance
 
-- A yearly bill of $1,200 sets aside $100 a month, and the safe-to-spend number drops by that much.
+- A yearly bill of $1,200 due in December holds $100 in January and $200 in February, and the safe-to-spend
+  number holds that much back every month until it is paid.
 - A bill that does not divide leaves its extra cents with the bill.
 - `pnpm check-types && pnpm test && pnpm build` from the root passes at feature close.
