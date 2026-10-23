@@ -1,6 +1,7 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { InferRequestType, InferResponseType } from 'hono/client'
 import { api, unwrap } from '#/shared/api'
+import { invalidateSpending } from '#/shared/invalidate-spending'
 
 export type Transaction = InferResponseType<typeof api.api.transactions.$get, 200>[number]
 export type NewTransaction = InferRequestType<typeof api.api.transactions.$post>['json']
@@ -34,6 +35,7 @@ function useInvalidateTransactions() {
   return () => {
     void queryClient.invalidateQueries({ queryKey: ['transactions'] })
     void queryClient.invalidateQueries({ queryKey: ['balances'] })
+    invalidateSpending(queryClient)
   }
 }
 
