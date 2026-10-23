@@ -7,6 +7,7 @@ import { recurringExpense } from '../recurring-expenses/recurring-expense.schema
 import { requireSettings } from '../settings/get-settings'
 import { isAnnounced } from './announcement-rule'
 import { billDeliveryId, deliverWebhook } from './deliver-webhook'
+import { refuseGuest } from './webhooks'
 import { webhook } from './webhook.schema'
 
 export type DueCheck = {
@@ -27,6 +28,7 @@ export type DueCheck = {
  * drops the repeat.
  */
 export async function checkDueBills(db: Db, userId: string): Promise<DueCheck> {
+  await refuseGuest(db, userId)
   const settings = await requireSettings(db, userId)
   const leadDays = settings.reminderLeadDays
   if (leadDays === null || leadDays <= 0) return { bills: 0, delivered: 0, failures: [] }

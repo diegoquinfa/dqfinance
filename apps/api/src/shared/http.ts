@@ -36,6 +36,8 @@ export const ERROR_CODES = [
   'savings_goal_not_found',
   'expected_income_not_found',
   'webhook_not_found',
+  'webhook_limit',
+  'guest_not_allowed',
   'recurring_already_confirmed',
   'balance_changed',
   'budget_not_found',

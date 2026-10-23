@@ -31,6 +31,8 @@
   "error_savings_goal_not_found": "That savings goal doesn't exist.",
   "error_expected_income_not_found": "That expected income doesn't exist.",
   "error_webhook_not_found": "That webhook doesn't exist.",
+  "error_webhook_limit": "You reached the webhook limit.",
+  "error_guest_not_allowed": "Create an account to use this.",
   "error_recurring_already_confirmed": "That recurring expense is already confirmed.",
   "error_balance_changed": "The balance moved while you were writing. Check it and try again.",
   "error_budget_not_found": "That budget doesn't exist.",

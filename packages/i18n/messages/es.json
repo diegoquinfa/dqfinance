@@ -31,6 +31,8 @@
   "error_savings_goal_not_found": "Esa meta de ahorro no existe.",
   "error_expected_income_not_found": "Ese ingreso esperado no existe.",
   "error_webhook_not_found": "Ese webhook no existe.",
+  "error_webhook_limit": "Llegaste al límite de webhooks.",
+  "error_guest_not_allowed": "Crea una cuenta para usar esto.",
   "error_recurring_already_confirmed": "Ese gasto recurrente ya está confirmado.",
   "error_balance_changed": "El saldo se movió mientras escribías. Revísalo e inténtalo otra vez.",
   "error_budget_not_found": "Ese presupuesto no existe.",
