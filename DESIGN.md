@@ -157,6 +157,8 @@ Quiet and useful. `--ease-out-expo` (`cubic-bezier(0.16, 1, 0.3, 1)`), 300-600ms
 
 No dependency: CSS keyframes in `styles.css`, `IntersectionObserver` and one canvas.
 
+The one other exception is the confetti on reaching a savings goal: one burst of token-colored squares over the goals page, about 2.5 seconds, skipped under reduced motion.
+
 ## Language
 
 The app is bilingual (English and Spanish) from the first screen. The catalog is `packages/i18n`, and every visible string comes from it, so a new string missing from `messages/en.json` or `messages/es.json` breaks the type check. Use a hyphen `-` in visible text; no em or en dashes.
