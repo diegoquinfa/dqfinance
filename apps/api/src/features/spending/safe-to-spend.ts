@@ -99,11 +99,21 @@ export const yearlySetAsideCents = (
   }, 0)
 
 /**
- * What a savings goal holds back: what is already saved, plus this month's share of what is left.
+ * What a savings goal holds back: what is already saved, plus what this month's share still lacks.
+ * The share is the one the month started with (what was left before this month, over the months
+ * left), so saving it this month does not ask for it again. A goal without a date has no share.
  * Never more than the target.
  */
-export const goalReservationCents = (targetCents: number, contributedCents: number, monthlyCents: number): number =>
-  Math.min(targetCents, contributedCents + monthlyCents)
+export const goalReservationCents = (goal: {
+  targetCents: number
+  contributedCents: number
+  contributedThisMonthCents: number
+  monthsLeft: number | null
+}): number => {
+  const before = goal.contributedCents - goal.contributedThisMonthCents
+  const share = goal.monthsLeft ? Math.floor(Math.max(0, goal.targetCents - before) / goal.monthsLeft) : 0
+  return Math.min(goal.targetCents, goal.contributedCents + Math.max(0, share - goal.contributedThisMonthCents))
+}
 
 export type MonthExpense = { amountCents: number; months: number | null; occurredAt: Date }
 

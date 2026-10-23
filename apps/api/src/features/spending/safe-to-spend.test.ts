@@ -123,18 +123,31 @@ test('a yearly bill due before the period ends is a pending bill, not held twice
   assert.equal(yearlySetAsideCents([due], '2026-10-31', '2026-10'), 0)
 })
 
-test('a goal reserves what it holds plus the share of this month', () => {
-  // 3,000,000 target, 2,500,000 saved, 500,000 left over three months: 166,666 this month.
-  assert.equal(goalReservationCents(3000000, 2500000, 166666), 2666666)
+const goal = (over: Partial<Parameters<typeof goalReservationCents>[0]> = {}) =>
+  goalReservationCents({ targetCents: 3000000, contributedCents: 0, contributedThisMonthCents: 0, monthsLeft: 3, ...over })
+
+test('a goal reserves what it held before the month plus the share of this month', () => {
+  // 3,000,000 target, 2,500,000 saved before, 500,000 left over three months: 166,666 this month.
+  assert.equal(goal({ contributedCents: 2500000 }), 2666666)
+  assert.equal(goal(), 1000000)
+})
+
+test('saving the share this month does not ask for it again', () => {
+  // The month asked for 1,000,000; 750,000 of it is saved, 250,000 is still due.
+  assert.equal(goal({ contributedCents: 750000, contributedThisMonthCents: 750000 }), 1000000)
+  // Saving more than the share holds back what was saved.
+  assert.equal(goal({ contributedCents: 1200000, contributedThisMonthCents: 1200000 }), 1200000)
 })
 
 test('a goal without a date reserves what it already holds', () => {
-  assert.equal(goalReservationCents(3000000, 2500000, 0), 2500000)
+  assert.equal(goal({ contributedCents: 2500000, monthsLeft: null }), 2500000)
 })
 
 test('a goal never reserves more than its target', () => {
-  assert.equal(goalReservationCents(3000000, 2900000, 166666), 3000000)
-  assert.equal(goalReservationCents(3000000, 3500000, 0), 3000000)
+  // Only what was saved past the target can pass it: the share never asks for more than is left.
+  assert.equal(goal({ contributedCents: 3500000 }), 3000000)
+  assert.equal(goal({ contributedCents: 3200000, contributedThisMonthCents: 3200000, monthsLeft: null }), 3000000)
+  assert.equal(goal({ contributedCents: 2900000, monthsLeft: 1 }), 3000000)
 })
 
 test('a foreign card charge counts its value in the card currency', () => {
