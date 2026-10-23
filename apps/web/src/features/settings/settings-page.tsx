@@ -1,4 +1,5 @@
 import { CATEGORY_ICONS, type CategoryIcon, type PaletteColor } from '@dqfinance/api/appearance'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { GitMerge, Pencil, Trash2 } from 'lucide-react'
 import { authClient } from '#/features/auth/auth-client'
@@ -37,7 +38,7 @@ import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
-import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { CodeCombobox } from '#/shared/ui/code-combobox'
@@ -383,9 +384,15 @@ function CategoryRow({ category, categories }: { category: Category; categories:
   )
 }
 
+/** Every zone the browser knows, plus the saved one when this browser's list lacks it (UTC, often). */
+const timeZoneItems = (current: string) =>
+  [...new Set([...Intl.supportedValuesOf('timeZone'), current])].sort().map((zone) => ({ code: zone, label: zone }))
+
 export function SettingsPage() {
   const settings = useSettings()
   const update = useUpdateSettings()
+  const saveTimezone = useUpdateSettings()
+  const queryClient = useQueryClient()
   const categories = useCategories()
   const [currencyToAdd, setCurrencyToAdd] = useState('USD')
   const [draft, setDraft] = useState<string[] | null>(null)
@@ -401,9 +408,23 @@ export function SettingsPage() {
     <>
       <PageHeader title={m.settings_title()} />
 
-      <Section index="01" label={m.settings_language()}>
-        <div className="max-w-md">
+      <Section index="01" label={m.settings_preferences()}>
+        <div className="grid max-w-md gap-6">
           <LocaleSwitch id="settings-language" persist={(locale) => update.mutateAsync({ locale })} />
+          <Field>
+            <FieldLabel htmlFor="settings-timezone">{m.label_timezone()}</FieldLabel>
+            <CodeCombobox
+              id="settings-timezone"
+              items={timeZoneItems(settings.data.timezone)}
+              value={settings.data.timezone}
+              // The server stores the zone, then every finance query (days, summaries) is stale.
+              onValueChange={(timezone) =>
+                saveTimezone.mutate({ timezone }, { onSuccess: () => void queryClient.invalidateQueries() })
+              }
+            />
+            <FieldDescription>{m.settings_timezone_hint()}</FieldDescription>
+            <FieldError>{saveTimezone.error?.message}</FieldError>
+          </Field>
         </div>
       </Section>
 
