@@ -59,3 +59,32 @@ test('two corrections that read the same balance write one adjustment, not two',
   assert.equal(refused?.reason.status, 409)
   assert.deepEqual(adjustmentRows(sqlite), [{ delta: 15_000, observed: 15_000 }])
 })
+
+const cardSource = { type: 'card', id: 'card-1' } as const
+
+test('a debt in a currency the user never enabled is refused, and no adjustment is written', async () => {
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  // Only the primary currency is enabled; a USD debt on the card is not.
+  sqlite.exec(`INSERT INTO user_currency (user_id, code, created_at) VALUES ('user-1', 'COP', 1)`)
+
+  await assert.rejects(
+    adjustBalance(createDb(d1), USER_ID, { source: cardSource, observedBalance: 150, currency: 'USD' }),
+    { code: 'currency_not_enabled', status: 400 },
+  )
+  assert.deepEqual(adjustmentRows(sqlite), [])
+})
+
+test('a debt in a currency the user enabled is adjusted in that currency', async () => {
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  sqlite.exec(`INSERT INTO user_currency (user_id, code, created_at) VALUES ('user-1', 'COP', 1), ('user-1', 'USD', 1)`)
+
+  const result = await adjustBalance(createDb(d1), USER_ID, { source: cardSource, observedBalance: 150, currency: 'USD' })
+
+  assert.deepEqual(result, { delta: 150, balance: 150 })
+  assert.deepEqual(
+    sqlite.prepare('SELECT currency, delta_cents AS delta FROM balance_adjustment').all().map((row) => ({ ...row })),
+    [{ currency: 'USD', delta: 15_000 }],
+  )
+})
