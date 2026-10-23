@@ -367,7 +367,7 @@
   "webhooks_hint": "La app llama a tu URL cuando una cuenta vence, dentro de los días de aviso que fijes abajo. Cada llamada va firmada con tu secreto; con cero días nunca llama.",
   "webhooks_url": "URL",
   "webhooks_secret": "Secreto",
-  "webhooks_secret_hint": "Mínimo 8 caracteres. La app firma cada llamada con él y nunca lo vuelve a mostrar.",
+  "webhooks_secret_hint": "Mínimo 16 caracteres. La app firma cada llamada con él y nunca lo vuelve a mostrar.",
   "webhooks_add": "Agregar webhook",
   "webhooks_empty": "Aún no hay webhooks",
   "webhooks_created": "Webhook agregado.",

@@ -90,7 +90,7 @@ function NewWebhookForm({ close }: { close: () => void }) {
         </Field>
         <Field>
           <FieldLabel htmlFor="webhooks-secret">{m.webhooks_secret()}</FieldLabel>
-          <Input id="webhooks-secret" name="secret" type="password" minLength={8} required autoComplete="off" />
+          <Input id="webhooks-secret" name="secret" type="password" minLength={16} required autoComplete="off" />
           <FieldDescription>{m.webhooks_secret_hint()}</FieldDescription>
         </Field>
         <FieldError>{create.error?.message}</FieldError>

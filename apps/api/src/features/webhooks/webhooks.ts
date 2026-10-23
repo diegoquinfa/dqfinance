@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, count, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { publicUrl } from '../../shared/public-url'
@@ -6,6 +6,9 @@ import { AppError, found } from '../../shared/http'
 import { user } from '../auth/auth.schema'
 import { blocksWebhooks } from './webhook-guest-rule'
 import { webhook } from './webhook.schema'
+
+/** How many hooks one user may keep: enough for every receiver they run, few enough to bound the calls. */
+export const WEBHOOK_LIMIT = 10
 
 export const createWebhookInput = z.object({
   url: z
@@ -16,7 +19,7 @@ export const createWebhookInput = z.object({
     .refine((value) => publicUrl(value) !== null, 'The webhook URL must be a public https URL'),
   secret: z
     .string()
-    .min(8)
+    .min(16)
     .max(200)
     .describe('The secret the signature is made with; the user chooses it and keeps it'),
 })
@@ -46,6 +49,9 @@ export async function refuseGuest(db: Db, userId: string) {
 /** Adds a place the app calls. */
 export async function createWebhook(db: Db, userId: string, input: z.infer<typeof createWebhookInput>) {
   await refuseGuest(db, userId)
+  // shortcut: count, then insert, so two creates racing past the same count can exceed the limit by one; a conditional insert closes it.
+  const { hooks } = (await db.select({ hooks: count() }).from(webhook).where(eq(webhook.userId, userId)).get())!
+  if (hooks >= WEBHOOK_LIMIT) throw new AppError('webhook_limit', 409)
   const [row] = await db.insert(webhook).values({ userId, url: input.url, secret: input.secret }).returning()
   return webhookView(row!)
 }
