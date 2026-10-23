@@ -6,6 +6,7 @@ import { currencyCode, fromCents, toCents } from '../../shared/money'
 import { resolveSource, sourceRef } from '../accounts/source'
 import { currentBalanceOf } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
+import { assertCurrencyEnabled } from '../settings/get-settings'
 import { claimAdjustment } from './adjustment-claim'
 
 export const adjustBalanceInput = z.object({
@@ -34,6 +35,8 @@ export async function adjustBalance(db: Db, userId: string, input: z.infer<typeo
   // A debit card has no balance of its own: adjust its product instead.
   if (source.cardKind === 'debit') throw new AppError('credit_card_required')
   const currency = source.cardKind === 'credit' ? (input.currency ?? source.currency) : source.currency
+  // The source's own currency is enabled already; a debt currency the caller names must be too.
+  if (currency !== source.currency) await assertCurrencyEnabled(db, userId, currency)
 
   // The instant the balance is read, so the write can refuse a correction that read the same one.
   const readAt = Date.now()
