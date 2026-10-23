@@ -83,10 +83,11 @@ function AppLayout() {
   // must NOT be in the dependencies: `isPending` returning to false is itself a change, so the effect
   // would fire again on every result and post forever.
   useEffect(() => {
-    if (!settings.data || announcedDueBills.current) return
+    // A guest cannot have webhooks, so there is nothing to announce.
+    if (!settings.data || isGuest || announcedDueBills.current) return
     announcedDueBills.current = true
     checkDueBills()
-  }, [settings.data, checkDueBills])
+  }, [settings.data, isGuest, checkDueBills])
 
   if (isPending || (session && settings.isPending)) return <div className="min-h-dvh" aria-busy="true" />
   if (!session) return <Navigate to="/sign-in" />
