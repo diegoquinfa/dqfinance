@@ -28,7 +28,7 @@ Folders whose name says what they own are not listed below.
 - `budgets/`: what each category may spend in a month, and what it already spent. `budget-progress.ts` (pure) holds what is left of a limit and how close it is.
 - `savings-goals/`: what the user is saving for and what they put into it. `goal-progress.ts` (pure) holds how much of a goal is saved and what it asks for every month.
 - `expected-incomes/`: the money the user expects, with how often it arrives. `next-income-date.ts` (pure) holds the next payday, counted from the anchor so the day of the month never drifts.
-- `webhooks/`: the places the user asked the app to call when a bill falls due. `webhook-signature.ts` (pure) holds the HMAC of the body; the endpoint goes through `shared/public-url.ts`, the same check the push endpoints use.
+- `webhooks/`: the places the user asked the app to call when a bill falls due. `webhook-signature.ts` (pure) holds the HMAC of the call time and the body; the endpoint goes through `shared/public-url.ts`, the same check the push endpoints use.
 - `mcp/`: the MCP server; collects every feature's tools and guards `/mcp`. `guest-rule.ts` (pure) keeps a guest away from the tools.
 
 Build on `source.ts` and `compute-balances.ts` instead of re-deriving their rules.

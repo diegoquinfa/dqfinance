@@ -39,7 +39,9 @@ automates things wants the app to speak their language, not to be polled.
 - Every query filters by `userId`, taken from the session.
 - The secret is stored as the user typed it and never leaves the app: it is never sent back in a
   response, only its fingerprint.
-- The signature is computed over the raw body with a constant-time comparison.
+- The signature header is `X-DQFinance-Signature: t=<unix seconds>,v1=<hex>`, where `<hex>` is the
+  HMAC-SHA256 of `${t}.${body}` with the secret. A receiver recomputes it over the raw body, compares in
+  constant time, and refuses a `t` more than five minutes old, so a captured call cannot be replayed.
 - The endpoint passes the same public-host check as the push endpoints (`push-endpoint.ts`).
 - The delivery happens outside the request: a slow endpoint must not delay the app.
 
