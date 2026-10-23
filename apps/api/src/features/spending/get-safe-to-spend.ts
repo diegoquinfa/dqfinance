@@ -133,7 +133,7 @@ export async function getSafeToSpend(db: Db, userId: string) {
 
   // The money already put aside stays in the accounts, so it is in the money in hand: it has to be
   // held back in full, not just this month's share. A yearly bill holds the twelfths its cycle has
-  // earned so far; a savings goal holds what it already has, plus what this month's share still lacks. One yearly
+  // earned so far; a savings goal not yet reached holds what it already has, plus what this month's share still lacks. One yearly
   // bill due before the period ends is a pending bill above, so it is not held twice.
   // What each goal received this month: the month's share is the one it started with, so a share
   // already saved this month is not asked for again.
