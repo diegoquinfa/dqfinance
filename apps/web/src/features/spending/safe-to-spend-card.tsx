@@ -11,6 +11,7 @@ import { Field, FieldError, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { Spinner } from '#/shared/ui/spinner'
 import { useSafeToSpend } from './spending-api'
+import { overspendKey } from './overspend-key'
 
 /** The cap the user set for the month, and the way to change it. */
 function TargetDialog({ target, currency }: { target: number | null; currency: string }) {
@@ -103,6 +104,7 @@ export function SafeToSpendCard() {
   }
   const data = safe.data
   const over = data.allowed < 0
+  const overKey = overspendKey(data)
   return (
     <div className="grid gap-5">
       <div className="grid gap-2">
@@ -148,7 +150,7 @@ export function SafeToSpendCard() {
 
       {data.setAsides > 0 && <p className="label-mono text-muted-foreground">{m.spending_set_aside_hint()}</p>}
 
-      {over && <p className="text-sm text-destructive">{m.spending_over()}</p>}
+      {overKey && <p className="text-sm text-destructive">{m[overKey]()}</p>}
       {data.cappedByTarget && <p className="label-mono text-muted-foreground">{m.spending_capped()}</p>}
 
       <div>
