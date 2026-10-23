@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
-import { todayIn } from '../../shared/dates.ts'
+import { afterEach, mock, test } from 'node:test'
 import { openTestDb } from '../../test/fake-d1.ts'
-import { seedCardUser, TIMEZONE, USER_ID } from '../../test/seed.ts'
+import { seedCardUser, USER_ID } from '../../test/seed.ts'
 import '../../test/ts-imports.ts'
 
 const { createDb } = await import('../../db.ts')
 const { listBudgets } = await import('./list-budgets.ts')
+
+// Mid-October in Bogota: the budget reads the month of this instant, so the fixtures stay in October.
+const pinClock = () => mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-15T15:00:00Z') })
+afterEach(() => mock.timers.reset())
 
 /**
  * A 600,000 purchase over six months weighs 100,000 on every month it spans. The query has to keep
@@ -14,7 +17,8 @@ const { listBudgets } = await import('./list-budgets.ts')
  * month's share: dropping either one moves the number the budget reports.
  */
 test('a spread purchase weighs its share on every month it spans', async () => {
-  const today = todayIn(TIMEZONE)
+  pinClock()
+  const today = '2026-10-15'
   const [year, month] = today.split('-').map(Number) as [number, number]
   // The six months the purchase spans, the current one last.
   for (let back = 5; back >= 0; back--) {
