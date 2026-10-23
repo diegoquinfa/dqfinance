@@ -143,10 +143,19 @@ test('a goal without a date reserves what it already holds', () => {
   assert.equal(goal({ contributedCents: 2500000, monthsLeft: null }), 2500000)
 })
 
+test('a goal that reached its target reserves nothing: its money is free again', () => {
+  assert.equal(goal({ contributedCents: 3000000 }), 0)
+  assert.equal(goal({ contributedCents: 3500000 }), 0)
+  assert.equal(goal({ contributedCents: 3200000, contributedThisMonthCents: 3200000, monthsLeft: null }), 0)
+})
+
+test('a goal one cent short of its target still reserves what it holds', () => {
+  assert.equal(goal({ contributedCents: 2999999 }), 2999999)
+  assert.equal(goal({ contributedCents: 2999999, monthsLeft: null }), 2999999)
+})
+
 test('a goal never reserves more than its target', () => {
-  // Only what was saved past the target can pass it: the share never asks for more than is left.
-  assert.equal(goal({ contributedCents: 3500000 }), 3000000)
-  assert.equal(goal({ contributedCents: 3200000, contributedThisMonthCents: 3200000, monthsLeft: null }), 3000000)
+  // The share never asks for more than is left.
   assert.equal(goal({ contributedCents: 2900000, monthsLeft: 1 }), 3000000)
 })
 
