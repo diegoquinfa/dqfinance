@@ -1,4 +1,4 @@
-/** A guest's ledger is kept this many days after the guest was created; the daily run deletes it after. */
+/** A guest is kept at least this many days after it was created, and for as long as a session of it is alive. */
 const GUEST_RETENTION_DAYS = 7
 
 const DAY_MS = 24 * 60 * 60 * 1000
