@@ -36,7 +36,7 @@ export async function deleteCategory(db: Db, userId: string, id: string) {
     .from(budget)
     .where(and(eq(budget.categoryId, id), eq(budget.userId, userId)))
     .limit(1)
-  if (used.length > 0) throw new AppError('category_has_transactions')
+  if (used.length > 0) throw new AppError('category_has_transactions', 409)
   if (billed.length > 0 || limited.length > 0) throw new AppError('category_in_use', 409)
   await db.delete(category).where(and(eq(category.id, id), eq(category.userId, userId)))
   return { id, deleted: true }

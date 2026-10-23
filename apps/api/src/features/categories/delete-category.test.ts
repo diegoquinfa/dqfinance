@@ -37,7 +37,7 @@ test('a category a transaction uses is refused and kept', async () => {
 
   await assert.rejects(deleteCategory(createDb(d1), USER_ID, 'category-1'), {
     code: 'category_has_transactions',
-    status: 400,
+    status: 409,
   })
   assert.ok(categoryExists(sqlite, 'category-1'))
 })
