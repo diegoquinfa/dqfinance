@@ -8,7 +8,7 @@
     "deploy": "pnpm --filter @dqfinance/web run deploy",
     "dev": "pnpm --filter @dqfinance/i18n build && pnpm --filter @dqfinance/web dev",
     "dev:turbo": "turbo run dev",
-    "test": "pnpm --filter @dqfinance/api test && pnpm --filter @dqfinance/web test && node --test scripts/",
+    "test": "pnpm --filter @dqfinance/api test && pnpm --filter @dqfinance/web test && node --test 'scripts/*.test.mjs'",
     "check-types": "pnpm --filter @dqfinance/i18n build && pnpm --filter @dqfinance/api check-types && pnpm --filter @dqfinance/web check-types",
     "db:migrate:local": "pnpm --filter @dqfinance/web db:migrate:local",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
