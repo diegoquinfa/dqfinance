@@ -54,4 +54,7 @@ test('projectDueDates shows an overdue item from before the range once, today', 
   // Today outside the range: nothing to show.
   assert.deepEqual(projectDueDates(overdue, '2026-11-01', '2026-12-01', '2026-10-23'), [])
   assert.deepEqual(projectDueDates(overdue, '2026-08-01', '2026-09-01', '2026-10-23'), [])
+  // A monthly one missed since September does not show its missed October cycle too.
+  const monthly = { startsOn: '2026-09-05', nextDueOn: '2026-09-05', frequency: 'monthly' as const }
+  assert.deepEqual(projectDueDates(monthly, '2026-10-01', '2026-11-01', '2026-10-23'), ['2026-10-23'])
 })
