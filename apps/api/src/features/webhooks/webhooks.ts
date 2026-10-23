@@ -2,7 +2,9 @@ import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from '../../db'
 import { publicUrl } from '../../shared/public-url'
-import { found } from '../../shared/http'
+import { AppError, found } from '../../shared/http'
+import { user } from '../auth/auth.schema'
+import { blocksWebhooks } from './webhook-guest-rule'
 import { webhook } from './webhook.schema'
 
 export const createWebhookInput = z.object({
@@ -35,8 +37,15 @@ export const webhookView = (row: typeof webhook.$inferSelect): WebhookView => ({
   createdAt: row.createdAt.toISOString(),
 })
 
+/** Refuses a guest. The rule itself is in `webhook-guest-rule.ts`. */
+export async function refuseGuest(db: Db, userId: string) {
+  const row = await db.select({ isAnonymous: user.isAnonymous }).from(user).where(eq(user.id, userId)).get()
+  if (blocksWebhooks(row)) throw new AppError('guest_not_allowed', 403)
+}
+
 /** Adds a place the app calls. */
 export async function createWebhook(db: Db, userId: string, input: z.infer<typeof createWebhookInput>) {
+  await refuseGuest(db, userId)
   const [row] = await db.insert(webhook).values({ userId, url: input.url, secret: input.secret }).returning()
   return webhookView(row!)
 }
