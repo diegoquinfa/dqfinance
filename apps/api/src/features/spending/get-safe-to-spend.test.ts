@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import type { DatabaseSync } from 'node:sqlite'
 import { afterEach, mock, test } from 'node:test'
 import { openTestDb } from '../../test/fake-d1.ts'
 import { seedCardUser, USER_ID } from '../../test/seed.ts'
@@ -32,4 +33,79 @@ test('a foreign charge counts its value in the card currency', async () => {
   assert.equal(result.currency, 'COP')
   assert.equal(result.target, 400_000)
   assert.equal(result.targetDaily, 0)
+})
+
+/** Another user with money in every place the query reads: balances, a bill, a goal, a spread expense. */
+const seedOtherUser = (sqlite: DatabaseSync) =>
+  sqlite.exec(`
+    INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES ('user-2', 'Ben', 'ben@example.com', 1, 1, 1);
+    INSERT INTO user_settings (user_id, country, locale, timezone, primary_currency, spending_target_cents, onboarded_at) VALUES ('user-2', 'CO', 'en', 'America/Bogota', 'COP', 500000, 1);
+    INSERT INTO bank (id, user_id, name, created_at) VALUES ('bank-2', 'user-2', 'Bank', 1);
+    INSERT INTO bank_account (id, user_id, bank_id, name, created_at) VALUES ('account-2', 'user-2', 'bank-2', 'Checking', 1);
+    INSERT INTO product (id, user_id, bank_account_id, type, name, currency, created_at) VALUES ('product-2', 'user-2', 'account-2', 'checking', 'Card', 'COP', 1);
+    INSERT INTO card (id, user_id, product_id, kind, name, created_at) VALUES ('card-2', 'user-2', 'product-2', 'credit', 'Visa', 1);
+    INSERT INTO category (id, user_id, name, kind, created_at) VALUES ('category-2', 'user-2', 'Food', 'expense', 1);
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, product_id, category_id, occurred_at, created_at) VALUES ('income-2', 'user-2', 'income', 100000000, 'COP', 'product-2', 'category-2', ${Date.parse('2026-10-02T12:00:00Z')}, 1);
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, card_id, category_id, installment_months, occurred_at, created_at) VALUES ('spread-2', 'user-2', 'expense', 60000000, 'COP', 'card-2', 'category-2', 6, ${Date.parse('2026-10-04T12:00:00Z')}, 1);
+    INSERT INTO balance_adjustment (id, user_id, product_id, currency, observed_balance_cents, delta_cents, adjusted_at, created_at) VALUES ('adjust-2', 'user-2', 'product-2', 'COP', 1050000, 50000, 1, 1);
+    INSERT INTO recurring_expense (id, user_id, name, amount_cents, currency, card_id, category_id, frequency, starts_on, next_due_on, active, created_at) VALUES ('rent-2', 'user-2', 'Rent', 50000000, 'COP', 'card-2', 'category-2', 'monthly', '2026-09-20', '2026-10-20', 1, 1);
+    INSERT INTO recurring_expense (id, user_id, name, amount_cents, currency, card_id, category_id, frequency, starts_on, next_due_on, active, created_at) VALUES ('insurance-2', 'user-2', 'Insurance', 120000000, 'COP', 'card-2', 'category-2', 'yearly', '2026-03-01', '2027-03-01', 1, 1);
+    INSERT INTO savings_goal (id, user_id, name, target_cents, currency, target_date, active, created_at) VALUES ('goal-2', 'user-2', 'Trip', 100000000, 'COP', NULL, 1, 1);
+    INSERT INTO savings_contribution (id, user_id, goal_id, amount_cents, contributed_on, created_at) VALUES ('contribution-2', 'user-2', 'goal-2', 20000000, '2026-10-01', 1);
+  `)
+
+test("another user's balances, bills, goals and expenses do not change the result", async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite, 1_000_000)
+  sqlite.exec(`
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, product_id, category_id, occurred_at, created_at) VALUES ('income-1', 'user-1', 'income', 200000000, 'COP', 'product-1', 'category-1', ${Date.parse('2026-10-02T12:00:00Z')}, 1);
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, card_id, category_id, occurred_at, created_at) VALUES ('expense-1', 'user-1', 'expense', 10000000, 'COP', 'card-1', 'category-1', ${Date.parse('2026-10-03T12:00:00Z')}, 1);
+    INSERT INTO recurring_expense (id, user_id, name, amount_cents, currency, card_id, category_id, frequency, starts_on, next_due_on, active, created_at) VALUES ('rent-1', 'user-1', 'Rent', 30000000, 'COP', 'card-1', 'category-1', 'monthly', '2026-09-25', '2026-10-25', 1, 1);
+  `)
+  const db = createDb(d1)
+  const before = await getSafeToSpend(db, USER_ID)
+
+  seedOtherUser(sqlite)
+
+  // The other user's own result moves, so the data is live: only the scoping keeps it out of this one.
+  assert.notDeepEqual(await getSafeToSpend(db, 'user-2'), before)
+  assert.deepEqual(await getSafeToSpend(db, USER_ID), before)
+})
+
+test('a savings goal holds back what it has plus this month\'s share', async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  sqlite.exec(`
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, product_id, category_id, occurred_at, created_at) VALUES ('income-1', 'user-1', 'income', 2000000, 'COP', 'product-1', 'category-1', ${Date.parse('2026-10-02T12:00:00Z')}, 1);
+  `)
+  const db = createDb(d1)
+  const before = await getSafeToSpend(db, USER_ID)
+
+  // A 30,000 COP car by December: 7,500 is saved, 22,500 is left, 7,500 a month for three months.
+  sqlite.exec(`
+    INSERT INTO savings_goal (id, user_id, name, target_cents, currency, target_date, active, created_at) VALUES ('goal-1', 'user-1', 'Car', 3000000, 'COP', '2026-12-31', 1, 1);
+    INSERT INTO savings_contribution (id, user_id, goal_id, amount_cents, contributed_on, created_at) VALUES ('contribution-1', 'user-1', 'goal-1', 750000, '2026-10-01', 1);
+  `)
+  const after = await getSafeToSpend(db, USER_ID)
+
+  assert.equal(before.setAsides, 0)
+  // The reserved amount is the saved 7,500 plus the 7,500 due this month, and the free money falls by it.
+  assert.equal(after.setAsides, 15_000)
+  assert.equal(after.free, before.free - 15_000)
+})
+
+test('an overdue monthly bill is counted once in the pending bills', async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  // Due on the 5th, still unpaid on the 15th: it takes its money today, once.
+  sqlite.exec(`
+    INSERT INTO recurring_expense (id, user_id, name, amount_cents, currency, card_id, category_id, frequency, starts_on, next_due_on, active, created_at) VALUES ('rent-1', 'user-1', 'Rent', 1500000, 'COP', 'card-1', 'category-1', 'monthly', '2026-08-05', '2026-10-05', 1, 1);
+  `)
+
+  const result = await getSafeToSpend(createDb(d1), USER_ID)
+
+  assert.equal(result.pendingBills, 15_000)
 })
