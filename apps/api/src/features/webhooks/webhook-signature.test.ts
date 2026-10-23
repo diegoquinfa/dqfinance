@@ -17,7 +17,16 @@ test('another secret signs differently', async () => {
   assert.notEqual(await signBody('shhh', '{"a":1}'), await signBody('other', '{"a":1}'))
 })
 
-test('the header names the algorithm', async () => {
-  const header = await signatureHeader('shhh', 'body')
-  assert.match(header, /^sha256=[0-9a-f]{64}$/)
+test('the header is the time and the signature over the time and the body', async () => {
+  const header = await signatureHeader('shhh', 'body', 1_700_000_000)
+  assert.equal(header, `t=1700000000,v1=${await signBody('shhh', '1700000000.body')}`)
+})
+
+test('another time signs differently, so a captured call cannot be replayed with a new time', async () => {
+  const signatureAt = async (time: number) => (await signatureHeader('shhh', 'body', time)).split(',v1=')[1]
+  assert.notEqual(await signatureAt(1_700_000_000), await signatureAt(1_700_000_001))
+})
+
+test('the header carries the time and a version', async () => {
+  assert.match(await signatureHeader('shhh', 'body'), /^t=\d+,v1=[0-9a-f]{64}$/)
 })

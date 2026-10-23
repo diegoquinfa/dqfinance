@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { billDeliveryId, deliverWebhook } from './deliver-webhook.ts'
-import { signatureHeader } from './webhook-signature.ts'
+import { signBody } from './webhook-signature.ts'
 
 const hook = { url: 'https://receiver.example.com/dqfinance', secret: 'shhh' }
 
@@ -46,8 +46,12 @@ test('the call is a signed post of exactly the body that was sent', async () => 
   assert.equal(headers['X-DQFinance-Event'], 'bill.due')
   assert.equal(headers['X-DQFinance-Delivery'], 'bill-1:2026-11-01')
   assert.equal(String(call.init.body), JSON.stringify(payload))
-  // The signature covers the delivered bytes, not a re-serialisation of the payload.
-  assert.equal(headers['X-DQFinance-Signature'], await signatureHeader(hook.secret, String(call.init.body)))
+  // The signature covers the time of the call and the delivered bytes, not a re-serialisation of the payload.
+  const match = /^t=(\d+),v1=([0-9a-f]{64})$/.exec(headers['X-DQFinance-Signature'] ?? '')
+  assert.ok(match)
+  const [t, v1] = [match[1], match[2]]
+  assert.ok(Math.abs(Number(t) - Date.now() / 1000) < 60)
+  assert.equal(v1, await signBody(hook.secret, `${t}.${String(call.init.body)}`))
 })
 
 test('the delivery id is stable for one bill and due date, and tells another due date apart', () => {
