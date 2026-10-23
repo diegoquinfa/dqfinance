@@ -28,9 +28,10 @@ import { useCreateWebhook, useDeleteWebhook, useWebhooks, type Webhook } from '.
 function LeadDaysField() {
   const settings = useSettings()
   const update = useUpdateSettings()
-  // The draft is what the user typed; the saved setting is what the server holds.
-  const [draft, setDraft] = useState<number | null>(null)
-  const days = draft ?? settings.data?.reminderLeadDays ?? 0
+  // The draft is what the user typed, as text so the field can be empty.
+  // The saved setting is what the server holds, and the label shows it.
+  const [draft, setDraft] = useState<string | null>(null)
+  const days = settings.data?.reminderLeadDays ?? 0
 
   return (
     <Field className="max-w-sm">
@@ -42,15 +43,19 @@ function LeadDaysField() {
         max={60}
         step={1}
         inputMode="numeric"
-        value={days}
+        value={draft ?? days}
         onChange={(event) => {
-          const next = Number(event.target.value)
-          setDraft(next)
+          const text = event.target.value
+          setDraft(text)
+          // Only a whole number is saved: a cleared or half-typed field is not a zero,
+          // so typing never turns the warning off.
+          if (!/^\d+$/.test(text)) return
           // A refused change falls back to the saved setting, so the field never lies.
-          update.mutate(
-            { reminderLeadDays: next },
-            { onError: () => setDraft(null) },
-          )
+          update.mutate({ reminderLeadDays: Number(text) }, { onError: () => setDraft(null) })
+        }}
+        onBlur={() => {
+          // A field left empty shows the saved setting again.
+          if (draft === '') setDraft(null)
         }}
         className="max-w-32 tabular-nums"
       />
