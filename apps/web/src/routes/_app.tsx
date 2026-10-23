@@ -10,6 +10,7 @@ import { setUserTimeZone } from '#/shared/dates'
 import { useSeedDemo } from '#/features/demo/demo-api'
 import { useCheckDueBills } from '#/features/settings/webhooks-api'
 import { NewTransactionDialog } from '#/features/transactions/new-transaction-dialog'
+import { GoalCelebration } from '#/features/savings-goals/goal-celebration'
 import { ApiError } from '#/shared/api'
 import { currentLocale, m, switchLocale } from '#/shared/i18n'
 import { Avatar, AvatarFallback } from '#/shared/ui/avatar'
@@ -182,6 +183,7 @@ function AppLayout() {
           </li>
         </ul>
       </nav>
+      <GoalCelebration />
     </div>
   )
 }

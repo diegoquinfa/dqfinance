@@ -37,6 +37,17 @@ export function useAddSavingsContribution() {
   })
 }
 
+/** Marks a reached goal as celebrated, so the app does not celebrate it again. */
+export function useCelebrateGoal() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => unwrap(api.api.savings[':id'].celebrate.$post({ param: { id } })),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: savingsGoalsQuery.queryKey })
+    },
+  })
+}
+
 export function useDeleteSavingsGoal() {
   const queryClient = useQueryClient()
   return useMutation({
