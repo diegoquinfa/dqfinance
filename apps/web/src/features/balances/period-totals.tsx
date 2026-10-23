@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTransactionSummary, type SummaryFilters } from '#/features/transactions/transactions-api'
 import { currentLocale, m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
+import { todayDate } from '#/shared/dates'
 import { periodRange, type Period } from '#/shared/periods'
 import { Button } from '#/shared/ui/button'
 import { rowsClass } from '#/shared/ui/page'
@@ -90,7 +91,7 @@ function periodLabel(period: Period, offset: number, range: { from: string; to: 
 export function CalendarPeriod({ currency }: { currency: string }) {
   const [period, setPeriod] = useState<Period>('month')
   const [offset, setOffset] = useState(0)
-  const range = periodRange(period, offset)
+  const range = periodRange(period, offset, todayDate())
 
   return (
     <div className="grid gap-5">

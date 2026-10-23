@@ -4,7 +4,7 @@ import { useSettings } from '#/features/settings/settings-api'
 import { NewTransactionDialog } from '#/features/transactions/new-transaction-dialog'
 import { TransactionRow } from '#/features/transactions/transaction-row'
 import { useTransactions } from '#/features/transactions/transactions-api'
-import { formatDate } from '#/shared/dates'
+import { formatDate, todayDate } from '#/shared/dates'
 import { m } from '#/shared/i18n'
 import { formatSignedAmount } from '#/shared/money'
 import { lastMonths } from '#/shared/periods'
@@ -30,7 +30,7 @@ export function ContactPage({ id }: { id: string }) {
   const listSearch = useSearch({ from: '/_app/contacts_/$id' })
   const [months, setMonths] = useState<Months>('12')
   const { data: settings } = useSettings()
-  const period = lastMonths(Number(months))
+  const period = lastMonths(Number(months), todayDate())
   const contact = useCounterparty(id, { from: period.from })
   const movements = useTransactions({ counterpartyId: id, limit: 50 })
 

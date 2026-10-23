@@ -6,6 +6,7 @@ import type { Locale } from '#/shared/i18n'
 import { authClient } from '#/features/auth/auth-client'
 import { useSettings } from '#/features/settings/settings-api'
 import { usePushUpdates } from '#/features/settings/push-api'
+import { setUserTimeZone } from '#/shared/dates'
 import { useSeedDemo } from '#/features/demo/demo-api'
 import { useCheckDueBills } from '#/features/settings/webhooks-api'
 import { NewTransactionDialog } from '#/features/transactions/new-transaction-dialog'
@@ -88,6 +89,9 @@ function AppLayout() {
     announcedDueBills.current = true
     checkDueBills()
   }, [settings.data, isGuest, checkDueBills])
+
+  // Before the pages render: the days they default to and write are the user's, not the device's.
+  setUserTimeZone(settings.data?.timezone)
 
   if (isPending || (session && settings.isPending)) return <div className="min-h-dvh" aria-busy="true" />
   if (!session) return <Navigate to="/sign-in" />
