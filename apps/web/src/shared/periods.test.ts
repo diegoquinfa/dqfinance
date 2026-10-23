@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { lastMonths, periodRange } from './periods.ts'
+import { dayAfter, lastMonths, periodRange } from './periods.ts'
+
+test('dayAfter steps one calendar day, across month, year and leap-day edges', () => {
+  assert.equal(dayAfter('2026-10-31'), '2026-11-01')
+  assert.equal(dayAfter('2026-12-31'), '2027-01-01')
+  assert.equal(dayAfter('2028-02-28'), '2028-02-29')
+})
 
 test('periods cover whole calendar units and cross month and year edges', () => {
   const sunday = new Date(2026, 9, 18, 23, 0) // Sunday 18 Oct 2026
