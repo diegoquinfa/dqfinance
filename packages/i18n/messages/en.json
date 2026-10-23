@@ -331,6 +331,7 @@
   "savings_empty_description": "Name what you are saving for, and the app keeps it out of your daily spending.",
   "savings_created": "Goal created.",
   "savings_contributed": "Contribution added.",
+  "savings_reached": "Goal reached! Its money is free again.",
   "savings_deleted": "Goal deleted.",
   "savings_delete": "Delete goal",
   "savings_delete_hint": "The goal and what you put into it are deleted.",
