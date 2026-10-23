@@ -378,6 +378,7 @@
   "webhooks_lead_days_hint": "Cuántos días antes del vencimiento. Cero lo apaga.",
   "webhooks_lead_days_days": "{days} días antes",
   "webhooks_lead_day": "{days} día antes",
+  "webhooks_check_failed": "Un webhook no recibió el aviso de una cuenta. Se reintentará la próxima vez que abras la app.",
   "transaction_installments": "Repartir en",
   "transaction_installments_hint": "El movimiento mantiene su fecha y su monto; solo el presupuesto lo ve en partes.",
   "transaction_installments_none": "De una vez",

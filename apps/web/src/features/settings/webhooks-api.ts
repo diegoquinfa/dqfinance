@@ -1,6 +1,8 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { InferRequestType, InferResponseType } from 'hono/client'
+import { m } from '#/shared/i18n'
 import { api, unwrap } from '#/shared/api'
+import { toast } from 'sonner'
 
 export type Webhook = InferResponseType<typeof api.api.webhooks.$get, 200>[number]
 export type NewWebhook = InferRequestType<typeof api.api.webhooks.$post>['json']
@@ -30,9 +32,12 @@ export function useDeleteWebhook() {
   })
 }
 
-/** Announces the bills that fall due inside the lead time the user set. */
+/** Announces the bills that fall due inside the lead time the user set, and says when a hook missed one. */
 export function useCheckDueBills() {
   return useMutation({
     mutationFn: async () => unwrap(api.api.webhooks.check.$post()),
+    onSuccess: ({ failures }) => {
+      if (failures.length > 0) toast(m.webhooks_check_failed())
+    },
   })
 }
