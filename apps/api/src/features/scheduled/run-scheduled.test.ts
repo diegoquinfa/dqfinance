@@ -67,6 +67,23 @@ test('deleting an expired guest removes every row it owns, and nothing else', as
   assert.equal(kept.n, 1)
 })
 
+test('a guest past its retention that still has a live session keeps its ledger', async () => {
+  const { sqlite, d1 } = openTestDb()
+  const now = Date.now()
+  sqlite
+    .prepare(`INSERT INTO user (id, name, email, email_verified, is_anonymous, created_at, updated_at) VALUES ('guest-active', 'Guest', 'a@example.test', 0, 1, ?, 1)`)
+    .run(now - 30 * DAY_MS)
+  sqlite
+    .prepare(`INSERT INTO session (id, expires_at, token, created_at, updated_at, user_id) VALUES ('s', ?, 't', 1, 1, 'guest-active')`)
+    .run(now + DAY_MS)
+  await seedDemo(createDb(d1), 'guest-active', 'en')
+
+  await runScheduled(createDb(d1))
+
+  const kept = sqlite.prepare(`SELECT count(*) AS n FROM user_settings WHERE user_id = 'guest-active'`).get() as { n: number }
+  assert.equal(kept.n, 1)
+})
+
 test('every table that a user owns cascades from the user row', () => {
   const { sqlite } = openTestDb()
   sqlite.exec('PRAGMA foreign_keys = ON')

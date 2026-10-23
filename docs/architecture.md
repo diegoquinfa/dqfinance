@@ -77,7 +77,7 @@ Anything two features need that is not a domain noun moves to `shared/`, and `sh
 
 ## Scheduled work
 
-One daily cron trigger (`triggers` in `wrangler.jsonc`, 13:17 UTC) calls the Worker's `scheduled` handler, which runs `runScheduled` (`features/scheduled/run-scheduled.ts`). It deletes the guests created more than seven days ago, with every row they own, in one batch ordered children first: a `restrict` foreign key stops the cascade from the user row alone. Then it checks the bills of each user who set a reminder and has an active webhook, so a reminder no longer waits for the user to open the app. The web shell still calls `POST /api/webhooks/check` on load; both run the same check, which announces a bill once per due date.
+One daily cron trigger (`triggers` in `wrangler.jsonc`, 13:17 UTC) calls the Worker's `scheduled` handler, which runs `runScheduled` (`features/scheduled/run-scheduled.ts`). It deletes the abandoned guests (created more than seven days ago, with no live session) and every row they own, in one batch of one statement per table, ordered children first: a `restrict` foreign key stops the cascade from the user row alone, and a statement per guest would hit D1's per-invocation query limit. Their uploaded documents stay in R2. Then it checks the bills of each user who set a reminder and has an active webhook, so a reminder no longer waits for the user to open the app. The web shell still calls `POST /api/webhooks/check` on load; both run the same check, which announces a bill once per due date.
 
 ## Turborepo
 
