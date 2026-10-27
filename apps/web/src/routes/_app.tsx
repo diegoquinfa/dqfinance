@@ -45,7 +45,7 @@ const links = [
   { to: '/settings', label: m.nav_settings },
 ] as const
 
-// The four destinations people open daily; the rest live in the menu.
+// The four destinations people open daily, in the top bar and the bottom bar; the rest live in the menu.
 const tabs = [
   { to: '/overview', label: m.nav_overview, icon: House },
   { to: '/transactions', label: m.nav_transactions, icon: ReceiptText },
@@ -108,9 +108,9 @@ function AppLayout() {
           <Link to="/overview" className="shrink-0">
             <img src="/logo.svg" alt={m.app_name()} className="h-7 w-auto" />
           </Link>
-          <nav aria-label={m.nav_main()} className="hidden xl:block">
+          <nav aria-label={m.nav_main()} className="hidden lg:block">
             <ul className="flex gap-6">
-              {links.map((link) => (
+              {tabs.map((link) => (
                 <li key={link.to}>
                   <Link
                     to={link.to}
@@ -188,12 +188,12 @@ function AppLayout() {
   )
 }
 
-/** Full-screen menu with large numbered links, below the xl breakpoint. */
+/** Full-screen menu with every destination as a large numbered link, at every size. */
 function MenuDialog({ name, email }: { name: string; email: string }) {
   const [open, setOpen] = useState(false)
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-      <DialogPrimitive.Trigger className="label-mono link-draw h-9 text-ink xl:hidden">{m.nav_menu()}</DialogPrimitive.Trigger>
+      <DialogPrimitive.Trigger className="label-mono link-draw h-9 text-ink">{m.nav_menu()}</DialogPrimitive.Trigger>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Content className="fixed inset-0 z-50 flex flex-col bg-canvas duration-500 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0">
           <div className="container-page flex h-16 shrink-0 items-center justify-between border-b border-line">
@@ -249,7 +249,7 @@ function initials(name: string, email: string) {
     .join('')
 }
 
-/** From xl up the account is the avatar: name, Settings, Sign out. Below, the full-screen menu. */
+/** From xl up the account is also the avatar: name, Settings, Sign out. */
 function ProfileMenu({ name, email }: { name: string; email: string }) {
   return (
     <DropdownMenu>
