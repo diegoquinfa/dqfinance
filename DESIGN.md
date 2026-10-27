@@ -91,7 +91,7 @@ The scale is `@utility type-*`, not `--text-*` theme sizes: `cn` (tailwind-merge
 
 ## Shell
 
-- **Top bar** (64px, `canvas` + hairline, sticky): `DQFINANCE` in mono on the left. From `xl`, the eight mono links with a drawn underline (`link-draw`) and `ink` for the current page. From `lg`, the primary "New movement" button. From `xl`, the account is a square avatar (the user's initials) opening a dropdown with the name and email (mono), Settings and Sign out. Below `xl`, "Menu" opens a full-screen menu with large numbered links (`01`... in `faint`, the current one in `signal`), the name, the email, and "Sign out".
+- **Top bar** (64px, `canvas` + hairline, sticky): `DQFINANCE` in mono on the left. From `lg`, the bottom bar's four destinations as mono links with a drawn underline (`link-draw`) and `ink` for the current page, and the primary "New movement" button. From `xl`, the account is a square avatar (the user's initials) opening a dropdown with the name and email (mono), Settings and Sign out. At every size, "Menu" opens a full-screen menu with every destination as a large numbered link (`01`... in `faint`, the current one in `signal`), the name, the email, and "Sign out". Never more links in the bar: a new page goes in the menu.
 - **Bottom bar** (below `lg`): Overview, Movements, Accounts, Recurring as icons (accessible names in `sr-only`), the current one in `ink` with a 1px lilac mark on top, and a square `ink` "+" that opens New movement.
 
 ## Components
