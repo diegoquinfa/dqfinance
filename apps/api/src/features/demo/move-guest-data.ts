@@ -5,6 +5,7 @@ import { bank, bankAccount, card, cashWallet, product } from '../accounts/accoun
 import { balanceAdjustment } from '../balance-adjustments/balance-adjustment.schema.ts'
 import { user } from '../auth/auth.schema.ts'
 import { budget } from '../budgets/budget.schema.ts'
+import { cardStatement } from '../card-statements/card-statement.schema.ts'
 import { category } from '../categories/category.schema.ts'
 import { counterparty } from '../counterparties/counterparty.schema.ts'
 import { document } from '../documents/document.schema.ts'
@@ -30,6 +31,7 @@ export const guestOwnedTables = [
   product,
   cashWallet,
   card,
+  cardStatement,
   counterparty,
   transaction,
   recurringExpense,

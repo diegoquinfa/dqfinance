@@ -28,6 +28,7 @@ Status: approved 2026-10-18. Terms are defined in [GLOSSARY.md](../../GLOSSARY.m
 | D13 | i18n lives in one shared package (`packages/i18n`, Paraglide) used by the API and the web. | One message catalog; the API translates errors and system category names. |
 | D14 | A **pocket** is a product with `type = 'pocket'` and a `parent_product_id`: the product it sets money aside from. Its rules: the parent is a non-pocket product of the same user, the same bank account and the same currency, one level only; cards cannot belong to a pocket; a product with pockets cannot become a pocket, and a pocket's type cannot change. Every product also has a `yield_payout` (`daily` \| `monthly`), how often its interest is paid. | Colombian accounts let people set money aside inside one account ("home services", "transport"), each with its own effective annual rate. |
 | D15 | A transaction has a **title** (≤ 120 characters, the short label that names it in every list) and a **description** (≤ 2 000 characters, the details shown in its detail sheet). An empty title falls back to the category name. The title is what a statement gives a movement; a statement line longer than a title keeps its full text as the description. | One field doing both jobs forces a long title to name a movement, or details with nowhere to go. |
+| D16 | Safe to spend and the forecast start from what the **accounts and cash wallets hold**, not from net worth. A credit card weighs through its **statement**: the payment the user records for a cut (the minimum, or more), less the transfers that reached the card after that cut, on its payment day. The app never derives that payment from the debt. | A card's debt is paid in installments, each purchase with its own months and the rate of its day, and extra payments change them; the bank's statement already folds all of that into one number. Subtracting the whole debt made the daily number meaningless. |
 
 ## Data model
 
@@ -42,6 +43,7 @@ All tables have `id` (text UUID, except where noted), `user_id` (FK → `user`, 
 | `product` | `bank_account_id`, `type` (`savings` \| `checking` \| `payroll` \| `investment` \| `other` \| `pocket`), `name`, `currency`, `annual_rate_bps?`, `parent_product_id?`, `yield_payout?` | A **source**. `annual_rate_bps` is the effective annual rate (E.A.) in basis points (10000 = 100%); it only feeds an estimate, never a balance. A **pocket** (`type = 'pocket'`) sets money aside inside its `parent_product_id`: same bank account, same currency, one level (D14). `yield_payout` is `daily` \| `monthly`, how often the interest is paid. |
 | `cash_wallet` | `name`, `currency` | A **source**. Several allowed (COP wallet, USD wallet). |
 | `card` | `product_id`, `kind` (`debit` \| `credit`), `name`, `last4?`, `credit_limit_cents?`, `statement_day?`, `due_day?`, `brand?`, `interest_rate_bps?`, `interest_rate_period?`, `color?` | A **source**. Currency = its product's currency. `brand` is `visa` \| `mastercard` \| `amex` \| `diners` \| `other`; `interest_rate_period` is `monthly` (MV) or `annual` (EA), and the rate belongs to a credit card. `color` is presentation only. |
+| `card_statement` | `card_id`, `closed_on`, `due_on`, `payment_cents` | What a credit card's statement asks for after one cut (D16), in the card's currency. `card_id` + `closed_on` is unique: recording the same cut again replaces the payment. |
 | `category` | `name?`, `kind` (`expense` \| `income`), `system_key?` | System categories (`fx_loss`, `fx_gain`, `bank_fees`, `other_expense`, `other_income`) have a key and no stored name; the name is translated on read. An import row without a category is booked in `other_expense` / `other_income`. |
 | `counterparty` | `name`, `kind` (`person` \| `business`) | |
 | `transaction` | `type` (`income` \| `expense`), `amount_cents`, `currency`, **source** (`product_id?` \| `cash_wallet_id?` \| `card_id?`), `primary_amount_cents?`, `category_id`, `counterparty_id?`, `recurring_expense_id?`, `transfer_id?`, `title?`, `description?`, `installment_months?`, `occurred_at` | `primary_amount_cents` only for a credit-card charge in a foreign currency. `transfer_id` links the fee and FX entries a transfer created. `title` names the transaction in a list, `description` holds the details (D15). `installment_months` spreads an expense over the months it belongs to, for budgeting only: the movement keeps its date and its amount. |
@@ -149,32 +151,7 @@ A file attached to a source: contract, terms, or fee table. PDF or a common imag
 
 ## MCP tools
 
-| Tool | Purpose |
-| --- | --- |
-| `get_settings` | The user's country, language, timezone and enabled currencies; read-only |
-| `list_accounts` | Every source with its id, currency, and balance or debt |
-| `get_balance_history` | Month-end assets and card debt per currency, optionally for one source |
-| `create_bank`, `create_bank_account`, `create_cash_wallet` | A bank and an account in it, or a cash wallet, so an agent can set up a source end to end |
-| `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, the yield payout, the parent product of a pocket, brand, interest rate, and color |
-| `list_categories`, `create_category`, `update_category`, `delete_category`, `merge_categories` | Categories to record movements with, and reshaping them: rename and mark, delete an unused one, or merge one into another of the same kind; `includeSystem` adds the FX-difference and fee ones |
-| `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `delete_contact` | Contacts, and one contact's totals by category and month |
-| `create_transaction`, `list_transactions`, `summarize_transactions` | Record, query and total income and expenses |
-| `search_transactions` | Find a movement by its title, description or category, one line each, newest first |
-| `update_transaction`, `delete_transaction` | Correct or remove a movement; the fee and FX entries of a transfer belong to it and cannot change on their own |
-| `create_transfer`, `list_transfers`, `mark_transfer_received` | Move money between the user's own sources |
-| `adjust_balance`, `list_balance_adjustments` | Set the real balance of a source; the last 100 corrections |
-| `list_recurring`, `create_recurring`, `delete_recurring` | Manage subscriptions and bills; `pending: true` is the "to confirm" inbox |
-| `confirm_recurring`, `skip_recurring` | Work the "to confirm" inbox |
-| `get_calendar` | Per day of the user's timezone, what moved and what falls due (up to 62 days) |
-| `import_transactions` | Record a whole statement at once, with a dry-run preview and duplicate detection |
-| `list_documents`, `delete_document` | The files attached to the user's sources, and removing one |
-| `list_expected_incomes`, `create_expected_income`, `delete_expected_income` | The money the user expects, and the day each one next arrives; safe to spend counts on them |
-| `list_savings_goals`, `create_savings_goal`, `add_savings_contribution`, `delete_savings_goal` | What the user is saving for, what was put in, and what each goal asks every month |
-| `safe_to_spend`, `forecast` | How much may be spent today; and the projected balance of each day until the month ends, with its lowest point |
-| `list_webhooks`, `create_webhook`, `delete_webhook` | The user's own automation: the public https URL the app calls when a bill falls due, and the secret its signature uses |
-| `list_budgets`, `set_budget`, `delete_budget` | A monthly limit per category, with what it spent and what is left |
-
-Onboarding, changing settings, and uploading or downloading files stay in the web app; every other write is also reachable through the tools above. Scopes: `finance:read`, `finance:write`.
+The tool set, and the setup that stays web-only, are in [mcp.md](../mcp.md#tools).
 
 ## Web screens
 
@@ -208,4 +185,4 @@ Each step is a full vertical slice (API + MCP + web + tests), working before the
 
 ## Later
 
-Receipts/attachments, tags, statements/periods, exchange rates (automatic purchase-day values), loans and debts (uses Counterparty), recurring subscription detection, shared expenses, federated contacts and group projects. User requests behind these are in [2026-10-20-user-feedback.md](2026-10-20-user-feedback.md). The proposals still open are in [2026-10-21-feature-proposals.md](2026-10-21-feature-proposals.md); what shipped from that list is tracked in [odd/tasks](../../odd/tasks/).
+Receipts/attachments, tags, budget periods, exchange rates (automatic purchase-day values), loans and debts (uses Counterparty), recurring subscription detection, shared expenses, federated contacts and group projects. User requests behind these are in [2026-10-20-user-feedback.md](2026-10-20-user-feedback.md). The proposals still open are in [2026-10-21-feature-proposals.md](2026-10-21-feature-proposals.md); what shipped from that list is tracked in [odd/tasks](../../odd/tasks/).

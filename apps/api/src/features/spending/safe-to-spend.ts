@@ -5,7 +5,7 @@ import { billOccurrences } from './bill-occurrences.ts'
 /**
  * How much the user may spend today.
  *
- * today = (money in hand − fixed bills still due − savings and set-asides) / days left
+ * today = (money in hand − fixed bills still due − card payments due − savings and set-asides) / days left
  *
  * "Days left" runs to the end of the month, or to the next expected income, so the number corrects
  * itself: overspend one day and tomorrow's figure drops; underspend and it rises.
@@ -15,6 +15,8 @@ export type SafeToSpendInput = {
   availableCents: number
   /** The fixed bills still due before the period ends. */
   pendingBillsCents: number
+  /** What the credit card statements still ask for before the period ends (design D16). */
+  cardPaymentsCents: number
   /** What the user set aside: savings goals and yearly bills. */
   setAsidesCents: number
   /** What the user already spent this period. */
@@ -44,7 +46,7 @@ export type SafeToSpend = {
  * is, so the daily figure is rounded down to the cent.
  */
 export const safeToSpend = (input: SafeToSpendInput): SafeToSpend => {
-  const freeCents = input.availableCents - input.pendingBillsCents - input.setAsidesCents
+  const freeCents = input.availableCents - input.pendingBillsCents - input.cardPaymentsCents - input.setAsidesCents
   // The last day of the period still counts as one day.
   const daysLeft = Math.max(1, input.daysLeft)
   const dailyCents = Math.floor(freeCents / daysLeft)

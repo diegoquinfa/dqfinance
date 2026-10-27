@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { CardStatementDialog } from '#/features/card-statements/card-statement-dialog'
 import { useUpdateSettings } from '#/features/settings/settings-api'
+import { formatDay } from '#/shared/dates'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
-import { Eyebrow } from '#/shared/ui/page'
+import { Eyebrow, rowsClass } from '#/shared/ui/page'
 import { Field, FieldError, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { Spinner } from '#/shared/ui/spinner'
-import { useSafeToSpend } from './spending-api'
+import { useSafeToSpend, type SafeToSpend } from './spending-api'
 import { overspendKey } from './overspend-key'
 
 /** The cap the user set for the month, and the way to change it. */
@@ -88,9 +90,63 @@ function TargetDialog({ target, currency }: { target: number | null; currency: s
   )
 }
 
+/** One credit card in its cycle: what its last statement still asks for, and when (design D16). */
+function CardCycleRow({ card }: { card: SafeToSpend['cards'][number] }) {
+  // The statement of the last cut, once the user recorded it.
+  const current = card.statementMissing ? null : card.statement
+  const closedOn = current?.closedOn ?? card.lastCutOn
+  const dueOn = current?.dueOn ?? card.dueOn
+  return (
+    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1 py-4">
+      <span className="truncate text-ink">{card.name}</span>
+      <span className="text-right">
+        {current &&
+          (current.remaining > 0 ? (
+            <span className="font-medium text-ink tabular-nums">{formatMoney(current.remaining, card.currency)}</span>
+          ) : (
+            <span className="label-mono text-income">{m.spending_card_paid()}</span>
+          ))}
+      </span>
+      <span className="label-mono truncate text-muted-foreground">
+        {closedOn && dueOn
+          ? m.spending_card_cycle({ cut: formatDay(closedOn), due: formatDay(dueOn) })
+          : m.spending_card_no_days()}
+      </span>
+      <span className="text-right">
+        <CardStatementDialog
+          cardId={card.id}
+          cardName={card.name}
+          closedOn={closedOn}
+          dueOn={dueOn}
+          payment={current?.payment}
+          trigger={
+            <button type="button" className="label-mono link-draw text-ink">
+              {current ? m.action_edit() : m.spending_card_record()}
+            </button>
+          }
+        />
+      </span>
+      {current && current.paid > 0 && current.remaining > 0 && (
+        <span className="label-mono col-span-2 text-muted-foreground tabular-nums">
+          {m.spending_card_paid_of({
+            paid: formatMoney(current.paid, card.currency),
+            payment: formatMoney(current.payment, card.currency),
+          })}
+        </span>
+      )}
+      {card.cycleCharges > 0 && (
+        <span className="label-mono col-span-2 text-muted-foreground tabular-nums">
+          {m.spending_card_charges({ amount: formatMoney(card.cycleCharges, card.currency) })}
+        </span>
+      )}
+    </li>
+  )
+}
+
 /**
- * The number the user checks most: how much may I spend today. The money in hand, the bills still
- * due and the days left in the month, and the cap the user set.
+ * The number the user checks most: how much may I spend today. What the accounts hold, the bills
+ * and card payments still due, the days left in the month, and the cap the user set. Below it, each
+ * credit card with what its statement asks for.
  */
 export function SafeToSpendCard() {
   const safe = useSafeToSpend()
@@ -121,13 +177,15 @@ export function SafeToSpendCard() {
 
       <dl className="grid gap-y-3">
         <div className="flex items-baseline justify-between gap-4">
-          <dt className="label-mono text-muted-foreground">{m.spending_money()}</dt>
-          <dd className="text-soft tabular-nums">{formatMoney(data.available, data.currency)}</dd>
-        </div>
-        <div className="flex items-baseline justify-between gap-4">
           <dt className="label-mono text-muted-foreground">{m.spending_bills()}</dt>
           <dd className="text-soft tabular-nums">{formatMoney(data.pendingBills, data.currency)}</dd>
         </div>
+        {data.cardPayments > 0 && (
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="label-mono text-muted-foreground">{m.spending_card_payments()}</dt>
+            <dd className="text-soft tabular-nums">{formatMoney(data.cardPayments, data.currency)}</dd>
+          </div>
+        )}
         {data.expectedIncome > 0 && (
           <div className="flex items-baseline justify-between gap-4">
             <dt className="label-mono text-muted-foreground">{m.spending_expected()}</dt>
@@ -156,6 +214,17 @@ export function SafeToSpendCard() {
       <div>
         <TargetDialog target={data.target} currency={data.currency} />
       </div>
+
+      {data.cards.length > 0 && (
+        <div className="grid gap-3">
+          <Eyebrow>{m.spending_cards()}</Eyebrow>
+          <ul className={rowsClass}>
+            {data.cards.map((card) => (
+              <CardCycleRow key={card.id} card={card} />
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }

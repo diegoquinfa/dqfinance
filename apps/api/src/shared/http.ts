@@ -54,6 +54,7 @@ export const ERROR_CODES = [
   'card_on_pocket',
   'transaction_not_found',
   'transaction_from_transfer',
+  'statement_dates_required',
 ] as const
 
 export type ErrorCode = (typeof ERROR_CODES)[number]

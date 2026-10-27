@@ -13,6 +13,7 @@ import {
 const input = (over: Partial<SafeToSpendInput> = {}): SafeToSpendInput => ({
   availableCents: 500000,
   pendingBillsCents: 120000,
+  cardPaymentsCents: 0,
   setAsidesCents: 0,
   spentCents: 0,
   targetCents: null,
@@ -31,6 +32,12 @@ test('the set-asides come out before the division', () => {
   const result = safeToSpend(input({ setAsidesCents: 50000 }))
   assert.equal(result.freeCents, 330000)
   assert.equal(result.dailyCents, 33000)
+})
+
+test('a card payment due in the period comes out before the division', () => {
+  const result = safeToSpend(input({ cardPaymentsCents: 80000 }))
+  assert.equal(result.freeCents, 300000)
+  assert.equal(result.dailyCents, 30000)
 })
 
 test('the cap wins when it is lower than what the money allows', () => {

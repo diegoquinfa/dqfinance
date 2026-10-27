@@ -16,6 +16,8 @@ Domain terms used in code, docs, and reviews. Code uses the English term; the Sp
 | **Source** (Fuente) | Where money moves from or to: a product, a cash wallet, or a card. Stored as three nullable foreign keys with exactly one set. |
 | **Balance** (Saldo) | Money in a product or cash wallet. Always computed from movements. |
 | **Debt** (Deuda) | What is owed on a credit card, per currency. Always computed. |
+| **Cut** (Corte) | The day a credit card's statement closes: what was charged until then goes on that statement. |
+| **Statement** (Extracto) | What a credit card asks the user to pay after a cut, by its payment day. The user records it (the minimum, or more); the app never derives it from the debt. |
 | **Transaction** (Movimiento) | An income or an expense on one source. Changes the user's net worth. |
 | **Title** (Título) | The short label that names a transaction in every list, at most 120 characters. Empty falls back to the category name. |
 | **Description** (Descripción) | The long free text of a transaction, with the details its title has no room for. Shown only in the transaction's detail sheet. |

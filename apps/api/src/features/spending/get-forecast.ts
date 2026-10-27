@@ -8,6 +8,7 @@ import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-
 import { assetsAndLiabilities } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
 import { shiftDay } from '../calendar/calendar-days.ts'
+import { listCardCycles } from '../card-statements/list-card-cycles'
 import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
 import { incomeDatesIn } from '../expected-incomes/next-income-date.ts'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
@@ -19,8 +20,9 @@ import { monthSpentCents } from './safe-to-spend'
 import { monthPeriod } from './spending-period'
 
 /**
- * The balance of each day until the end of the month, and the day it is lowest. What is known moves
- * the line: the recurring expenses and the incomes the user expects. What is not known is the
+ * The balance of each day until the end of the month, and the day it is lowest. It starts from what
+ * the accounts and wallets hold, like safe to spend (design D16). What is known moves the line: the
+ * recurring expenses, the credit card statements on their payment day, and the incomes the user expects. What is not known is the
  * user's pace: this month's spending so far, divided by the days elapsed, spent each day after today.
  */
 export async function getForecast(db: Db, userId: string) {
@@ -31,7 +33,7 @@ export async function getForecast(db: Db, userId: string) {
 
   const balances = await getBalances(db, userId)
   const totals = assetsAndLiabilities(balances).find((total) => total.currency === currency)
-  const startCents = (totals?.assetsCents ?? 0) - (totals?.liabilitiesCents ?? 0)
+  const startCents = totals?.assetsCents ?? 0
 
   // The pace is read on every request, summed by the database: a stored average would need a refresh
   // on every write path, while this is one indexed sum. A fixed bill is projected on its own dates,
@@ -104,6 +106,13 @@ export async function getForecast(db: Db, userId: string) {
     for (const occurrence of billOccurrences(bill, today, month.end)) {
       add(expenseByDay, occurrence.day, occurrence.amountCents)
     }
+  }
+
+  // What a statement still asks for leaves on its payment day; an overdue one leaves today.
+  for (const owned of await listCardCycles(db, userId, today, settings.timezone)) {
+    if (owned.currency !== currency || !owned.statement?.remainingCents) continue
+    const day = owned.statement.dueOn < today ? today : owned.statement.dueOn
+    if (day <= month.end) add(expenseByDay, day, owned.statement.remainingCents)
   }
 
   const incomes = (await listExpectedIncomes(db, userId)).filter((income) => income.currency === currency)

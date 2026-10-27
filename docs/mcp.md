@@ -1,6 +1,6 @@
 # DQFinance — MCP server
 
-The tool set, and the setup that stays web-only, are in [the domain design](./plans/2026-10-18-finance-domain-design.md#mcp-tools).
+The tools are listed under [Tools](#tools); the flow, the roles and the rules for writing one follow.
 
 ## Flow
 
@@ -68,3 +68,33 @@ The consent page refuses too, so the agent's author sees why instead of a myster
 ## Importing a statement
 
 `import_transactions` takes one source and up to 500 rows. The tool description asks the agent to parse the PDF or screenshot itself, call with `dryRun: true`, show the preview, and only then call again with `dryRun: false`; the write is one atomic `db.batch` of 8-row INSERTs (D1 allows 100 bound parameters per statement). A row is a duplicate when it matches a recorded movement on the same source, type, amount in cents and calendar day (the user's timezone), and a title or a description that both of them carry matches. A row that only looks like one is imported and flagged `possibleDuplicate`. The rule is `features/transactions/duplicate.ts` (pure, tested).
+
+## Tools
+
+| Tool | Purpose |
+| --- | --- |
+| `get_settings` | The user's country, language, timezone and enabled currencies; read-only |
+| `list_accounts` | Every source with its id, currency, and balance or debt |
+| `get_balance_history` | Month-end assets and card debt per currency, optionally for one source |
+| `create_bank`, `create_bank_account`, `create_cash_wallet` | A bank and an account in it, or a cash wallet, so an agent can set up a source end to end |
+| `create_product`, `update_product`, `create_card`, `update_card` | The setup fields an agent needs, including the annual rate, the yield payout, the parent product of a pocket, brand, interest rate, and color |
+| `list_categories`, `create_category`, `update_category`, `delete_category`, `merge_categories` | Categories to record movements with, and reshaping them: rename and mark, delete an unused one, or merge one into another of the same kind; `includeSystem` adds the FX-difference and fee ones |
+| `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `delete_contact` | Contacts, and one contact's totals by category and month |
+| `create_transaction`, `list_transactions`, `summarize_transactions` | Record, query and total income and expenses |
+| `search_transactions` | Find a movement by its title, description or category, one line each, newest first |
+| `update_transaction`, `delete_transaction` | Correct or remove a movement; the fee and FX entries of a transfer belong to it and cannot change on their own |
+| `create_transfer`, `list_transfers`, `mark_transfer_received` | Move money between the user's own sources |
+| `adjust_balance`, `list_balance_adjustments` | Set the real balance of a source; the last 100 corrections |
+| `list_recurring`, `create_recurring`, `delete_recurring` | Manage subscriptions and bills; `pending: true` is the "to confirm" inbox |
+| `confirm_recurring`, `skip_recurring` | Work the "to confirm" inbox |
+| `get_calendar` | Per day of the user's timezone, what moved and what falls due (up to 62 days) |
+| `import_transactions` | Record a whole statement at once, with a dry-run preview and duplicate detection |
+| `list_documents`, `delete_document` | The files attached to the user's sources, and removing one |
+| `list_expected_incomes`, `create_expected_income`, `delete_expected_income` | The money the user expects, and the day each one next arrives; safe to spend counts on them |
+| `list_savings_goals`, `create_savings_goal`, `add_savings_contribution`, `delete_savings_goal` | What the user is saving for, what was put in, and what each goal asks every month |
+| `safe_to_spend`, `forecast` | How much may be spent today, with each credit card's cycle and statement; and the projected balance of each day until the month ends, with its lowest point |
+| `record_card_statement` | What a credit card's statement asks the user to pay after a cut (D16) |
+| `list_webhooks`, `create_webhook`, `delete_webhook` | The user's own automation: the public https URL the app calls when a bill falls due, and the secret its signature uses |
+| `list_budgets`, `set_budget`, `delete_budget` | A monthly limit per category, with what it spent and what is left |
+
+Onboarding, changing settings, and uploading or downloading files stay in the web app; every other write is also reachable through the tools above. Scopes: `finance:read`, `finance:write`.

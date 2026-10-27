@@ -155,9 +155,10 @@ test('the pace is this month spending over the days elapsed, spent from tomorrow
 
   assert.equal(result.daysElapsed, 15)
   assert.equal(result.dailyAverage, 2_000)
-  // Today's balance already holds the spending so far; each of the 16 days after it takes 2,000.
-  assert.equal(result.days[0]?.balance, 80_000)
-  assert.equal(result.days.at(-1)?.balance, 80_000 - 2_000 * 16)
+  // The 30,000 went on the credit card, so the accounts still hold 110,000 today (design D16);
+  // each of the 16 days after it takes 2,000.
+  assert.equal(result.days[0]?.balance, 110_000)
+  assert.equal(result.days.at(-1)?.balance, 110_000 - 2_000 * 16)
 })
 
 test("a fixed bill's movement is not part of the pace", async () => {
@@ -210,4 +211,23 @@ test('an expense in another currency is not part of the pace', async () => {
   const result = await getForecast(createDb(d1), USER_ID)
 
   assert.equal(result.dailyAverage, 0)
+})
+
+test("a card statement leaves on its payment day, and the card's debt never moves the line", async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  seedBalance(sqlite)
+  // 4,000 still asked for by the statement, due on the 20th. The debt itself is far larger.
+  sqlite.exec(`
+    INSERT INTO balance_adjustment (id, user_id, card_id, currency, observed_balance_cents, delta_cents, adjusted_at, created_at) VALUES ('debt-1', 'user-1', 'card-1', 'COP', 500000000, 500000000, ${Date.parse('2026-10-01T12:00:00Z')}, 1);
+    INSERT INTO card_statement (id, user_id, card_id, closed_on, due_on, payment_cents, created_at) VALUES ('statement-1', 'user-1', 'card-1', '2026-09-30', '2026-10-20', 400000, 1);
+  `)
+
+  const result = await getForecast(createDb(d1), USER_ID)
+
+  const before = result.days.filter((point) => point.day < '2026-10-20')
+  const from = result.days.filter((point) => point.day >= '2026-10-20')
+  assert.ok(before.every((point) => point.balance === 10_000))
+  assert.ok(from.every((point) => point.balance === 6_000))
 })
