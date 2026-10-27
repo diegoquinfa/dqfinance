@@ -21,12 +21,21 @@ export const formatSignedAmount = (type: 'income' | 'expense', amount: number, c
 // Intl formatters are expensive to build and a chart builds one per tick.
 const compactFormats = new Map<string, Intl.NumberFormat>()
 
-/** "150 mil", "1,2 M": the axis of a chart gives the scale, the tooltip gives the exact amount. */
-export function formatCompact(amount: number, locale: Locale = currentLocale()) {
-  let format = compactFormats.get(locale)
+/**
+ * "150 mil", "1,2 M": the axis of a chart gives the scale, the tooltip gives the exact amount. An axis
+ * whose ticks sit close together passes the significant digits it needs (shared/axis-digits.ts).
+ */
+export function formatCompact(amount: number, locale: Locale = currentLocale(), significantDigits?: number) {
+  const key = `${locale}:${significantDigits ?? ''}`
+  let format = compactFormats.get(key)
   if (!format) {
-    format = new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 })
-    compactFormats.set(locale, format)
+    format = new Intl.NumberFormat(
+      locale,
+      significantDigits
+        ? { notation: 'compact', maximumSignificantDigits: significantDigits }
+        : { notation: 'compact', maximumFractionDigits: 1 },
+    )
+    compactFormats.set(key, format)
   }
   return format.format(amount)
 }
