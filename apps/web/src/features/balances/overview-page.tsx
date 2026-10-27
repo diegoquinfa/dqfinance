@@ -115,27 +115,33 @@ export function OverviewPage() {
     <>
       <h1 className="sr-only">{m.overview_title()}</h1>
 
-      <section className="grid gap-10 pt-10 pb-8 md:pt-16 lg:grid-cols-12 lg:items-end lg:gap-x-12 lg:pb-12">
-        <div className="grid gap-5 lg:col-span-6">
-          <h2>
-            <Eyebrow index="01">{m.overview_total_balance()}</Eyebrow>
-          </h2>
-          <p className="type-display font-medium break-words text-ink tabular-nums">
-            {formatMoney(worth[0]!.assets, primary)}
-          </p>
-          {otherBalances.length > 0 && (
-            <ul aria-label={m.overview_other_currencies()} className="flex flex-wrap gap-x-6 gap-y-1">
-              {otherBalances.map((entry) => (
-                <li key={entry.currency} className="label-mono text-muted-foreground tabular-nums">
-                  {formatMoney(entry.assets, entry.currency)}
-                </li>
-              ))}
-            </ul>
-          )}
+      {/* Desktop: the total and its period on the left, safe-to-spend on the right, both from the top.
+          Below lg the wrapper dissolves so safe-to-spend stays second, before the period. */}
+      <section className="grid gap-10 pt-10 pb-8 md:pt-16 lg:grid-cols-12 lg:items-start lg:gap-x-12 lg:pb-12">
+        <div className="contents lg:col-span-6 lg:grid lg:gap-10">
+          <div className="grid gap-2">
+            <h2>
+              <Eyebrow index="01">{m.overview_total_balance()}</Eyebrow>
+            </h2>
+            <p className="type-display font-medium break-words text-ink tabular-nums">
+              {formatMoney(worth[0]!.assets, primary)}
+            </p>
+            {otherBalances.length > 0 && (
+              <ul aria-label={m.overview_other_currencies()} className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
+                {otherBalances.map((entry) => (
+                  <li key={entry.currency} className="label-mono text-muted-foreground tabular-nums">
+                    {formatMoney(entry.assets, entry.currency)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="max-lg:order-last">
+            <CalendarPeriod currency={primary} />
+          </div>
         </div>
-        <div className="grid gap-10 lg:col-span-6">
+        <div className="lg:col-span-6">
           <SafeToSpendCard />
-          <CalendarPeriod currency={primary} />
         </div>
       </section>
 
