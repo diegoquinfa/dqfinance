@@ -231,3 +231,25 @@ test("a card statement leaves on its payment day, and the card's debt never move
   assert.ok(before.every((point) => point.balance === 10_000))
   assert.ok(from.every((point) => point.balance === 6_000))
 })
+
+test('the month so far is what the accounts held at the end of each day, ending with today', async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  seedBalance(sqlite)
+  // A card charge never moves the accounts, so it is not in the history.
+  seedExpense(sqlite, { id: 'food-1', cents: 300_000, occurredAt: '2026-10-05T12:00:00Z' })
+  // Late on the 9th in Bogota (UTC-5), early on the 10th in UTC: it belongs to the 9th.
+  sqlite.exec(`INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, product_id, category_id, occurred_at, created_at) VALUES ('rent-paid', 'user-1', 'expense', 400000, 'COP', 'product-1', 'category-1', ${Date.parse('2026-10-10T03:00:00Z')}, 1);`)
+
+  const result = await getForecast(createDb(d1), USER_ID)
+
+  assert.equal(result.history.length, 15)
+  assert.deepEqual(result.history[0], { day: '2026-10-01', balance: 0 })
+  assert.deepEqual(result.history[1], { day: '2026-10-02', balance: 10_000 })
+  assert.deepEqual(result.history[7], { day: '2026-10-08', balance: 10_000 })
+  assert.deepEqual(result.history[8], { day: '2026-10-09', balance: 6_000 })
+  // Today's point is where the projection starts.
+  assert.deepEqual(result.history.at(-1), { day: '2026-10-15', balance: 6_000 })
+  assert.equal(result.days[0]?.balance, 6_000)
+})

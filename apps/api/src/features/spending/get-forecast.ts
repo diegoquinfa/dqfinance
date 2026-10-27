@@ -5,8 +5,8 @@ import { startOfDayIn } from '../../shared/day-range.ts'
 import { fromCents, toCents } from '../../shared/money'
 import { card } from '../accounts/account.schema'
 import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
-import { assetsAndLiabilities } from '../balances/compute-balances'
-import { getBalances } from '../balances/get-balances'
+import { assetsAndLiabilities, computeBalances, computeBalancesAt } from '../balances/compute-balances'
+import { getLedger } from '../balances/get-balances'
 import { shiftDay } from '../calendar/calendar-days.ts'
 import { listCardCycles } from '../card-statements/list-card-cycles'
 import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
@@ -20,7 +20,8 @@ import { monthSpentCents } from './safe-to-spend'
 import { monthPeriod } from './spending-period'
 
 /**
- * The balance of each day until the end of the month, and the day it is lowest. It starts from what
+ * What the accounts held at the end of each day of the month so far, then the projected balance of
+ * each day until the end of the month, and the day it is lowest. It starts from what
  * the accounts and wallets hold, like safe to spend (design D16). What is known moves the line: the
  * recurring expenses, the credit card statements on their payment day, and the incomes the user expects. What is not known is the
  * user's pace: this month's spending so far, divided by the days elapsed, spent each day after today.
@@ -30,17 +31,27 @@ export async function getForecast(db: Db, userId: string) {
   const currency = settings.primaryCurrency
   const today = todayIn(settings.timezone)
   const month = monthPeriod(today)
+  const monthStart = `${today.slice(0, 8)}01`
 
-  const balances = await getBalances(db, userId)
-  const totals = assetsAndLiabilities(balances).find((total) => total.currency === currency)
-  const startCents = totals?.assetsCents ?? 0
+  const ledger = await getLedger(db, userId)
+  const assetsOf = (balances: ReturnType<typeof computeBalances>) =>
+    assetsAndLiabilities(balances).find((total) => total.currency === currency)?.assetsCents ?? 0
+  const startCents = assetsOf(computeBalances(ledger))
+
+  // The days already lived, from the same balance rules at the last instant of each day; today's is
+  // the balance now, where the projection starts.
+  const history: { day: string; balanceCents: number }[] = []
+  for (let day = monthStart; day < today; day = shiftDay(day, 1)) {
+    const at = new Date(startOfDayIn(settings.timezone, shiftDay(day, 1)).getTime() - 1)
+    history.push({ day, balanceCents: assetsOf(computeBalancesAt({ ...ledger, at })) })
+  }
+  history.push({ day: today, balanceCents: startCents })
 
   // The pace is read on every request, summed by the database: a stored average would need a refresh
   // on every write path, while this is one indexed sum. A fixed bill is projected on its own dates,
   // so its movements are left out; a spread expense counts its share of this month, so only those
   // rows are loaded.
   const daysElapsed = Number(today.slice(8))
-  const monthStart = `${today.slice(0, 8)}01`
   const tomorrowStart = startOfDayIn(settings.timezone, shiftDay(today, 1))
   const ordinary = await db
     .select({ cents: sql<number>`coalesce(sum(${movementAmount}), 0)` })
@@ -139,6 +150,7 @@ export async function getForecast(db: Db, userId: string) {
     periodEnd: month.end,
     dailyAverage: fromCents(dailyAverageCents),
     daysElapsed,
+    history: history.map((point) => ({ day: point.day, balance: fromCents(point.balanceCents) })),
     days: points.map((point) => ({ day: point.day, balance: fromCents(point.balanceCents) })),
     lowest: lowest ? { day: lowest.day, balance: fromCents(lowest.balanceCents) } : null,
   }
