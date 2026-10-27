@@ -135,3 +135,47 @@ test('an overdue monthly bill is counted once in the pending bills', async () =>
 
   assert.equal(result.pendingBills, 15_000)
 })
+
+test("a card's debt does not weigh; its statement does, when it is paid in the period", async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  // 100,000 in the account and 50,000 charged to the card.
+  sqlite.exec(`
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, product_id, category_id, occurred_at, created_at) VALUES ('income-1', 'user-1', 'income', 10000000, 'COP', 'product-1', 'category-1', ${Date.parse('2026-10-02T12:00:00Z')}, 1);
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, card_id, category_id, occurred_at, created_at) VALUES ('charge-1', 'user-1', 'expense', 5000000, 'COP', 'card-1', 'category-1', ${Date.parse('2026-10-03T12:00:00Z')}, 1);
+  `)
+  const db = createDb(d1)
+  const debtOnly = await getSafeToSpend(db, USER_ID)
+
+  // A statement of 20,000 due on the 20th, inside the month.
+  sqlite.exec(`INSERT INTO card_statement (id, user_id, card_id, closed_on, due_on, payment_cents, created_at) VALUES ('statement-1', 'user-1', 'card-1', '2026-09-30', '2026-10-20', 2000000, 1)`)
+  const dueNow = await getSafeToSpend(db, USER_ID)
+
+  // The same statement paid next month: not this period's money.
+  sqlite.exec(`UPDATE card_statement SET due_on = '2026-11-14'`)
+  const dueLater = await getSafeToSpend(db, USER_ID)
+
+  assert.equal(debtOnly.available, 100_000)
+  assert.equal(debtOnly.cardPayments, 0)
+  assert.equal(debtOnly.free, 100_000)
+  assert.equal(dueNow.cardPayments, 20_000)
+  assert.equal(dueNow.free, 80_000)
+  assert.equal(dueNow.cards[0]?.statement?.remaining, 20_000)
+  assert.equal(dueLater.cardPayments, 0)
+  assert.equal(dueLater.free, 100_000)
+})
+
+test('a spread charge on a credit card gives nothing back: its statement asks for it', async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  sqlite.exec(`
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, card_id, category_id, installment_months, occurred_at, created_at) VALUES ('spread-1', 'user-1', 'expense', 6000000, 'COP', 'card-1', 'category-1', 6, ${Date.parse('2026-10-04T12:00:00Z')}, 1);
+  `)
+
+  const result = await getSafeToSpend(createDb(d1), USER_ID)
+
+  assert.equal(result.futureInstallments, 0)
+  assert.equal(result.free, 0)
+})

@@ -1,4 +1,4 @@
-import { and, eq, gte, isNotNull, lt, or, sum } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, isNull, lt, or, sum } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { todayIn } from '../../shared/dates'
 import { startOfDayIn } from '../../shared/day-range.ts'
@@ -8,6 +8,7 @@ import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-
 import { assetsAndLiabilities } from '../balances/compute-balances'
 import { getBalances } from '../balances/get-balances'
 import { shiftDay } from '../calendar/calendar-days.ts'
+import { listCardCycles } from '../card-statements/list-card-cycles'
 import { listExpectedIncomes } from '../expected-incomes/list-expected-incomes'
 import { recurringExpense } from '../recurring-expenses/recurring-expense.schema'
 import { listGoals } from '../savings-goals/list-goals'
@@ -26,9 +27,10 @@ import {
 import { monthPeriod } from './spending-period'
 
 /**
- * What the user may spend today, in their primary currency. The money in hand is what the balances
- * hold (a card's debt counts against it), the bills are the recurring expenses still due before the
- * period ends, and the cap is the one the user set for the month.
+ * What the user may spend today, in their primary currency. The money in hand is what the accounts
+ * and wallets hold; a credit card's debt weighs only through the statement payments due before the
+ * period ends (design D16). The bills are the recurring expenses still due before the period ends,
+ * and the cap is the one the user set for the month.
  */
 export async function getSafeToSpend(db: Db, userId: string) {
   const settings = await requireSettings(db, userId)
@@ -49,11 +51,18 @@ export async function getSafeToSpend(db: Db, userId: string) {
 
   const balances = await getBalances(db, userId)
   const totals = assetsAndLiabilities(balances).find((total) => total.currency === currency)
-  const inHandCents = (totals?.assetsCents ?? 0) - (totals?.liabilitiesCents ?? 0)
+  const inHandCents = totals?.assetsCents ?? 0
+
+  // What each credit card still owes on its last statement, when the payment falls in the period;
+  // an overdue one still waits to be paid, like an overdue bill.
+  const cards = await listCardCycles(db, userId, today, settings.timezone)
+  const cardPaymentsCents = cards
+    .filter((owned) => owned.currency === currency && owned.statement && owned.statement.dueOn <= period.end)
+    .reduce((total, owned) => total + owned.statement!.remainingCents, 0)
 
   // An expense the user spread over several months: the money already left the account, but the
-  // months that have not come yet are still the user's. A foreign card charge weighs its value in
-  // the card's currency, the same one its debt sits in.
+  // months that have not come yet are still the user's. A credit card charge left no account, so it
+  // has nothing to give back: the card's statement asks for it instead.
   const installments = await db
     .select({
       amountCents: movementAmount,
@@ -69,6 +78,7 @@ export async function getSafeToSpend(db: Db, userId: string) {
         eq(transaction.type, 'expense'),
         eq(movementCurrency, currency),
         isNotNull(transaction.installmentMonths),
+        or(isNull(transaction.cardId), eq(card.kind, 'debit')),
         lt(transaction.occurredAt, startOfDayIn(settings.timezone, shiftDay(today, 1))),
       ),
     )
@@ -171,6 +181,7 @@ export async function getSafeToSpend(db: Db, userId: string) {
     // expense that have not come yet.
     availableCents: inHandCents + period.expectedCents + futureCents,
     pendingBillsCents,
+    cardPaymentsCents,
     setAsidesCents,
     spentCents,
     targetCents: settings.spendingTargetCents,
@@ -186,6 +197,7 @@ export async function getSafeToSpend(db: Db, userId: string) {
     expectedIncome: fromCents(period.expectedCents),
     futureInstallments: fromCents(futureCents),
     pendingBills: fromCents(pendingBillsCents),
+    cardPayments: fromCents(cardPaymentsCents),
     setAsides: fromCents(setAsidesCents),
     free: fromCents(result.freeCents),
     daily: fromCents(result.dailyCents),
@@ -193,5 +205,16 @@ export async function getSafeToSpend(db: Db, userId: string) {
     targetDaily: result.targetDailyCents === null ? null : fromCents(result.targetDailyCents),
     allowed: fromCents(result.allowedCents),
     cappedByTarget: result.cappedByTarget,
+    cards: cards.map(({ cycleChargesCents, statement, ...owned }) => ({
+      ...owned,
+      cycleCharges: fromCents(cycleChargesCents),
+      statement: statement && {
+        closedOn: statement.closedOn,
+        dueOn: statement.dueOn,
+        payment: fromCents(statement.paymentCents),
+        paid: fromCents(statement.paidCents),
+        remaining: fromCents(statement.remainingCents),
+      },
+    })),
   }
 }

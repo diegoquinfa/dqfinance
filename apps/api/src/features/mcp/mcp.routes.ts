@@ -9,6 +9,7 @@ import { balanceAdjustmentTools } from '../balance-adjustments/balance-adjustmen
 import { balanceTools } from '../balances/balances.tools'
 import { budgetTools } from '../budgets/budgets.tools'
 import { calendarTools } from '../calendar/calendar.tools'
+import { cardStatementTools } from '../card-statements/card-statements.tools'
 import { categoryTools } from '../categories/categories.tools'
 import { counterpartyTools } from '../counterparties/counterparties.tools'
 import { documentTools } from '../documents/documents.tools'
@@ -40,6 +41,7 @@ const mcpServer = createMCPServer({
     ...recurringExpenseTools,
     ...documentTools,
     ...calendarTools,
+    ...cardStatementTools,
     ...expectedIncomeTools,
     ...savingsGoalTools,
     ...spendingTools,

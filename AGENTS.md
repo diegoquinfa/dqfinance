@@ -26,7 +26,7 @@ Always use the skill ponytail
 - Writing an MCP tool, changing the OAuth flow, or creating the auth instance: [docs/mcp.md](./docs/mcp.md).
 - Naming a domain noun: [GLOSSARY.md](./GLOSSARY.md).
 - Building UI: [DESIGN.md](./DESIGN.md), and [docs/screens.md](./docs/screens.md) for what a route holds.
-- Changing the data model or a design decision (D1–D13): [the domain design](./docs/plans/2026-10-18-finance-domain-design.md).
+- Changing the data model or a design decision (D1–D16): [the domain design](./docs/plans/2026-10-18-finance-domain-design.md).
 - Choosing what to build next: the domain design, then the [redesign follow-ups](./docs/plans/2026-10-19-web-redesign.md#follow-ups-not-built).
 
 ## Parallel work
