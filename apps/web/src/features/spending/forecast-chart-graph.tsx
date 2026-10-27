@@ -1,6 +1,7 @@
 import { cn } from 'cn'
 import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from 'recharts'
 import { formatDay } from '#/shared/dates'
+import { axisSignificantDigits } from '#/shared/axis-digits'
 import { m } from '#/shared/i18n'
 import { formatCompact, formatMoney } from '#/shared/money'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '#/shared/ui/chart'
@@ -10,6 +11,7 @@ import { useForecast } from './spending-api'
 type Point = { at: string; label: string; balance: number }
 
 const tick = { fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--muted-ink)' }
+const TICK_COUNT = 4
 
 const config = { balance: { label: m.forecast_balance() } } satisfies ChartConfig
 
@@ -37,6 +39,7 @@ export default function ForecastChartGraph({ className }: { className?: string }
     balance: day.balance,
   }))
   if (points.length === 0) return null
+  const digits = axisSignificantDigits(points.map((point) => point.balance), TICK_COUNT)
 
   return (
     <div className={cn('grid gap-5', className)}>
@@ -64,12 +67,12 @@ export default function ForecastChartGraph({ className }: { className?: string }
           <CartesianGrid vertical={false} stroke="var(--line)" />
           <YAxis
             width={56}
-            tickCount={4}
+            tickCount={TICK_COUNT}
             tickLine={false}
             axisLine={false}
             tickMargin={8}
             tick={tick}
-            tickFormatter={(value) => formatCompact(Number(value))}
+            tickFormatter={(value) => formatCompact(Number(value), undefined, digits)}
           />
           <XAxis
             dataKey="label"
