@@ -1,14 +1,26 @@
 import { m } from '#/shared/i18n'
 import { formatDate } from '#/shared/dates'
 import { formatMoney } from '#/shared/money'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '#/shared/ui/alert-dialog'
 import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
 import { PageHeader, rowsClass } from '#/shared/ui/page'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
+import { toast } from 'sonner'
 import { NewTransferDialog } from './new-transfer-dialog'
 import { transferSideLabel } from './transfer-side'
-import { useMarkTransferReceived, useTransfers, type Transfer } from './transfers-api'
+import { useDeleteTransfer, useMarkTransferReceived, useTransfers, type Transfer } from './transfers-api'
 
 const typeLabels: Record<Transfer['type'], () => string> = {
   own_same_bank: m.transfer_type_own_same_bank,
@@ -32,6 +44,7 @@ function TransferBadges({ transfer }: { transfer: Transfer }) {
 export function TransfersPage() {
   const transfers = useTransfers({ limit: 100 })
   const markReceived = useMarkTransferReceived()
+  const remove = useDeleteTransfer()
 
   return (
     <>
@@ -90,6 +103,30 @@ export function TransfersPage() {
                       {m.transfers_mark_received()}
                     </Button>
                   )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" disabled={remove.isPending}>
+                        {m.action_delete()}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{m.action_delete()}</AlertDialogTitle>
+                        <AlertDialogDescription>{m.transfers_delete_hint()}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{m.action_cancel()}</AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          onClick={() =>
+                            remove.mutate(transfer.id, { onSuccess: () => toast.success(m.transfers_deleted()) })
+                          }
+                        >
+                          {m.action_delete()}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
                 {/* Line 2: the account behind each side. */}
                 {(from.detail || to.detail) && (
