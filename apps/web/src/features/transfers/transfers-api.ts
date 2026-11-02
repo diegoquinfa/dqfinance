@@ -42,3 +42,11 @@ export function useMarkTransferReceived() {
     onSuccess: invalidate,
   })
 }
+
+export function useDeleteTransfer() {
+  const invalidate = useInvalidateTransfers()
+  return useMutation({
+    mutationFn: async (id: string) => unwrap(api.api.transfers[':id'].$delete({ param: { id } })),
+    onSuccess: invalidate,
+  })
+}

@@ -5,6 +5,7 @@ import { requireSession } from '../auth/require-session'
 import { pushConfigFrom } from '../push/push-config'
 import { sendPush } from '../push/send-push'
 import { createTransfer, createTransferInput } from './create-transfer'
+import { deleteTransfer } from './delete-transfer'
 import { listTransfers, listTransfersInput } from './list-transfers'
 import { markTransferReceived, markTransferReceivedInput } from './mark-transfer-received'
 
@@ -26,3 +27,4 @@ export const transfersRoutes = new Hono<AppEnv>()
     await sendPush(c.var.db, c.var.userId, c.var.locale, pushConfigFrom(c.env), 'transfer_received')
     return c.json(received)
   })
+  .delete('/:id', async (c) => c.json(await deleteTransfer(c.var.db, c.var.userId, c.req.param('id'))))
