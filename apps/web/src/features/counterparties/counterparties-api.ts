@@ -1,4 +1,4 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { InferRequestType, InferResponseType } from 'hono/client'
 import { api, unwrap } from '#/shared/api'
 
@@ -41,12 +41,20 @@ export function useUpdateCounterparty() {
 }
 
 /** One contact with its breakdown and its monthly series, inside the period. */
-export function useCounterparty(id: string, filters: { from?: string; to?: string } = {}) {
-  return useQuery({
+export const counterpartyQuery = (id: string, filters: { from?: string; to?: string } = {}) =>
+  queryOptions({
     queryKey: ['counterparties', id, filters],
     queryFn: async () => unwrap(api.api.counterparties[':id'].$get({ param: { id }, query: filters })),
     enabled: Boolean(id),
   })
+
+export function useCounterparty(id: string, filters: { from?: string; to?: string } = {}) {
+  return useQuery(counterpartyQuery(id, filters))
+}
+
+/** The same detail for several contacts at once, in the order they were chosen. */
+export function useCounterpartiesDetail(ids: string[], filters: { from?: string; to?: string } = {}) {
+  return useQueries({ queries: ids.map((id) => counterpartyQuery(id, filters)) })
 }
 
 /** Deletes a contact. The API answers with the deleted row, so this one goes through `unwrap` too. */
