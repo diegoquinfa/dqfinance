@@ -19,7 +19,7 @@ export const expectedIncomeTools = [
   toolDefinition({
     name: 'create_expected_income',
     description:
-      'Add an income the user expects: what it is, how much it brings and how often it arrives. The currency defaults to the primary one.',
+      'Add an income the user expects: what it is, how much it brings, how often it arrives and, when known, the contact who pays it (list_contacts). The currency defaults to the primary one.',
     inputSchema: createExpectedIncomeInput,
   }).server<McpContext>((input, ctx) => createExpectedIncome(ctx.context.db, ctx.context.userId, input)),
 
