@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useSources, findSource, sourceKey, type SourceRef } from '#/features/accounts/sources'
 import { SourceSelect } from '#/features/accounts/source-select'
 import { useCategories } from '#/features/categories/categories-api'
-import { useCounterparties } from '#/features/counterparties/counterparties-api'
+import { ContactField, useContactId } from '#/features/counterparties/contact-field'
 import { IncomeRow, NewIncomeForm } from '#/features/expected-incomes/expected-incomes-page'
 import { useExpectedIncomes } from '#/features/expected-incomes/expected-incomes-api'
 import { useSettings } from '#/features/settings/settings-api'
@@ -61,10 +61,11 @@ function NewRecurringForm({
   const settings = useSettings()
   // A prefilled cost needs its system category, which the picker hides by default.
   const categories = useCategories('expense', Boolean(defaultCategoryId))
-  const counterparties = useCounterparties()
+  const contactId = useContactId()
   const create = useCreateRecurringExpense()
   const [sourceKey, setSourceKey] = useState(defaultSourceKey)
   const [currency, setCurrency] = useState('')
+  const [failed, setFailed] = useState<string>()
 
   const source = findSource(sources, sourceKey)
   const isCreditCard = source?.cardKind === 'credit'
@@ -74,10 +75,19 @@ function NewRecurringForm({
   )
   const initialCategoryId = defaultCategoryId ?? pickableCategories[0]?.id
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!source) return
     const form = new FormData(event.currentTarget)
+    let counterpartyId: string | undefined
+    try {
+      counterpartyId = await contactId(String(form.get('counterparty') ?? ''))
+    } catch (thrown) {
+      // Resolving the contact needs the network; its failure has to show, like the form's own.
+      setFailed(thrown instanceof Error ? thrown.message : String(thrown))
+      return
+    }
+    setFailed(undefined)
     create.mutate(
       {
         name: String(form.get('name')),
@@ -85,7 +95,7 @@ function NewRecurringForm({
         source: source.ref,
         currency: isCreditCard && chargeCurrency !== source.currency ? chargeCurrency : undefined,
         categoryId: String(form.get('categoryId')),
-        counterpartyId: String(form.get('counterpartyId')) || undefined,
+        counterpartyId,
         frequency: String(form.get('frequency')) as NewRecurringExpense['frequency'],
         startsOn: String(form.get('startsOn')),
       },
@@ -178,28 +188,13 @@ function NewRecurringForm({
             </SelectContent>
           </Select>
         </Field>
-        <Field>
-          <FieldLabel htmlFor="recurring-counterparty">{`${m.label_contact()} (${m.label_optional()})`}</FieldLabel>
-          <Select name="counterpartyId" defaultValue="">
-            <SelectTrigger id="recurring-counterparty">
-              <SelectValue placeholder={m.label_none()} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">{m.label_none()}</SelectItem>
-              {(counterparties.data ?? []).map((contact) => (
-                <SelectItem key={contact.id} value={contact.id}>
-                  {contact.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+        <ContactField id="recurring-counterparty" />
         <Field>
           <FieldLabel htmlFor="recurring-starts-on">{m.recurring_starts_on()}</FieldLabel>
           <Input id="recurring-starts-on" name="startsOn" type="date" defaultValue={today()} required />
           <FieldDescription>{m.recurring_starts_on_hint()}</FieldDescription>
         </Field>
-        <FieldError>{create.error?.message}</FieldError>
+        <FieldError>{failed ?? create.error?.message}</FieldError>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={close}>
             {m.action_cancel()}
@@ -338,7 +333,9 @@ export function RecurringPage() {
                     )}
                   </p>
                   <p className="label-mono text-muted-foreground">
-                    {sourceLabel(item.source)} / {item.category.name} / {m.recurring_next_due({ date: formatDay(item.nextDueOn) })}
+                    {sourceLabel(item.source)} / {item.category.name}
+                    {item.counterparty && ` / ${item.counterparty.name}`}
+                    {` / ${m.recurring_next_due({ date: formatDay(item.nextDueOn) })}`}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

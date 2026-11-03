@@ -1,4 +1,6 @@
 import { formatDay } from '#/shared/dates'
+import { useState } from 'react'
+import { ContactField, useContactId } from '#/features/counterparties/contact-field'
 import { m } from '#/shared/i18n'
 import { formatMoney } from '#/shared/money'
 import {
@@ -46,15 +48,27 @@ function frequencyLabel(frequency: string) {
 /** What the money is coming from, how much, and when the next one lands. */
 export function NewIncomeForm({ close }: { close: () => void }) {
   const create = useCreateExpectedIncome()
+  const contactId = useContactId()
+  const [failed, setFailed] = useState<string>()
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     const nextOn = String(form.get('nextOn') ?? '')
+    let counterpartyId: string | undefined
+    try {
+      counterpartyId = await contactId(String(form.get('counterparty') ?? ''))
+    } catch (thrown) {
+      // Resolving the contact needs the network; its failure has to show, like the form's own.
+      setFailed(thrown instanceof Error ? thrown.message : String(thrown))
+      return
+    }
+    setFailed(undefined)
     create.mutate(
       {
         name: String(form.get('name')),
         amount: Number(form.get('amount')),
+        counterpartyId,
         frequency: String(form.get('frequency')) as NewExpectedIncome['frequency'],
         nextOn: nextOn || undefined,
       },
@@ -104,11 +118,12 @@ export function NewIncomeForm({ close }: { close: () => void }) {
             </Select>
           </Field>
         </div>
+        <ContactField id="incomes-contact" />
         <Field>
           <FieldLabel htmlFor="incomes-next-on">{m.incomes_next_on()}</FieldLabel>
           <Input id="incomes-next-on" name="nextOn" type="date" />
         </Field>
-        <FieldError>{create.error?.message}</FieldError>
+        <FieldError>{failed ?? create.error?.message}</FieldError>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={close}>
             {m.action_cancel()}
@@ -137,6 +152,7 @@ export function IncomeRow({ income }: { income: ExpectedIncome }) {
         <p className="label-mono text-muted-foreground">
           {m.incomes_arrives()}{' '}
           <span className="text-ink">{formatDay(income.nextOn)}</span>
+          {income.counterparty && ` / ${income.counterparty.name}`}
         </p>
       </div>
       <div className="flex items-center gap-3">
