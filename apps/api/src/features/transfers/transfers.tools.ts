@@ -5,6 +5,7 @@ import { createTransfer, createTransferInput } from './create-transfer'
 import { deleteTransfer, deleteTransferInput } from './delete-transfer'
 import { listTransfers, listTransfersInput } from './list-transfers'
 import { markTransferReceived, markTransferReceivedInput } from './mark-transfer-received'
+import { updateTransfer, updateTransferToolInput } from './update-transfer'
 
 export const transferTools = [
   toolDefinition({
@@ -37,6 +38,13 @@ export const transferTools = [
     await sendPush(ctx.context.db, ctx.context.userId, ctx.context.locale, ctx.context.push, 'transfer_received')
     return received
   }),
+
+  toolDefinition({
+    name: 'update_transfer',
+    description:
+      "Change a transfer: send only the fields to change; null removes the note or the fee. The fee and the FX difference follow the new amount, and both balances are read as if the old transfer had never been recorded. A change of origin or destination moves the money between the new sources.",
+    inputSchema: updateTransferToolInput,
+  }).server<McpContext>(async ({ id, ...input }, ctx) => updateTransfer(ctx.context.db, ctx.context.userId, id, input)),
 
   toolDefinition({
     name: 'delete_transfer',
