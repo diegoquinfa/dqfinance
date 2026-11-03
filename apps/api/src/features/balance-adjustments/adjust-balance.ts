@@ -4,8 +4,8 @@ import { isoDateTime } from '../../shared/dates'
 import { AppError } from '../../shared/http'
 import { currencyCode, fromCents, toCents } from '../../shared/money'
 import { resolveSource, sourceRef } from '../accounts/source'
-import { currentBalanceOf } from '../balances/compute-balances'
-import { getBalances } from '../balances/get-balances'
+import { computeBalances, computeBalancesAt, currentBalanceOf } from '../balances/compute-balances'
+import { getLedger } from '../balances/get-balances'
 import { assertCurrencyEnabled } from '../settings/get-settings'
 import { claimAdjustment } from './adjustment-claim'
 
@@ -15,7 +15,9 @@ export const adjustBalanceInput = z.object({
     .number()
     .max(1e12)
     .multipleOf(0.01)
-    .describe('Real balance now (decimal, not cents); for a credit card the debt owed in `currency` (positive)'),
+    .describe(
+      'Real balance at `adjustedAt`, now by default (decimal, not cents); for a credit card the debt owed in `currency` (positive)',
+    ),
   currency: currencyCode.optional().describe("Credit cards only: which debt currency (defaults to the card's)"),
   // The balance the user saw. When the balance moved since, the adjustment is refused: two of them
   // must not both apply the same difference.
@@ -40,15 +42,20 @@ export async function adjustBalance(db: Db, userId: string, input: z.infer<typeo
 
   // The instant the balance is read, so the write can refuse a correction that read the same one.
   const readAt = Date.now()
-  const current = currentBalanceOf(await getBalances(db, userId), source.ref, currency)
+  const ledger = await getLedger(db, userId)
+  const now = currentBalanceOf(computeBalances(ledger), source.ref, currency)
   // The balance the user saw is the one the adjustment was made against. When it has moved, the
   // difference would be wrong, so the adjustment waits for the user to see the new balance.
-  if (input.expectedBalance !== undefined && toCents(input.expectedBalance) !== current) {
+  if (input.expectedBalance !== undefined && toCents(input.expectedBalance) !== now) {
     throw new AppError('balance_changed', 409)
   }
+  // The observed balance belongs to the adjustment's own instant (design D2), so a backdated one is
+  // compared with the balance at that date; the movements after it still count on top.
+  const adjustedAt = input.adjustedAt ? new Date(input.adjustedAt) : new Date()
+  const current = input.adjustedAt ? currentBalanceOf(computeBalancesAt({ ...ledger, at: adjustedAt }), source.ref, currency) : now
   const observed = toCents(input.observedBalance)
   const delta = observed - current
-  if (delta === 0) return { delta: 0, balance: fromCents(observed) }
+  if (delta === 0) return { delta: 0, balance: fromCents(now) }
 
   const result = await db.run(
     claimAdjustment(
@@ -60,7 +67,7 @@ export async function adjustBalance(db: Db, userId: string, input: z.infer<typeo
         observedCents: observed,
         deltaCents: delta,
         note: input.note || null,
-        adjustedAt: (input.adjustedAt ? new Date(input.adjustedAt) : new Date()).getTime(),
+        adjustedAt: adjustedAt.getTime(),
         createdAt: Date.now(),
       },
       readAt,
@@ -69,5 +76,5 @@ export async function adjustBalance(db: Db, userId: string, input: z.infer<typeo
   // The row is written only when nothing adjusted this balance after the read, so two tabs that
   // sent the same correction write one row, not two.
   if ((result.meta.changes ?? 0) === 0) throw new AppError('balance_changed', 409)
-  return { delta: fromCents(delta), balance: fromCents(observed) }
+  return { delta: fromCents(delta), balance: fromCents(now + delta) }
 }
