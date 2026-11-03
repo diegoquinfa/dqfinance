@@ -93,11 +93,14 @@ export function ContactRow({
   contact,
   primaryCurrency,
   listSearch,
+  compare,
 }: {
   contact: Counterparty
   primaryCurrency?: string
   /** The list's filters, carried to the detail page so going back keeps them. */
   listSearch?: { kind?: 'all' | 'person' | 'business'; search?: string }
+  /** The comparison: this row adds itself to the chart and takes itself out of it. */
+  compare?: { selected: boolean; onToggle: () => void }
 }) {
   return (
     <li className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 py-4">
@@ -134,7 +137,16 @@ export function ContactRow({
           )}
         </span>
       </Link>
-      <ContactMenu contact={contact} />
+      <div className="flex items-center gap-3">
+        {compare && (
+          <Button variant="link" aria-pressed={compare.selected} onClick={compare.onToggle}>
+            {compare.selected ? m.contacts_compare_remove() : m.contacts_compare_add()}
+            {/* Every row has the same visible word, so the name tells them apart when read aloud. */}
+            <span className="sr-only"> {contact.name}</span>
+          </Button>
+        )}
+        <ContactMenu contact={contact} />
+      </div>
     </li>
   )
 }
