@@ -47,6 +47,8 @@ export type Ledger = {
     cashWalletId: string | null
     cardId: string | null
     currency: string
+    /** The balance seen at `adjustedAt`; when absent, `deltaCents` is added as it is. */
+    observedBalanceCents?: number | null
     deltaCents: number
     adjustedAt: Date
   }[]
@@ -88,6 +90,11 @@ export type Balances = {
 }
 
 export function computeBalances(ledger: Ledger): Balances {
+  return walk(ledger).balances
+}
+
+function walk(ledger: Ledger): { balances: Balances; deltas: Map<Ledger['adjustments'][number], number> } {
+  const deltas = new Map<Ledger['adjustments'][number], number>()
   const balance = new Map<string, number>()
   const debt = new Map<string, Map<string, { units: number; basis: number }>>()
   const inTransit = new Map<string, number>()
@@ -163,23 +170,29 @@ export function computeBalances(ledger: Ledger): Balances {
       case 'adjustment': {
         const a = movement.row
         const ref = balanceRef(a)
+        const entry = ref ? undefined : debt.get(a.cardId!)?.get(a.currency)
+        // An adjustment records the balance seen at its instant (design D2). The difference is taken
+        // from what the ledger holds now, not the stored delta: a movement imported later but dated
+        // before the observation is already part of the balance that was seen, so it cannot count twice.
+        const current = ref ? (balance.get(sourceKey(ref)) ?? 0) : (entry?.units ?? 0)
+        const delta = a.observedBalanceCents == null ? a.deltaCents : a.observedBalanceCents - current
+        deltas.set(a, delta)
         if (ref) {
-          addBalance(ref, a.deltaCents)
+          addBalance(ref, delta)
           break
         }
         const owner = cards.get(a.cardId!)
-        const entry = debt.get(a.cardId!)?.get(a.currency)
         // Foreign debt is valued at the average cost of the debt outstanding at this instant; with no
         // debt in that currency there is no rate, so the units stay in their own currency and out of the
         // card total. The running total already holds every earlier adjustment.
         const rate = owner && a.currency !== owner.currency && entry && entry.units !== 0 ? entry.basis / entry.units : 0
-        addDebt(a.cardId!, a.currency, a.deltaCents, Math.round(a.deltaCents * rate))
+        addDebt(a.cardId!, a.currency, delta, Math.round(delta * rate))
         break
       }
     }
   }
 
-  return {
+  const balances: Balances = {
     accounts: [
       ...ledger.products.map((p) => ({
         ref: { type: 'product' as const, id: p.id },
@@ -224,6 +237,7 @@ export function computeBalances(ledger: Ledger): Balances {
 
     inTransit: [...inTransit].map(([currency, amountCents]) => ({ currency, amountCents })),
   }
+  return { balances, deltas }
 }
 
 /**
@@ -242,6 +256,25 @@ export function computeBalancesAt(ledger: LedgerPoint): Balances {
       .map((t) => ({ ...t, receivedAt: onTime(t.receivedAt) ? t.receivedAt : null })),
     adjustments: ledger.adjustments.filter((a) => onTime(a.adjustedAt)),
   })
+}
+
+/**
+ * The same ledger with the corrections recorded at or after `from` moved to the instant before it. An
+ * adjustment fixes the books at the moment it is observed (design D2); it is not money moving that
+ * day, so a history rebuilt from this ledger does not show a step the accounts never had. A moved
+ * one carries the difference it made at its own instant: its observed balance belongs to that instant.
+ */
+export function adjustmentsFrom(ledger: Ledger, from: Date): Ledger {
+  const { deltas } = walk(ledger)
+  const before = new Date(from.getTime() - 1)
+  return {
+    ...ledger,
+    adjustments: ledger.adjustments.map((a) =>
+      a.adjustedAt.getTime() >= from.getTime()
+        ? { ...a, observedBalanceCents: null, deltaCents: deltas.get(a) ?? a.deltaCents, adjustedAt: before }
+        : a,
+    ),
+  }
 }
 
 /**

@@ -253,3 +253,61 @@ test('the month so far is what the accounts held at the end of each day, ending 
   assert.deepEqual(result.history.at(-1), { day: '2026-10-15', balance: 6_000 })
   assert.equal(result.days[0]?.balance, 6_000)
 })
+
+test('a correction recorded this month counts from the first day, so a backdated import draws no step', async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  seedBalance(sqlite)
+  // A movement imported from a 2025 statement, and the correction that brings the account back to
+  // the 10,000 it really holds.
+  sqlite.exec(`
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, product_id, category_id, occurred_at, created_at) VALUES ('old-1', 'user-1', 'income', 300000000, 'COP', 'product-1', 'category-1', ${Date.parse('2025-06-10T12:00:00Z')}, 1);
+    INSERT INTO balance_adjustment (id, user_id, product_id, currency, observed_balance_cents, delta_cents, adjusted_at, created_at) VALUES ('fix-1', 'user-1', 'product-1', 'COP', 1000000, -300000000, ${Date.parse('2026-10-14T12:00:00Z')}, 1);
+  `)
+
+  const result = await getForecast(createDb(d1), USER_ID)
+
+  // The 10,000 income of the 2nd, and no step on the 14th.
+  assert.deepEqual(
+    result.history.map((point) => point.balance),
+    [0, ...Array(14).fill(10_000)],
+  )
+})
+
+test('a correction from an earlier month is part of the balance the month starts with', async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  seedBalance(sqlite)
+  sqlite.exec(`
+    INSERT INTO balance_adjustment (id, user_id, product_id, currency, observed_balance_cents, delta_cents, adjusted_at, created_at) VALUES ('fix-1', 'user-1', 'product-1', 'COP', 500000, 500000, ${Date.parse('2026-09-20T12:00:00Z')}, 1);
+  `)
+
+  const result = await getForecast(createDb(d1), USER_ID)
+
+  // The correction is in every day, and the 10,000 income of the 2nd comes on top of it.
+  assert.deepEqual(
+    result.history.map((point) => point.balance),
+    [5_000, ...Array(14).fill(15_000)],
+  )
+})
+
+test('a real movement still moves the line on its own day, with a correction in the month', async () => {
+  pinClock()
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  seedBalance(sqlite)
+  sqlite.exec(`
+    INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, product_id, category_id, occurred_at, created_at) VALUES ('spend-1', 'user-1', 'expense', 400000, 'COP', 'product-1', 'category-1', ${Date.parse('2026-10-05T12:00:00Z')}, 1);
+    INSERT INTO balance_adjustment (id, user_id, product_id, currency, observed_balance_cents, delta_cents, adjusted_at, created_at) VALUES ('fix-1', 'user-1', 'product-1', 'COP', 700000, 100000, ${Date.parse('2026-10-10T12:00:00Z')}, 1);
+  `)
+
+  const result = await getForecast(createDb(d1), USER_ID)
+
+  // The correction counts from the 1st, the 10,000 income from the 2nd, and the 4,000 leaves on the 5th.
+  assert.deepEqual(
+    result.history.map((point) => point.balance),
+    [1_000, 11_000, 11_000, 11_000, ...Array(11).fill(7_000)],
+  )
+})

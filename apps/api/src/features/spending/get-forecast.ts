@@ -5,7 +5,7 @@ import { startOfDayIn } from '../../shared/day-range.ts'
 import { fromCents, toCents } from '../../shared/money'
 import { card } from '../accounts/account.schema'
 import { cardProduct, movementAmount, movementCurrency } from '../accounts/card-currency'
-import { assetsAndLiabilities, computeBalances, computeBalancesAt } from '../balances/compute-balances'
+import { adjustmentsFrom, assetsAndLiabilities, computeBalances, computeBalancesAt } from '../balances/compute-balances'
 import { getLedger } from '../balances/get-balances'
 import { shiftDay } from '../calendar/calendar-days.ts'
 import { listCardCycles } from '../card-statements/list-card-cycles'
@@ -39,11 +39,15 @@ export async function getForecast(db: Db, userId: string) {
   const startCents = assetsOf(computeBalances(ledger))
 
   // The days already lived, from the same balance rules at the last instant of each day; today's is
-  // the balance now, where the projection starts.
+  // the balance now, where the projection starts. A correction recorded this month counts from the
+  // first day, so the line follows what the accounts hold instead of stepping on the day it was
+  // written: an adjustment corrects the books, it is not money moving (design D2).
+  const monthStartAt = startOfDayIn(settings.timezone, monthStart)
+  const historyLedger = adjustmentsFrom(ledger, monthStartAt)
   const history: { day: string; balanceCents: number }[] = []
   for (let day = monthStart; day < today; day = shiftDay(day, 1)) {
     const at = new Date(startOfDayIn(settings.timezone, shiftDay(day, 1)).getTime() - 1)
-    history.push({ day, balanceCents: assetsOf(computeBalancesAt({ ...ledger, at })) })
+    history.push({ day, balanceCents: assetsOf(computeBalancesAt({ ...historyLedger, at })) })
   }
   history.push({ day: today, balanceCents: startCents })
 
@@ -65,7 +69,7 @@ export async function getForecast(db: Db, userId: string) {
         eq(movementCurrency, currency),
         isNull(transaction.recurringExpenseId),
         isNull(transaction.installmentMonths),
-        gte(transaction.occurredAt, startOfDayIn(settings.timezone, monthStart)),
+        gte(transaction.occurredAt, monthStartAt),
         lt(transaction.occurredAt, tomorrowStart),
       ),
     )
