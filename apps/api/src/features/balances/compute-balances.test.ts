@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { assetsAndLiabilities, cardDebtOf, computeBalances, computeBalancesAt, currentBalanceOf, monthEnds, type Ledger, type LedgerPoint } from './compute-balances.ts'
+import { adjustmentsFrom, assetsAndLiabilities, cardDebtOf, computeBalances, computeBalancesAt, currentBalanceOf, monthEnds, type Ledger, type LedgerPoint } from './compute-balances.ts'
 
 // Source columns plus the date each movement row carries; only computeBalancesAt reads the date.
 const none = { productId: null, cashWalletId: null, cardId: null, occurredAt: new Date(), adjustedAt: new Date() }
@@ -273,6 +273,65 @@ test('a transfer in transit shows at the month-end it was sent in, before the de
   assert.deepEqual(february.inTransit, [{ currency: 'COP', amountCents: 100_000 }])
   assert.equal(currentBalanceOf(march, { type: 'product', id: 'other' }, 'COP'), 100_000)
   assert.deepEqual(march.inTransit, [])
+})
+
+// An observation of 10,000 on October 1st, written when the account had no movements, then a
+// statement from 2025 imported afterwards: its 3,000,000 income is dated before the observation.
+const importedAfterObservation = (adjustments: Ledger['adjustments'] = []): LedgerPoint => ({
+  ...ledger({
+    transactions: [
+      { ...none, type: 'income', amountCents: 3_000_000_00, currency: 'COP', primaryAmountCents: null, productId: 'savings', occurredAt: at('2025-06-10T12:00:00Z') },
+      { ...none, type: 'expense', amountCents: 2_000_00, currency: 'COP', primaryAmountCents: null, productId: 'savings', occurredAt: at('2026-10-20T12:00:00Z') },
+    ],
+    adjustments: [
+      { ...none, productId: 'savings', currency: 'COP', observedBalanceCents: 10_000_00, deltaCents: 10_000_00, adjustedAt: at('2026-10-01T12:00:00Z') },
+      ...adjustments,
+    ],
+  }),
+  at: at('2026-11-03T18:00:00Z'),
+})
+const savingsAt = (point: LedgerPoint, iso: string) =>
+  currentBalanceOf(computeBalancesAt({ ...point, at: at(iso) }), { type: 'product', id: 'savings' }, 'COP')
+
+test('an observed balance holds at its instant, even with movements imported later and dated before it', () => {
+  const point = importedAfterObservation()
+  // Before the observation the imported statement is all there is; from it on, the observed 10,000.
+  assert.equal(savingsAt(point, '2026-09-30T23:59:59Z'), 3_000_000_00)
+  assert.equal(savingsAt(point, '2026-10-31T23:59:59Z'), 10_000_00 - 2_000_00)
+  assert.equal(currentBalanceOf(computeBalances(point), { type: 'product', id: 'savings' }, 'COP'), 8_000_00)
+})
+
+test('a later correction of the same account sets the balance it observed, not its stored delta twice', () => {
+  // The correction written after the import: it read 3,008,000 and stored −3,000,000 to reach 8,000.
+  const point = importedAfterObservation([
+    { ...none, productId: 'savings', currency: 'COP', observedBalanceCents: 8_000_00, deltaCents: -3_000_000_00, adjustedAt: at('2026-11-03T17:30:00Z') },
+  ])
+  assert.equal(savingsAt(point, '2026-10-31T23:59:59Z'), 8_000_00)
+  assert.equal(savingsAt(point, '2026-11-03T18:00:00Z'), 8_000_00)
+})
+
+test('an observed foreign card debt sets the units and values the difference at the average rate', () => {
+  // 100 USD owed at 4,000; the bank says 150 USD: the 50 more cost 200,000.
+  const balances = computeBalances(
+    foreignDebtLedger({ adjustments: [{ ...none, cardId: 'visa', currency: 'USD', observedBalanceCents: 150_00, deltaCents: 1 }] }),
+  )
+  assert.deepEqual(cardDebtOf(balances, 'visa', 'USD'), { units: 150_00, basis: 600_000_00 })
+})
+
+test('adjustmentsFrom moves a correction before `from` with the difference it made at its own instant', () => {
+  const point = importedAfterObservation()
+  const moved = { ...point, ...adjustmentsFrom(point, at('2026-10-15T05:00:00Z')) }
+  // The October 1st observation is before `from` and stays an anchor; nothing moves.
+  assert.equal(savingsAt(moved, '2026-10-31T23:59:59Z'), 8_000_00)
+
+  const corrected = importedAfterObservation([
+    { ...none, productId: 'savings', currency: 'COP', observedBalanceCents: 9_000_00, deltaCents: 0, adjustedAt: at('2026-10-25T12:00:00Z') },
+  ])
+  const shifted = { ...corrected, ...adjustmentsFrom(corrected, at('2026-10-15T05:00:00Z')) }
+  // The October 25 observation added 1,000; it counts from the 15th, and the 2,000 spent on the 20th still leaves.
+  assert.equal(savingsAt(shifted, '2026-10-16T00:00:00Z'), 11_000_00)
+  assert.equal(savingsAt(shifted, '2026-10-21T00:00:00Z'), 9_000_00)
+  assert.equal(savingsAt(shifted, '2026-11-01T00:00:00Z'), 9_000_00)
 })
 
 test('a product carries its rate into the balance sheet; a cash wallet never has one', () => {

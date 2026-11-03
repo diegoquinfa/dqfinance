@@ -60,6 +60,19 @@ test('two corrections that read the same balance write one adjustment, not two',
   assert.deepEqual(adjustmentRows(sqlite), [{ delta: 15_000, observed: 15_000 }])
 })
 
+test('a backdated correction is the balance at its own date, and the movements after it still count', async () => {
+  const { sqlite, d1 } = openTestDb()
+  seedCardUser(sqlite)
+  // 50 arrived on the 10th, after the balance the user observed on the 5th.
+  sqlite.exec(`INSERT INTO \`transaction\` (id, user_id, type, amount_cents, currency, product_id, category_id, occurred_at, created_at) VALUES ('income-1', 'user-1', 'income', 5000, 'COP', 'product-1', 'category-1', ${Date.parse('2026-10-10T12:00:00Z')}, 1);`)
+  const db = createDb(d1)
+
+  const result = await adjustBalance(db, USER_ID, { source, observedBalance: 150, adjustedAt: '2026-10-05T12:00:00Z' })
+
+  assert.deepEqual(result, { delta: 150, balance: 200 })
+  assert.deepEqual(adjustmentRows(sqlite), [{ delta: 15_000, observed: 15_000 }])
+})
+
 const cardSource = { type: 'card', id: 'card-1' } as const
 
 test('a debt in a currency the user never enabled is refused, and no adjustment is written', async () => {
