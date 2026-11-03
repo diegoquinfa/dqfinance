@@ -8,6 +8,7 @@ import { createTransfer, createTransferInput } from './create-transfer'
 import { deleteTransfer } from './delete-transfer'
 import { listTransfers, listTransfersInput } from './list-transfers'
 import { markTransferReceived, markTransferReceivedInput } from './mark-transfer-received'
+import { updateTransfer, updateTransferInput } from './update-transfer'
 
 export const transfersRoutes = new Hono<AppEnv>()
   .use(requireSession)
@@ -28,3 +29,6 @@ export const transfersRoutes = new Hono<AppEnv>()
     return c.json(received)
   })
   .delete('/:id', async (c) => c.json(await deleteTransfer(c.var.db, c.var.userId, c.req.param('id'))))
+  .patch('/:id', jsonBody(updateTransferInput), async (c) =>
+    c.json(await updateTransfer(c.var.db, c.var.userId, c.req.param('id'), c.req.valid('json'))),
+  )
