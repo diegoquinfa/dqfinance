@@ -44,7 +44,7 @@ function frequencyLabel(frequency: string) {
 }
 
 /** What the money is coming from, how much, and when the next one lands. */
-function NewIncomeForm({ close }: { close: () => void }) {
+export function NewIncomeForm({ close }: { close: () => void }) {
   const create = useCreateExpectedIncome()
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -124,7 +124,7 @@ function NewIncomeForm({ close }: { close: () => void }) {
 }
 
 /** One expected income: what it is, how much, and the day the next one arrives. */
-function IncomeRow({ income }: { income: ExpectedIncome }) {
+export function IncomeRow({ income }: { income: ExpectedIncome }) {
   const remove = useDeleteExpectedIncome()
 
   return (
