@@ -29,6 +29,9 @@ import type { CompareContact } from './compare-points'
 type KindFilter = CounterpartyKind | 'all'
 type Months = '6' | '12'
 
+/** Adds a contact to the comparison or takes it out, keeping the others in the order they were chosen. */
+const toggled = (ids: string[], id: string) => (ids.includes(id) ? ids.filter((other) => other !== id) : [...ids, id])
+
 function NewContactForm({ close }: { close: () => void }) {
   const [kind, setKind] = useState<NewCounterparty['kind']>('person')
   const [name, setName] = useState('')
@@ -179,21 +182,6 @@ export function ContactsPage() {
           }
         >
           <div className="grid gap-6">
-            {/* Every listed contact is a chip: the search above narrows the list, and so the chips. */}
-            <ToggleGroup
-              type="multiple"
-              className="flex-wrap"
-              aria-label={m.contacts_compare_choose()}
-              value={compare}
-              onValueChange={(value) => setFilters({ compare: (value as string[]).join(',') || undefined })}
-            >
-              {(contacts.data ?? []).map((contact) => (
-                <ToggleGroupItem key={contact.id} value={contact.id}>
-                  {contact.name}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-
             {compare.length === 0 ? (
               <p className="text-sm text-muted-foreground">{m.contacts_compare_hint()}</p>
             ) : comparing ? (
@@ -240,6 +228,10 @@ export function ContactsPage() {
               contact={contact}
               primaryCurrency={settings?.primaryCurrency}
               listSearch={{ kind, search: term || undefined }}
+              compare={{
+                selected: compare.includes(contact.id),
+                onToggle: () => setFilters({ compare: toggled(compare, contact.id).join(',') || undefined }),
+              }}
             />
           ))}
         </ul>
