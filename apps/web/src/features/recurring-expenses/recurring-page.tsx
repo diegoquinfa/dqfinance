@@ -3,6 +3,8 @@ import { useSources, findSource, sourceKey, type SourceRef } from '#/features/ac
 import { SourceSelect } from '#/features/accounts/source-select'
 import { useCategories } from '#/features/categories/categories-api'
 import { useCounterparties } from '#/features/counterparties/counterparties-api'
+import { IncomeRow, NewIncomeForm } from '#/features/expected-incomes/expected-incomes-page'
+import { useExpectedIncomes } from '#/features/expected-incomes/expected-incomes-api'
 import { useSettings } from '#/features/settings/settings-api'
 import { sourceLabel } from '#/shared/source-label'
 import { formatDay, today } from '#/shared/dates'
@@ -38,6 +40,7 @@ import {
   useSkipRecurring,
   type NewRecurringExpense,
 } from './recurring-expenses-api'
+import { monthlyTotal, type MonthlyTotal } from './monthly-total'
 
 const frequencies = [
   { value: 'weekly', label: m.frequency_weekly },
@@ -270,6 +273,7 @@ function PendingItem({ id, name, amount, currency, nextDueOn }: { id: string; na
 export function RecurringPage() {
   const all = useRecurringExpenses(false)
   const pending = useRecurringExpenses(true)
+  const incomes = useExpectedIncomes()
   const remove = useDeleteRecurring()
 
   return (
@@ -305,7 +309,7 @@ export function RecurringPage() {
         {confirmOrSkipError(pending.error, all.error)}
       </Section>
 
-      <Section index="02" label={m.recurring_schedule()}>
+      <Section index="02" label={m.recurring_schedule()} action={<MonthlyTotalLabel totals={monthlyTotal(all.data ?? [])} />}>
         {all.isPending ? (
           <ListSkeleton rows={4} />
         ) : all.error ? (
@@ -364,7 +368,56 @@ export function RecurringPage() {
           </ul>
         )}
       </Section>
+
+      <Section
+        index="03"
+        label={m.recurring_incomes()}
+        action={
+          <div className="grid gap-3">
+            <DialogPanel trigger={<Button variant="outline">{m.incomes_new()}</Button>} title={m.incomes_new()}>
+              {(close) => <NewIncomeForm close={close} />}
+            </DialogPanel>
+            <MonthlyTotalLabel totals={monthlyTotal(incomes.data ?? [])} />
+          </div>
+        }
+      >
+        {incomes.isPending ? (
+          <ListSkeleton rows={3} />
+        ) : incomes.error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {incomes.error.message}
+          </p>
+        ) : incomes.data.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>{m.incomes_empty()}</EmptyTitle>
+              <EmptyDescription>{m.incomes_empty_description()}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <ul className={rowsClass}>
+            {incomes.data.map((income) => (
+              <IncomeRow key={income.id} income={income} />
+            ))}
+          </ul>
+        )}
+      </Section>
     </>
+  )
+}
+
+/** What the rows cost every month, one line per currency: the number the user adds up by hand. */
+function MonthlyTotalLabel({ totals }: { totals: MonthlyTotal[] }) {
+  if (totals.length === 0) return null
+  return (
+    <div className="grid gap-1">
+      <span className="label-mono text-muted-foreground">{m.recurring_monthly_total()}</span>
+      {totals.map((total) => (
+        <p key={total.currency} className="type-heading-sm font-medium tabular-nums text-ink">
+          {formatMoney(total.amount, total.currency)}
+        </p>
+      ))}
+    </div>
   )
 }
 
