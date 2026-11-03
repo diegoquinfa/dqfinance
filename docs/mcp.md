@@ -83,7 +83,7 @@ The consent page refuses too, so the agent's author sees why instead of a myster
 | `create_transaction`, `list_transactions`, `summarize_transactions` | Record, query and total income and expenses |
 | `search_transactions` | Find a movement by its title, description or category, one line each, newest first |
 | `update_transaction`, `delete_transaction` | Correct or remove a movement; the fee and FX entries of a transfer belong to it and cannot change on their own |
-| `create_transfer`, `list_transfers`, `mark_transfer_received`, `delete_transfer` | Move money between the user's own sources; deleting one puts both balances back |
+| `create_transfer`, `list_transfers`, `mark_transfer_received`, `update_transfer`, `delete_transfer` | Move money between the user's own sources; editing rewrites the fee and FX entries it owns, and deleting one puts both balances back |
 | `adjust_balance`, `list_balance_adjustments` | Set the real balance of a source; the last 100 corrections |
 | `list_recurring`, `create_recurring`, `delete_recurring` | Manage subscriptions and bills; `pending: true` is the "to confirm" inbox |
 | `confirm_recurring`, `skip_recurring` | Work the "to confirm" inbox |

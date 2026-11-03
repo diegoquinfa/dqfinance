@@ -25,6 +25,7 @@
   "error_credit_card_required": "Only a credit card can do that.",
   "error_same_source": "Origin and destination must be different.",
   "error_received_amount_required": "The currencies are different: enter the amount that arrived.",
+  "error_amount_required": "The new origin keeps its money in another currency: enter the amount in that currency.",
   "error_transfer_not_found": "That transfer doesn't exist.",
   "error_transfer_already_received": "That transfer was already received.",
   "error_recurring_not_found": "That recurring expense doesn't exist.",

@@ -25,6 +25,7 @@
   "error_credit_card_required": "Solo una tarjeta de crédito puede hacer eso.",
   "error_same_source": "El origen y el destino deben ser distintos.",
   "error_received_amount_required": "Las monedas son distintas: indica el monto que llegó.",
+  "error_amount_required": "El nuevo origen lleva su dinero en otra moneda: indica el monto en esa moneda.",
   "error_transfer_not_found": "Esa transferencia no existe.",
   "error_transfer_already_received": "Esa transferencia ya fue recibida.",
   "error_recurring_not_found": "Ese gasto recurrente no existe.",
