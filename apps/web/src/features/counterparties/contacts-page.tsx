@@ -1,22 +1,33 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useSettings } from '#/features/settings/settings-api'
+import { todayDate } from '#/shared/dates'
 import { m } from '#/shared/i18n'
+import { lastMonths } from '#/shared/periods'
 import { Button } from '#/shared/ui/button'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
 import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { PageHeader, rowsClass } from '#/shared/ui/page'
+import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { Spinner } from '#/shared/ui/spinner'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { toast } from 'sonner'
+import { ContactCompareChart } from './contact-compare-chart'
 import { ContactRow } from './contact-row'
-import { useCounterparties, useCreateCounterparty, type CounterpartyKind, type NewCounterparty } from './counterparties-api'
+import {
+  useCounterparties,
+  useCounterpartiesDetail,
+  useCreateCounterparty,
+  type CounterpartyKind,
+  type NewCounterparty,
+} from './counterparties-api'
 import { useDebounced } from './use-debounced'
+import type { CompareContact } from './compare-points'
 
 type KindFilter = CounterpartyKind | 'all'
+type Months = '6' | '12'
 
 function NewContactForm({ close }: { close: () => void }) {
   const [kind, setKind] = useState<NewCounterparty['kind']>('person')
@@ -90,14 +101,25 @@ export function ContactsPage() {
   const search = useSearch({ from: '/_app/contacts' })
   const navigate = useNavigate()
   const { data: settings } = useSettings()
+  const [months, setMonths] = useState<Months>('12')
   const kind = search.kind ?? 'all'
   const term = search.search ?? ''
+  // The chosen contacts travel in the URL too: a reload or a shared link keeps the comparison.
+  const compare = (search.compare ?? '').split(',').filter(Boolean)
   // The list comes from the server; the search waits for the person to stop typing.
   const debounced = useDebounced(term)
   const contacts = useCounterparties({
     kind: kind === 'all' ? undefined : kind,
     search: debounced.trim() || undefined,
   })
+  const period = lastMonths(Number(months), todayDate())
+  const details = useCounterpartiesDetail(compare, { from: period.from })
+  const chosen: CompareContact[] = details.flatMap((detail, index) =>
+    detail.data ? [{ id: compare[index]!, name: detail.data.name, monthly: detail.data.monthly }] : [],
+  )
+  const comparing = details.some((detail) => detail.isPending)
+  const currency =
+    settings?.primaryCurrency ?? chosen.find((contact) => contact.monthly.length > 0)?.monthly[0]?.currency ?? ''
 
   const setFilters = (patch: Partial<typeof search>) =>
     void navigate({ to: '/contacts', search: (previous) => ({ ...previous, ...patch }), replace: true })
@@ -135,6 +157,53 @@ export function ContactsPage() {
           />
         </Field>
       </section>
+
+      {contacts.data && contacts.data.length > 0 && (
+        <Section
+          index="01"
+          label={m.contacts_compare()}
+          action={
+            compare.length > 0 ? (
+              <ToggleGroup
+                type="single"
+                size="sm"
+                className="w-28"
+                aria-label={m.contacts_period()}
+                value={months}
+                onValueChange={(value) => setMonths(value as Months)}
+              >
+                <ToggleGroupItem value="6">{m.period_months({ count: 6 })}</ToggleGroupItem>
+                <ToggleGroupItem value="12">{m.period_months({ count: 12 })}</ToggleGroupItem>
+              </ToggleGroup>
+            ) : null
+          }
+        >
+          <div className="grid gap-6">
+            {/* Every listed contact is a chip: the search above narrows the list, and so the chips. */}
+            <ToggleGroup
+              type="multiple"
+              className="flex-wrap"
+              aria-label={m.contacts_compare_choose()}
+              value={compare}
+              onValueChange={(value) => setFilters({ compare: (value as string[]).join(',') || undefined })}
+            >
+              {(contacts.data ?? []).map((contact) => (
+                <ToggleGroupItem key={contact.id} value={contact.id}>
+                  {contact.name}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+
+            {compare.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{m.contacts_compare_hint()}</p>
+            ) : comparing ? (
+              <ListSkeleton rows={2} />
+            ) : currency && chosen.length > 0 ? (
+              <ContactCompareChart contacts={chosen} currency={currency} />
+            ) : null}
+          </div>
+        </Section>
+      )}
 
       {contacts.isPending ? (
         <ListSkeleton rows={4} />
