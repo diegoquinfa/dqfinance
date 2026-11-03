@@ -54,8 +54,15 @@ export default function ContactCompareChartGraph({
     <div className={className ?? 'grid gap-5'}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          {/* The sr-only table names the series, so the legend is visual only. */}
+          {/* The sr-only table names the series, so the legend is visual only. The total leads it:
+              it is what the numbers are for, and it stays in the same place whatever is chosen. */}
           <ul className="flex flex-wrap gap-x-5 gap-y-1" aria-hidden="true">
+            <li className="flex items-center gap-2">
+              <svg width="16" height="2" className="shrink-0">
+                <line x1="0" y1="1" x2="16" y2="1" stroke={TOTAL} strokeWidth="2.5" />
+              </svg>
+              <span className="label-mono text-ink">{m.contacts_compare_total()}</span>
+            </li>
             {contacts.map((contact, index) => (
               <li key={contact.id} className="flex items-center gap-2">
                 <svg width="16" height="2" className="shrink-0">
@@ -64,12 +71,6 @@ export default function ContactCompareChartGraph({
                 <span className="label-mono text-soft">{contact.name}</span>
               </li>
             ))}
-            <li className="flex items-center gap-2">
-              <svg width="16" height="2" className="shrink-0">
-                <line x1="0" y1="1" x2="16" y2="1" stroke={TOTAL} strokeWidth="2.5" />
-              </svg>
-              <span className="label-mono text-ink">{m.contacts_compare_total()}</span>
-            </li>
           </ul>
         </div>
         <ToggleGroup
