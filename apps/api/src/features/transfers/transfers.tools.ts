@@ -2,6 +2,7 @@ import { toolDefinition } from '@tanstack/ai'
 import type { McpContext } from '../mcp/mcp-context'
 import { sendPush } from '../push/send-push'
 import { createTransfer, createTransferInput } from './create-transfer'
+import { deleteTransfer, deleteTransferInput } from './delete-transfer'
 import { listTransfers, listTransfersInput } from './list-transfers'
 import { markTransferReceived, markTransferReceivedInput } from './mark-transfer-received'
 
@@ -36,4 +37,12 @@ export const transferTools = [
     await sendPush(ctx.context.db, ctx.context.userId, ctx.context.locale, ctx.context.push, 'transfer_received')
     return received
   }),
+
+  toolDefinition({
+    name: 'delete_transfer',
+    description:
+      'Delete a transfer recorded by mistake. Both balances go back as if it had never been recorded. Confirm with the user first.',
+    inputSchema: deleteTransferInput,
+    metadata: { annotations: { destructiveHint: true } },
+  }).server<McpContext>((input, ctx) => deleteTransfer(ctx.context.db, ctx.context.userId, input.id)),
 ] as const

@@ -435,6 +435,8 @@
   "transfers_in_transit": "Aún no ha llegado",
   "transfers_in_transit_hint": "Las transferencias interbancarias pueden tardar un día. El dinero sale del origen ahora y llega al destino cuando lo confirmes.",
   "transfers_mark_received": "Marcar como recibida",
+  "transfers_delete_hint": "El dinero vuelve al origen y sale del destino, como si nunca se hubiera registrado.",
+  "transfers_deleted": "Transferencia eliminada.",
   "transfers_fee_note": "Comisión {amount}",
   "transfers_fx_note": "Diferencia en cambio {amount}",
   "transfers_same_source": "El origen y el destino deben ser distintos.",

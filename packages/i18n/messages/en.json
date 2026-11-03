@@ -435,6 +435,8 @@
   "transfers_in_transit": "It hasn't arrived yet",
   "transfers_in_transit_hint": "Interbank transfers can take a day. The money leaves the origin now and reaches the destination when you confirm it.",
   "transfers_mark_received": "Mark received",
+  "transfers_delete_hint": "The money goes back to the origin and leaves the destination, as if it had never been recorded.",
+  "transfers_deleted": "Transfer deleted.",
   "transfers_fee_note": "Fee {amount}",
   "transfers_fx_note": "FX difference {amount}",
   "transfers_same_source": "Origin and destination must be different.",
