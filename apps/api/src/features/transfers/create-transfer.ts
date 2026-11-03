@@ -30,7 +30,21 @@ export const createTransferInput = z.object({
 
 export type CreateTransferInput = z.infer<typeof createTransferInput>
 
-export async function createTransfer(db: Db, userId: string, input: CreateTransferInput) {
+export type TransferRowOptions = {
+  /** Balances read as if this transfer did not exist, so an edit recomputes from the state before it. */
+  excludeTransferId?: string
+  /** An edit keeps the arrival it already had instead of taking the sending date. */
+  receivedAt?: Date | null
+}
+
+/** The rows a transfer writes: the transfer itself and the fee and FX entries it links on the origin. */
+export async function transferRows(
+  db: Db,
+  userId: string,
+  id: string,
+  input: CreateTransferInput,
+  options: TransferRowOptions = {},
+) {
   const [from, to] = await Promise.all([resolveSource(db, userId, input.from), resolveSource(db, userId, input.to)])
   if (sourceKey(from.ref) === sourceKey(to.ref)) throw new AppError('same_source')
   if (to.ref.type === 'card' && to.cardKind !== 'credit') throw new AppError('credit_card_required')
@@ -47,7 +61,7 @@ export async function createTransfer(db: Db, userId: string, input: CreateTransf
   let costBasis: number | null = null
   let fxDifference = 0
   if (to.ref.type === 'card' && receivedCurrency !== to.currency) {
-    const debt = cardDebtOf(await getBalances(db, userId), to.ref.id, receivedCurrency)
+    const debt = cardDebtOf(await getBalances(db, userId, options.excludeTransferId), to.ref.id, receivedCurrency)
     if (from.currency === to.currency) {
       const settled = settleForeignDebt({
         outstandingUnits: debt.units,
@@ -64,7 +78,6 @@ export async function createTransfer(db: Db, userId: string, input: CreateTransf
   }
 
   const sentAt = input.sentAt ? new Date(input.sentAt) : new Date()
-  const transferId = crypto.randomUUID()
   const origin = sourceColumns(from.ref)
   const destination = sourceColumns(to.ref)
   const feeCents = input.fee ? toCents(input.fee) : null
@@ -79,33 +92,40 @@ export async function createTransfer(db: Db, userId: string, input: CreateTransf
       currency: from.currency,
       ...origin,
       categoryId: await systemCategoryId(db, userId, key),
-      transferId,
+      transferId: id,
       occurredAt: sentAt,
     })
   if (feeCents) await link('expense', feeCents, 'bank_fees')
   if (fxDifference > 0) await link('expense', fxDifference, 'fx_loss')
   if (fxDifference < 0) await link('income', -fxDifference, 'fx_gain')
 
-  const insertTransfer = db.insert(transfer).values({
-      id: transferId,
-      userId,
-      fromProductId: origin.productId,
-      fromCashWalletId: origin.cashWalletId,
-      toProductId: destination.productId,
-      toCashWalletId: destination.cashWalletId,
-      toCardId: destination.cardId,
-      sentAmountCents: paidCents - fxDifference,
-      sentCurrency: from.currency,
-      receivedAmountCents: receivedCents,
-      receivedCurrency,
-      feeCents,
-      costBasisCents: costBasis,
-      note: input.note || null,
-      sentAt,
-      receivedAt: input.inTransit ? null : sentAt,
-    })
+  const values: typeof transfer.$inferInsert = {
+    id,
+    userId,
+    fromProductId: origin.productId,
+    fromCashWalletId: origin.cashWalletId,
+    toProductId: destination.productId,
+    toCashWalletId: destination.cashWalletId,
+    toCardId: destination.cardId,
+    sentAmountCents: paidCents - fxDifference,
+    sentCurrency: from.currency,
+    receivedAmountCents: receivedCents,
+    receivedCurrency,
+    feeCents,
+    costBasisCents: costBasis,
+    note: input.note || null,
+    sentAt,
+    receivedAt: options.receivedAt === undefined ? (input.inTransit ? null : sentAt) : options.receivedAt,
+  }
+  return { values, linked, fxDifference, feeCents }
+}
+
+export async function createTransfer(db: Db, userId: string, input: CreateTransferInput) {
+  const id = crypto.randomUUID()
+  const { values, linked, fxDifference, feeCents } = await transferRows(db, userId, id, input)
+  const insertTransfer = db.insert(transfer).values(values)
   // One batch: the transfer and its linked entries are written together or not at all.
   if (linked.length) await db.batch([insertTransfer, db.insert(transaction).values(linked)])
   else await insertTransfer
-  return { id: transferId, fxDifference: fxDifference / 100, fee: feeCents === null ? null : feeCents / 100 }
+  return { id, fxDifference: fxDifference / 100, fee: feeCents === null ? null : feeCents / 100 }
 }

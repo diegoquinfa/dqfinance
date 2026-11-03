@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import type { Db } from '../../db'
 import { fromCents } from '../../shared/money'
 import { bank, bankAccount, card, cashWallet, product } from '../accounts/account.schema'
@@ -9,11 +9,12 @@ import { computeBalances, type Balances, type Ledger } from './compute-balances'
 import { estimateYield } from '../accounts/product-yield'
 
 /**
- * Every movement of a user, as the pure balance core reads it.
+ * Every movement of a user, as the pure balance core reads it. `excludeTransferId` leaves one
+ * transfer out, so an edit can read the balances it changed from.
  * shortcut: loads every movement and sums in memory; switch to SQL aggregates when a user has
  * tens of thousands of movements.
  */
-export async function getLedger(db: Db, userId: string): Promise<Ledger> {
+export async function getLedger(db: Db, userId: string, excludeTransferId?: string): Promise<Ledger> {
   const [products, cashWallets, cards, transactions, transfers, adjustments] = await Promise.all([
     db
       .select({
@@ -57,15 +58,18 @@ export async function getLedger(db: Db, userId: string): Promise<Ledger> {
       })
       .from(transaction)
       .where(eq(transaction.userId, userId)),
-    db.select().from(transfer).where(eq(transfer.userId, userId)),
+    db
+      .select()
+      .from(transfer)
+      .where(and(eq(transfer.userId, userId), excludeTransferId ? ne(transfer.id, excludeTransferId) : undefined)),
     db.select().from(balanceAdjustment).where(eq(balanceAdjustment.userId, userId)),
   ])
   return { products, cashWallets, cards, transactions, transfers, adjustments }
 }
 
 /** Every balance, card debt, and in-transit amount of a user (in cents). */
-export async function getBalances(db: Db, userId: string): Promise<Balances> {
-  return computeBalances(await getLedger(db, userId))
+export async function getBalances(db: Db, userId: string, excludeTransferId?: string): Promise<Balances> {
+  return computeBalances(await getLedger(db, userId, excludeTransferId))
 }
 
 /** Decimal amounts for HTTP and MCP responses. */

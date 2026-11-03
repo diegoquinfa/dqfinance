@@ -30,6 +30,7 @@ export const ERROR_CODES = [
   'credit_card_required',
   'same_source',
   'received_amount_required',
+  'amount_required',
   'transfer_not_found',
   'transfer_already_received',
   'recurring_not_found',
