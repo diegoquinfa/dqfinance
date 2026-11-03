@@ -90,7 +90,7 @@ The consent page refuses too, so the agent's author sees why instead of a myster
 | `get_calendar` | Per day of the user's timezone, what moved and what falls due (up to 62 days) |
 | `import_transactions` | Record a whole statement at once, with a dry-run preview and duplicate detection |
 | `list_documents`, `delete_document` | The files attached to the user's sources, and removing one |
-| `list_expected_incomes`, `create_expected_income`, `delete_expected_income` | The money the user expects, and the day each one next arrives; safe to spend counts on them |
+| `list_expected_incomes`, `create_expected_income`, `delete_expected_income` | The money the user expects, the day each one next arrives and, when known, the contact who pays it; safe to spend counts on them |
 | `list_savings_goals`, `create_savings_goal`, `add_savings_contribution`, `delete_savings_goal` | What the user is saving for, what was put in, and what each goal asks every month |
 | `safe_to_spend`, `forecast` | How much may be spent today, with each credit card's cycle and statement; and the projected balance of each day until the month ends, with its lowest point |
 | `record_card_statement` | What a credit card's statement asks the user to pay after a cut (D16) |

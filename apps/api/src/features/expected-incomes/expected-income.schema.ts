@@ -1,5 +1,6 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { ownerId } from '../auth/owner'
+import { counterparty } from '../counterparties/counterparty.schema'
 import { cents, createdAt, id } from '../../shared/schema-columns'
 import { INCOME_FREQUENCIES } from './income-frequency'
 
@@ -12,6 +13,7 @@ export const expectedIncome = sqliteTable(
     name: text('name').notNull(),
     amountCents: cents('amount_cents').notNull(),
     currency: text('currency').notNull(),
+    counterpartyId: text('counterparty_id').references(() => counterparty.id, { onDelete: 'set null' }),
     frequency: text('frequency', { enum: INCOME_FREQUENCIES }).notNull(),
     // The date the next one arrives (YYYY-MM-DD, user timezone). For a regular income it is the
     // anchor the occurrences are counted from.
