@@ -465,7 +465,7 @@
   "contacts_compare_add": "Compare",
   "contacts_compare_remove": "Remove",
   "contacts_compare_hint": "Choose Compare on the contacts you want to see: each one gets a line and the total adds them up.",
-  "contacts_compare_mode": "Expenses or incomes",
+  "contacts_compare_mode": "Expenses, incomes or net",
   "contacts_compare_total": "Total",
   "contacts_compare_aria": "Money per month with the chosen contacts, in {currency}",
   "contacts_compare_caption": "Money per month with the chosen contacts, in {currency}",

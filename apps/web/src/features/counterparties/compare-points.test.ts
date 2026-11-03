@@ -29,6 +29,17 @@ test('a month one contact does not have counts as zero, and another currency is 
   )
 })
 
+test('net is income minus expense, per contact and in the total', () => {
+  const points = comparePoints(contacts, 'COP', 'net', (month) => month)
+  assert.deepEqual(
+    points.map((point) => [point.month, point.didi, point.uber, point.total]),
+    [
+      ['2026-09', -100, 0, -100],
+      ['2026-10', -50.5, 9.75, -40.75],
+    ],
+  )
+})
+
 test('the total adds cents, so a tenth of a tenth does not drift', () => {
   const tenths: CompareContact[] = [0.1, 0.2].map((amount, index) => ({
     id: `contact-${index}`,
