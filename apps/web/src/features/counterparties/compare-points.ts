@@ -7,7 +7,13 @@ export type CompareContact = {
   monthly: CounterpartyDetail['monthly']
 }
 
-export type CompareMode = 'spent' | 'received'
+/** `net` is received minus spent, so it can go below zero. */
+export type CompareMode = 'spent' | 'received' | 'net'
+
+const centsOf = (row: CompareContact['monthly'][number], mode: CompareMode) =>
+  mode === 'net'
+    ? Math.round(row.received * 100) - Math.round(row.spent * 100)
+    : Math.round(row[mode] * 100)
 
 /** One chart row: the month, then the value of each contact by id, then the total. */
 export type ComparePoint = { month: string; label: string; total: number; [id: string]: string | number }
@@ -35,7 +41,7 @@ export function comparePoints(
     const perMonth = new Map<string, number>()
     for (const row of contact.monthly) {
       if (row.currency !== currency) continue
-      perMonth.set(row.month, (perMonth.get(row.month) ?? 0) + Math.round(row[mode] * 100))
+      perMonth.set(row.month, (perMonth.get(row.month) ?? 0) + centsOf(row, mode))
     }
     cents.set(contact.id, perMonth)
   }
