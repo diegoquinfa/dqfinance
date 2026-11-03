@@ -29,7 +29,7 @@ const monthLabel = (month: string, locale: string) => {
 
 /**
  * The chosen contacts month by month, one line each in a pastel tone, and the total with them in
- * ink. Expenses or incomes, never both at once: two series per contact would be unreadable.
+ * ink. Expenses, incomes or their net, never two at once: two series per contact would be unreadable.
  */
 export default function ContactCompareChartGraph({
   contacts,
@@ -76,13 +76,14 @@ export default function ContactCompareChartGraph({
         <ToggleGroup
           type="single"
           size="sm"
-          className="w-36"
+          className="w-52"
           aria-label={m.contacts_compare_mode()}
           value={mode}
           onValueChange={(value) => setMode(value as CompareMode)}
         >
           <ToggleGroupItem value="spent">{m.label_expense()}</ToggleGroupItem>
           <ToggleGroupItem value="received">{m.label_income()}</ToggleGroupItem>
+          <ToggleGroupItem value="net">{m.label_net()}</ToggleGroupItem>
         </ToggleGroup>
       </div>
 
