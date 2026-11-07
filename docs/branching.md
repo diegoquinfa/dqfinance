@@ -71,6 +71,14 @@ pnpm exec wrangler rollback <deployment-id>
 A rollback reverts the Worker, not the database. Land the revert on `main`
 afterwards so the next deploy does not re-ship the broken version.
 
+## Commit attribution
+
+Commits and merges are created with `git` in a local checkout and then pushed.
+Never merge a pull request through the GitHub API and never write files through
+it: those actions are attributed to the GitHub App (`openbotgit[bot]`), which
+then appears as a contributor of the repository. `git push` keeps the identity
+of the commit object itself, so the branch stays authored by its author.
+
 ## Branch protection
 
 This repository is **public**, so GitHub branch protection is available without a
