@@ -11,7 +11,7 @@ One Cloudflare Worker serves both apps from one origin:
 - `apps/api` — Hono REST API, Better Auth (OAuth 2.1 authorization server), MCP server at `/mcp`, D1 + Drizzle. Mounted on `/api/*`, `/.well-known/*` and `/mcp`.
 - `apps/web` — the Worker itself (`src/server.ts`), a TanStack Start app: the landing page, sign-in and consent, onboarding, overview, accounts with a source detail page, movements (with CSV import), transfers, recurring, contacts, settings, and per-account documents.
 
-Agent rules: [AGENTS.md](./AGENTS.md). Architecture: [docs/architecture.md](./docs/architecture.md). Conventions: [CODING_STANDARDS.md](./CODING_STANDARDS.md). UI rules: [DESIGN.md](./DESIGN.md).
+Agent rules: [AGENTS.md](./AGENTS.md). Architecture: [docs/architecture.md](./docs/architecture.md). Conventions: [CODING_STANDARDS.md](./CODING_STANDARDS.md). UI rules: [DESIGN.md](./DESIGN.md). Branches, CI and deploys: [docs/branching.md](./docs/branching.md).
 
 ## Run locally
 
@@ -58,6 +58,8 @@ Inspect it with `npx @modelcontextprotocol/inspector`. Uploading and downloading
 | Regenerate Worker binding types after editing `wrangler.jsonc` | `pnpm --filter @dqfinance/api cf-typegen` |
 
 ## Deploy
+
+Pushes to `main` deploy: GitHub Actions runs `pnpm run build && pnpm run deploy` (migrations, then the Worker) once the checks pass. Setup, branch rules and rollback: [docs/branching.md](./docs/branching.md). The paths below use the same command by hand.
 
 **With the button:** it copies this repo to your GitHub account, creates the D1 database and R2 bucket, asks for `BETTER_AUTH_SECRET`, then runs `pnpm run build` and `pnpm run deploy` (migrations, then deploy). Every push to your copy deploys again.
 
