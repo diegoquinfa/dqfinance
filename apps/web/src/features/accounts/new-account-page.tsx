@@ -8,6 +8,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/s
 import { Input } from '#/shared/ui/input'
 import { Label } from '#/shared/ui/label'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
+import { Section } from '#/shared/ui/page'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
@@ -174,146 +175,155 @@ export function NewAccountPage({ bankId, bankAccountId }: { bankId?: string; ban
       {/* onSubmit, not action: React clears an action form after it runs, losing a failed create's fields. */}
       <form
         id={FORM_ID}
-        className="grid max-w-2xl gap-6"
+        className="grid"
         onSubmit={(event) => {
           event.preventDefault()
           void submit(new FormData(event.currentTarget))
         }}
       >
         {/* The amount comes first and large: the opening balance is the number that matters. */}
-        <div className="grid gap-2 border-b border-line pb-3 transition-colors has-focus-visible:border-signal">
-          <Label htmlFor="new-opening-balance">{m.accounts_new_opening()}</Label>
-          <div className="flex items-center gap-3">
-            <input
-              id="new-opening-balance"
-              name="openingBalance"
-              type="number"
-              step="0.01"
-              inputMode="decimal"
-              placeholder="0"
-              className="type-title w-full min-w-0 [appearance:textfield] bg-transparent font-medium text-ink tabular-nums placeholder:text-muted-foreground focus-visible:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <Select name="currency" defaultValue={settings.data.primaryCurrency}>
-              <SelectTrigger
-                aria-label={m.label_currency()}
-                className="label-mono h-9 w-24 border border-line-strong bg-transparent"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {settings.data.currencies.map((code) => (
-                  <SelectItem key={code} value={code}>
-                    {code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <FieldDescription>{m.accounts_new_opening_hint()}</FieldDescription>
-        </div>
-
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="new-bank">{m.label_bank()}</FieldLabel>
-            {/* A bank's name: free text, with the country's known banks suggested as the user types. */}
-            <Autocomplete
-              items={suggestions}
-              name="bankName"
-              required
-              value={bankText ?? preselectedBank?.name ?? ''}
-              onValueChange={setBankText}
-            >
-              <ComboboxInput id="new-bank" showTrigger={false} maxLength={80} />
-              {/* Like a datalist, nothing shows when no suggestion matches. */}
-              <ComboboxContent className="data-empty:hidden">
-                <ComboboxList>
-                  {(bank: string) => (
-                    <AutocompleteItem key={bank} value={bank}>
-                      {bank}
-                    </AutocompleteItem>
-                  )}
-                </ComboboxList>
-              </ComboboxContent>
-            </Autocomplete>
-            <FieldDescription>
-              {!text
-                ? m.accounts_new_bank_hint()
-                : matchedBank
-                  ? m.accounts_bank_reuse({ bank: matchedBank.name })
-                  : m.accounts_bank_create({ bank: text })}
-            </FieldDescription>
-          </Field>
-
-          {/* The bank account level is hidden: it only shows when the bank already has one to pick. */}
-          {bankAccounts.length > 0 && (
-            <Field>
-              <FieldLabel htmlFor="new-existing-account">{m.accounts_new_existing_account()}</FieldLabel>
-              <Select
-                value={accountChoice}
-                onValueChange={(value) => setChoice({ bank: matchedBank?.id ?? '', value })}
-              >
-                <SelectTrigger id="new-existing-account">
+        <Section index="01" label={m.label_balance()}>
+          <div className="grid max-w-xl gap-2 border-b border-line pb-3 transition-colors has-focus-visible:border-signal">
+            <Label htmlFor="new-opening-balance">{m.accounts_new_opening()}</Label>
+            <div className="flex items-center gap-3">
+              <input
+                id="new-opening-balance"
+                name="openingBalance"
+                type="number"
+                step="0.01"
+                inputMode="decimal"
+                placeholder="0"
+                className="type-title w-full min-w-0 [appearance:textfield] bg-transparent font-medium text-ink tabular-nums placeholder:text-muted-foreground focus-visible:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <Select name="currency" defaultValue={settings.data.primaryCurrency}>
+                <SelectTrigger
+                  aria-label={m.label_currency()}
+                  className="label-mono h-9 w-24 border border-line-strong bg-transparent"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NEW}>{m.accounts_new_existing_none()}</SelectItem>
-                  {bankAccounts.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.last4 ? `${item.name} •••• ${item.last4}` : item.name}
+                  {settings.data.currencies.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {code}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <FieldDescription>{m.accounts_new_account_hint()}</FieldDescription>
-            </Field>
-          )}
+            </div>
+            <FieldDescription>{m.accounts_new_opening_hint()}</FieldDescription>
+          </div>
+        </Section>
 
-          <Field>
-            <span className="label-mono text-muted-foreground">{m.label_product_type()}</span>
-            <ToggleGroup
-              type="single"
-              className="w-full flex-wrap"
-              aria-label={m.label_product_type()}
-              value={type}
-              onValueChange={(value) => setType(value)}
-            >
-              {productTypes.map((item) => (
-                <ToggleGroupItem key={item.value} value={item.value}>
-                  {item.label()}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="new-product-name">{m.accounts_new_product_name()}</FieldLabel>
-            <Input id="new-product-name" name="productName" maxLength={80} placeholder={typeLabel} />
-            <FieldDescription>{m.accounts_new_name_hint()}</FieldDescription>
-          </Field>
-
-          {creatingAccount && (
+        <Section index="02" label={m.accounts_new_bank_account()}>
+          <FieldGroup className="max-w-xl">
             <Field>
-              <FieldLabel htmlFor="new-account-last4">{`${m.label_last4()} (${m.label_optional()})`}</FieldLabel>
-              <Input id="new-account-last4" name="last4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
+              <FieldLabel htmlFor="new-bank">{m.label_bank()}</FieldLabel>
+              {/* A bank's name: free text, with the country's known banks suggested as the user types. */}
+              <Autocomplete
+                items={suggestions}
+                name="bankName"
+                required
+                value={bankText ?? preselectedBank?.name ?? ''}
+                onValueChange={setBankText}
+              >
+                <ComboboxInput id="new-bank" showTrigger={false} maxLength={80} />
+                {/* Like a datalist, nothing shows when no suggestion matches. */}
+                <ComboboxContent className="data-empty:hidden">
+                  <ComboboxList>
+                    {(bank: string) => (
+                      <AutocompleteItem key={bank} value={bank}>
+                        {bank}
+                      </AutocompleteItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Autocomplete>
+              <FieldDescription>
+                {!text
+                  ? m.accounts_new_bank_hint()
+                  : matchedBank
+                    ? m.accounts_bank_reuse({ bank: matchedBank.name })
+                    : m.accounts_bank_create({ bank: text })}
+              </FieldDescription>
             </Field>
-          )}
 
-          <Field>
-            <FieldLabel htmlFor="new-product-rate">{m.product_annual_rate()}</FieldLabel>
-            <Input id="new-product-rate" name="annualRate" type="number" min="0" step="0.01" inputMode="decimal" />
-            <FieldDescription>{m.product_annual_rate_hint()}</FieldDescription>
-          </Field>
-        </FieldGroup>
+            {/* The bank account level is hidden: it only shows when the bank already has one to pick. */}
+            {bankAccounts.length > 0 && (
+              <Field>
+                <FieldLabel htmlFor="new-existing-account">{m.accounts_new_existing_account()}</FieldLabel>
+                <Select value={accountChoice} onValueChange={(value) => setChoice({ bank: matchedBank?.id ?? '', value })}>
+                  <SelectTrigger id="new-existing-account">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NEW}>{m.accounts_new_existing_none()}</SelectItem>
+                    {bankAccounts.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.last4 ? `${item.name} •••• ${item.last4}` : item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldDescription>{m.accounts_new_account_hint()}</FieldDescription>
+              </Field>
+            )}
 
-        <FieldError>{error}</FieldError>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" asChild>
-            <Link to="/accounts">{m.action_cancel()}</Link>
-          </Button>
-          <Button type="submit" disabled={pending}>
-            {pending && <Spinner data-icon="inline-start" />}
-            {m.action_create()}
-          </Button>
+            {creatingAccount && (
+              <Field>
+                <FieldLabel htmlFor="new-account-last4">{`${m.label_last4()} (${m.label_optional()})`}</FieldLabel>
+                <Input id="new-account-last4" name="last4" inputMode="numeric" pattern="\d{4}" maxLength={4} />
+              </Field>
+            )}
+          </FieldGroup>
+        </Section>
+
+        <Section index="03" label={m.accounts_new_product_label()}>
+          <FieldGroup className="max-w-xl">
+            <Field>
+              <span className="label-mono text-muted-foreground">{m.label_product_type()}</span>
+              <ToggleGroup
+                type="single"
+                className="w-full flex-wrap"
+                aria-label={m.label_product_type()}
+                value={type}
+                onValueChange={(value) => setType(value)}
+              >
+                {productTypes.map((item) => (
+                  <ToggleGroupItem key={item.value} value={item.value}>
+                    {item.label()}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="new-product-name">{m.accounts_new_product_name()}</FieldLabel>
+              <Input id="new-product-name" name="productName" maxLength={80} placeholder={typeLabel} />
+              <FieldDescription>{m.accounts_new_name_hint()}</FieldDescription>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="new-product-rate">{m.product_annual_rate()}</FieldLabel>
+              <Input id="new-product-rate" name="annualRate" type="number" min="0" step="0.01" inputMode="decimal" />
+              <FieldDescription>{m.product_annual_rate_hint()}</FieldDescription>
+            </Field>
+          </FieldGroup>
+        </Section>
+
+        <div className="grid gap-5 pb-8 lg:grid-cols-12 lg:gap-x-12">
+          <div className="grid gap-4 lg:col-span-9 lg:col-start-4">
+            <FieldError>{error}</FieldError>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" asChild>
+                <Link to="/accounts">{m.action_cancel()}</Link>
+              </Button>
+              <Button type="submit" disabled={pending}>
+                {pending && <Spinner data-icon="inline-start" />}
+                {m.action_create()}
+              </Button>
+            </div>
+          </div>
         </div>
       </form>
     </>

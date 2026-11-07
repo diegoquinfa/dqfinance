@@ -132,20 +132,16 @@ export function ImportPage() {
         <p className="text-sm text-muted-foreground">{m.import_intro()}</p>
       </PageHeader>
 
-      <Section index="01" label={m.label_source()}>
-        <SourceSelect
-          id="import-source"
-          label={m.label_source()}
-          hint={m.transactions_pick_source()}
-          options={sources}
-          value={sourceKey}
-          onChange={setSourceKey}
-          className="max-w-md"
-        />
-      </Section>
-
-      <Section index="02" label={m.import_statement()}>
+      <Section index="01" label={m.import_statement()}>
         <FieldGroup className="max-w-2xl">
+          <SourceSelect
+            id="import-source"
+            label={m.label_source()}
+            hint={m.transactions_pick_source()}
+            options={sources}
+            value={sourceKey}
+            onChange={setSourceKey}
+          />
           <Field>
             <FieldLabel htmlFor="import-text">{m.import_paste()}</FieldLabel>
             <Textarea
@@ -175,7 +171,7 @@ export function ImportPage() {
       </Section>
 
       {table.headers.length > 0 && (
-        <Section index="03" label={m.import_columns()}>
+        <Section index="02" label={m.import_columns()}>
           <FieldGroup className="max-w-2xl sm:grid sm:grid-cols-2">
             <ColumnField
               id="import-column-date"
@@ -212,7 +208,7 @@ export function ImportPage() {
       )}
 
       <Section
-        index={table.headers.length > 0 ? '04' : '03'}
+        index={table.headers.length > 0 ? '03' : '02'}
         label={m.import_preview()}
         action={
           <Button variant="outline" disabled={!ready || !fresh.length || importRows.isPending} onClick={submit}>

@@ -15,6 +15,8 @@ import { ApiError } from '#/shared/api'
 import { currentLocale, m, switchLocale } from '#/shared/i18n'
 import { Avatar, AvatarFallback } from '#/shared/ui/avatar'
 import { Button } from '#/shared/ui/button'
+import { AppSidebar } from '#/shared/ui/app-sidebar'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '#/shared/ui/sidebar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -102,89 +104,86 @@ function AppLayout() {
   if (!settings.isPending && !settings.isFetching && !settings.data && !isGuest) return <Navigate to="/onboarding" />
 
   return (
-    <div className="min-h-dvh">
-      <header className="sticky top-0 z-40 border-b border-line bg-canvas">
-        <div className="container-page flex h-16 items-center justify-between gap-6">
-          <Link to="/overview" className="shrink-0">
-            <img src="/logo.svg" alt={m.app_name()} className="h-7 w-auto" />
-          </Link>
-          <nav aria-label={m.nav_main()} className="hidden lg:block">
-            <ul className="flex gap-6">
-              {tabs.map((link) => (
-                <li key={link.to}>
-                  <Link
-                    to={link.to}
-                    className="label-mono link-draw py-1 text-muted-foreground hover:text-ink data-[status=active]:text-ink"
-                  >
-                    {link.label()}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <div className="flex items-center gap-2">
-            <NewTransactionDialog
-              trigger={
-                <Button size="sm" className="hidden lg:inline-flex">
-                  <Plus aria-hidden />
-                  {m.transactions_new()}
-                </Button>
-              }
-            />
-            <MenuDialog name={session.user.name} email={session.user.email} />
-            <ProfileMenu name={session.user.name} email={session.user.email} />
-          </div>
-        </div>
-      </header>
-
-      {isGuest && (
-        <div className="border-b border-line bg-surface">
-          <div className="container-page flex flex-wrap items-center justify-between gap-3 py-3">
-            <p className="text-sm text-muted-foreground">{m.guest_banner()}</p>
-            <Link to="/sign-up" className="label-mono link-draw text-ink">
-              {m.auth_link_sign_up()}
-            </Link>
-          </div>
-        </div>
-      )}
-
-      <main id="main" className="container-page pb-32 lg:pb-24">
-        <Outlet />
-      </main>
-
-      <nav
-        aria-label={m.nav_main()}
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas pb-[env(safe-area-inset-bottom)] lg:hidden"
-      >
-        <ul className="grid h-16 grid-cols-5">
-          {tabs.map(({ to, label, icon: Icon }) => (
-            <li key={to}>
-              <Link
-                to={to}
-                className="relative flex h-full items-center justify-center text-muted-foreground transition-colors before:absolute before:top-0 before:h-px before:w-8 before:bg-signal before:opacity-0 hover:text-ink data-[status=active]:text-ink data-[status=active]:before:opacity-100"
-              >
-                <Icon aria-hidden className="size-5" strokeWidth={1.5} />
-                <span className="sr-only">{label()}</span>
+    <SidebarProvider>
+      {/* Desktop rail. Below `xl` the shell keeps the top bar and the bottom bar. */}
+      <div className="hidden xl:block">
+        <AppSidebar />
+      </div>
+      <SidebarInset id="main" className="min-h-dvh">
+        <header className="sticky top-0 z-40 border-b border-line bg-canvas">
+          <div className="container-page flex h-16 items-center justify-between gap-6">
+            <div className="flex min-w-0 items-center gap-4">
+              <SidebarTrigger label={m.nav_toggle_sidebar()} className="hidden text-muted-foreground hover:text-ink xl:inline-flex" />
+              <Link to="/overview" className="shrink-0 xl:hidden">
+                <img src="/logo.svg" alt={m.app_name()} className="h-7 w-auto" />
               </Link>
-            </li>
-          ))}
-          <li className="p-2">
-            <NewTransactionDialog
-              trigger={
-                <button
-                  type="button"
-                  className="flex size-full items-center justify-center bg-ink text-canvas transition-colors hover:bg-signal"
+            </div>
+            <div className="flex items-center gap-2">
+              <NewTransactionDialog
+                trigger={
+                  <Button size="sm" className="hidden lg:inline-flex">
+                    <Plus aria-hidden />
+                    {m.transactions_new()}
+                  </Button>
+                }
+              />
+              <div className="xl:hidden">
+                <MenuDialog name={session.user.name} email={session.user.email} />
+              </div>
+              <ProfileMenu name={session.user.name} email={session.user.email} />
+            </div>
+          </div>
+        </header>
+
+        {isGuest && (
+          <div className="border-b border-line bg-surface">
+            <div className="container-page flex flex-wrap items-center justify-between gap-3 py-3">
+              <p className="text-sm text-muted-foreground">{m.guest_banner()}</p>
+              <Link to="/sign-up" className="label-mono link-draw text-ink">
+                {m.auth_link_sign_up()}
+              </Link>
+            </div>
+          </div>
+        )}
+
+        <div className="container-page pb-32 xl:pb-24">
+          <Outlet />
+        </div>
+
+        <nav
+          aria-label={m.nav_main()}
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas pb-[env(safe-area-inset-bottom)] xl:hidden"
+        >
+          <ul className="grid h-16 grid-cols-5">
+            {tabs.map(({ to, label, icon: Icon }) => (
+              <li key={to}>
+                <Link
+                  to={to}
+                  className="relative flex h-full items-center justify-center text-muted-foreground transition-colors before:absolute before:top-0 before:h-px before:w-8 before:bg-signal before:opacity-0 hover:text-ink data-[status=active]:text-ink data-[status=active]:before:opacity-100"
                 >
-                  <Plus aria-hidden className="size-5" />
-                  <span className="sr-only">{m.transactions_new()}</span>
-                </button>
-              }
-            />
-          </li>
-        </ul>
-      </nav>
+                  <Icon aria-hidden className="size-5" strokeWidth={1.5} />
+                  <span className="sr-only">{label()}</span>
+                </Link>
+              </li>
+            ))}
+            <li className="p-2">
+              <NewTransactionDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="flex size-full items-center justify-center bg-ink text-canvas transition-colors hover:bg-signal"
+                  >
+                    <Plus aria-hidden className="size-5" />
+                    <span className="sr-only">{m.transactions_new()}</span>
+                  </button>
+                }
+              />
+            </li>
+          </ul>
+        </nav>
+      </SidebarInset>
       <GoalCelebration />
-    </div>
+    </SidebarProvider>
   )
 }
 

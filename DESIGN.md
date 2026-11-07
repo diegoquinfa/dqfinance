@@ -83,7 +83,7 @@ The scale is `@utility type-*`, not `--text-*` theme sizes: `cn` (tailwind-merge
 - One container: `container-page` (max 1360px, gutters 20 / 48 / 80px).
 - 12 columns with `gap-x-12` from `lg`. **Controlled asymmetry:** labels left, content right.
 - `Section` (`shared/ui/page.tsx`) has one layout, `rail`: the heading in columns 1-3, content in 4-12, and its action ("View all →", "Add account") under the heading. Below `lg` it collapses to one column with the action beside the heading.
-- Every `Section` is the same block, on every page, including the signed-in detail pages: the heading is two lines, `// 0X` with the number in `signal` above the label in `type-heading` (`ink`), and the action sits under the label in the rail. The number is sequential per page, starting at 01, and skips nothing; a section without a number is a defect. A section that renders only sometimes (like the import columns step) takes the next free number, so the visible sequence never skips a number. The page h1 stays `type-title` and is never numbered. The one documented exception is the overview's `01` total balance: it is the page's lede, a bare mono eyebrow above the display amount, not a `Section`, and the only number on that page that is not a section heading.
+- Every `Section` is the same block, on every page, including the signed-in detail pages: the heading is two lines, `// 0X` with the number in `signal` above the label in `type-heading` (`ink`), and the action sits under the label in the rail. The number is sequential per page, starting at 01, and skips nothing; a section without a number is a defect. A section that renders only sometimes (like the import columns step) takes the next free number, so the visible sequence never skips a number. The page h1 stays `type-title` and is never numbered. The one documented exception is the overview's `01` total balance: it is the page's lede, a bare mono eyebrow above the display amount, not a `Section`, and the only number on that page that is not a section heading. On the overview the sections pair their content in two columns from `lg` (a chart beside its figures, a list beside its list) instead of stacking full width, and their numbers are computed from the visible order because "To confirm" renders only when it has items. The summary band's two columns are a container query at 64rem, not a viewport breakpoint, so it stacks whenever the content column is under 1024px (the rail makes that happen at 1280).
 - Sections are separated by space (`py-8 md:py-12`), never by lines or alternating backgrounds.
 - Lists are hairline rows (`rowsClass`: a line above every row and one closing the list). Never one box per item.
 - Corners are square everywhere (every `--radius-*` is 0). `rounded-full` remains only for dots.
@@ -91,47 +91,13 @@ The scale is `@utility type-*`, not `--text-*` theme sizes: `cn` (tailwind-merge
 
 ## Shell
 
-- **Top bar** (64px, `canvas` + hairline, sticky): `DQFINANCE` in mono on the left. From `lg`, the bottom bar's four destinations as mono links with a drawn underline (`link-draw`) and `ink` for the current page, and the primary "New movement" button. From `xl`, the account is a square avatar (the user's initials) opening a dropdown with the name and email (mono), Settings and Sign out. At every size, "Menu" opens a full-screen menu with every destination as a large numbered link (`01`... in `faint`, the current one in `signal`), the name, the email, and "Sign out". Never more links in the bar: a new page goes in the menu.
-- **Bottom bar** (below `lg`): Overview, Movements, Accounts, Recurring as icons (accessible names in `sr-only`), the current one in `ink` with a 1px lilac mark on top, and a square `ink` "+" that opens New movement.
+- **Desktop rail** (from `xl`, 1280px): 16rem wide on `canvas`, with a hairline on its right edge. The logo lockup at the top, then every destination as a mono row with a lucide icon, in this order: Overview, Movements, Import, Accounts, Transfers, Recurring, Calendar, Savings, Incomes, Budgets, Contacts, Settings. The current route is `ink` with a 1px `signal` mark at the row's left edge. It collapses to the 3rem icon rail, where a row shows its label in a tooltip. The toggle is the ghost icon button in the rail footer, mirrored in the top bar; Ctrl/Cmd+B toggles it too. The state lives in memory.
+- **Top bar** (64px, `canvas` + hairline, sticky): at `xl` it holds only the rail toggle, the primary "New movement" button and the avatar, a square with the user's initials (mono) that opens a dropdown with the name and email (mono), Settings and Sign out. Below `xl` it keeps the logo lockup, "Menu" and, from `lg`, "New movement".
+- **Bottom bar** (below `xl`): Overview, Movements, Accounts, Recurring as icons (accessible names in `sr-only`), the current one in `ink` with a 1px lilac mark on top, and a square `ink` "+" that opens New movement. The rest of the phone shell is unchanged, with "Menu" opening a full-screen menu with every destination as a large numbered link (`01`... in `faint`, the current one in `signal`), the name, the email, and "Sign out". Never more links in a bar: a new page goes in the rail and the menu.
 
 ## Components
 
-`shared/ui` holds shadcn/ui primitives restyled with the tokens. Add more with `pnpm dlx shadcn@latest add <name>` from `apps/web`, then run the checklist below.
-
-Checklist for every added component:
-
-- No `rounded-*`; `rounded-full` only for dots.
-- No `shadow-*`.
-- No `ring-*` focus styles and no `outline-none`: focus is the global 1px `signal` outline with a 4px offset (`styles.css`) plus the amount field's bottom line.
-- Colors only by token: `ink`, `soft`, `muted-foreground`, `faint`, `canvas`, `raised`, `surface`, `line`, `line-strong`, `signal`, `income`, `destructive`.
-- Form labels, metadata and the `// 0X` markers are `label-mono`; a section's label is `type-heading` in `ink`; weights stay 400 or 500.
-- Lists stay hairline rows (`rowsClass`), not a box per item.
-- Every string comes from `packages/i18n`, both catalogs; hyphens, never em or en dashes.
-
-| Component | Notes |
-| --- | --- |
-| `Button` | `default`: `ink` on `canvas`, hover `signal`, one per view at most (the top bar or the "+" holds it). `outline`: page actions ("New contact", "Adjust balance", Confirm). `ghost`: icon buttons, Cancel, Skip. `link`: inline text with a drawn underline, for actions inside a section rail; it takes no box size. |
-| `Input` | Filled `surface`, square, 44px, 16px text (no iOS zoom). Border appears on hover/focus. |
-| `Select`, `Combobox`, `Autocomplete` | The trigger or input looks like `Input`; the list is a `raised` hairline panel under it, as wide as it, with `soft` rows that turn `surface` + `ink` when highlighted, a check on the chosen one, and `label-mono` group labels. `Select` (Radix) for short fixed lists; `CodeCombobox` (Base UI) to search long `{ code, label }` lists like countries and currencies; `Autocomplete` for free text with suggestions, like a bank's name. A select's "None" is the item `""` plus the same text as placeholder. No native `<select>` or `<datalist>`: Windows paints their lists with the system theme. |
-| `Label`, `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldGroup` | Forms are `FieldGroup` + `Field`: mono label above, control, description or error below. Validation sets `data-invalid` on the field and `aria-invalid` on the control; errors are `role="alert"`. |
-| `ToggleGroup` | Square mono chips with a hairline frame; the chosen one is inverted (`bg-ink text-canvas`). Expense/income, periods, filters. A single-select group never empties: the empty value of a second click is dropped. |
-| `Badge` | Mono tag with a hairline border: product type, currency, in transit. |
-| `Card` | Only for raised surfaces: the auth and consent panels. |
-| `Dialog`, `DialogPanel`, `AlertDialog` | Bottom sheet on mobile, centered square panel from `sm`. Overlay `canvas` at 90 %, no blur. `AlertDialog` confirms what runs immediately, like deleting a recurring expense. |
-| `Empty` | Empty states, left aligned, hairlines above and below, with an optional action. |
-| `Avatar`, `DropdownMenu` | The account: a square avatar with initials (mono), its dropdown names the user and offers Settings and Sign out. |
-| `Skeleton`, `ListSkeleton` | Loading states shaped like what they replace: `Skeleton` is a bare `surface` block, `ListSkeleton` is hairline rows. |
-| `Spinner` | Only inside a pending button, next to its text; the button also gets `disabled`. |
-| `Separator` | A lone divider line, where a `border-t` used to be. List rows keep `divide-y` through `rowsClass`. |
-| `Toaster` (sonner) | Mounted once in the root route. A successful create confirms with `toast.success(...)`; never for reads. |
-| `PageHeader`, `Section`, `Eyebrow`, `FocusLayout` | `shared/ui/page.tsx`: the page h1, the rail sections, the `// 0X` marker, and the signed-out layout (two-tone statement + panel). A section heading is two lines: the `// 0X` index above the label in `type-heading`. |
-| `TransactionRow` | `features/transactions`: title in `ink`, mono metadata (`date / source / category`), the signed amount on the right. Every movement list uses it. |
-| `Chart` | `shared/ui/chart.tsx` wraps Recharts (the only chart dependency). Lines only: assets solid in `ink`, liabilities dashed in `muted-foreground`, so the dash tells them apart without relying on tone. A mono legend beside the title, a `line` grid, mono ticks with compact amounts on the Y axis (`150 mil`), a `line-strong` cursor, no area fills, no lilac, no animation. The tooltip is a square hairline panel with the month, then each series label beside its `formatMoney` value; the region carries an `aria-label` and the same points sit in an `sr-only` table beside it. |
-| `Table` | Data with more than two columns, like the statement import preview: mono headers, hairline rows, no box, no zebra. |
-| `Textarea` | Pasted statement rows: filled `surface`, mono, grows with what it holds. A movement's description uses it too, in sans. |
-| `CardFace` | `features/accounts/card-face.tsx`: the 1.586 square-cornered face on a product's card page, with its color, brand (`label-mono`) and masked last 4. |
-
-States: hover changes tone or moves a row title 4px right, never size. Focus is a 1px `signal` outline with a 4px offset (global); the amount field shows focus on its bottom line. Disabled is `opacity-50`.
+The catalogue of components and the checklist for every added one: [docs/components.md](./docs/components.md).
 
 ## Screens
 

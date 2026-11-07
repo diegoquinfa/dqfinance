@@ -110,16 +110,27 @@ export function OverviewPage() {
     primary,
   )
   const otherBalances = worth.slice(1).filter((entry) => entry.assets !== 0)
+  const pendingItems = pending.data ?? []
+  // The section only counts while something is due (or still loading), so the numbers follow the visible order.
+  const showPending = pending.isPending || pendingItems.length > 0
+  const sectionKeys = [
+    showPending ? 'pending' : null,
+    'month',
+    'worth',
+    'accounts',
+    'recent',
+  ].filter((key): key is string => key !== null)
+  const sectionIndex = (key: string) => String(sectionKeys.indexOf(key) + 2).padStart(2, '0')
 
   return (
     <>
       <h1 className="sr-only">{m.overview_title()}</h1>
 
-      {/* Desktop: the total and its period on the left, safe-to-spend on the right, both from the top.
-          Below lg the wrapper dissolves so safe-to-spend stays second, before the period. */}
-      <section className="grid gap-10 pt-10 pb-8 md:pt-16 lg:grid-cols-12 lg:items-start lg:gap-x-12 lg:pb-12">
-        <div className="contents lg:col-span-6 lg:grid lg:gap-10">
-          <div className="grid gap-2">
+      {/* Summary band: the total and the period controls, with anything still in transit under the total.
+          A container query, not a viewport one: the desktop rail narrows the content without moving `lg`. */}
+      <div className="@container">
+        <section className="grid gap-10 pt-10 pb-8 md:pt-16 @[64rem]:grid-cols-12 @[64rem]:items-start @[64rem]:gap-x-12 lg:pb-12">
+          <div className="grid content-start min-w-0 gap-3 @[64rem]:col-span-6">
             <h2>
               <Eyebrow index="01">{m.overview_total_balance()}</Eyebrow>
             </h2>
@@ -127,7 +138,7 @@ export function OverviewPage() {
               {formatMoney(worth[0]!.assets, primary)}
             </p>
             {otherBalances.length > 0 && (
-              <ul aria-label={m.overview_other_currencies()} className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
+              <ul aria-label={m.overview_other_currencies()} className="flex flex-wrap gap-x-6 gap-y-1">
                 {otherBalances.map((entry) => (
                   <li key={entry.currency} className="label-mono text-muted-foreground tabular-nums">
                     {formatMoney(entry.assets, entry.currency)}
@@ -135,143 +146,174 @@ export function OverviewPage() {
                 ))}
               </ul>
             )}
+            {inTransit.length > 0 && (
+              <div className="grid gap-3">
+                <h3>
+                  <Eyebrow>{m.overview_in_transit()}</Eyebrow>
+                </h3>
+                <ul aria-label={m.overview_in_transit()} className="flex flex-wrap gap-x-6 gap-y-1">
+                  {inTransit.map((transfer) => (
+                    <li key={transfer.currency} className="label-mono text-muted-foreground tabular-nums">
+                      {formatMoney(transfer.amount, transfer.currency)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-          <div className="max-lg:order-last">
-            <CalendarPeriod currency={primary} />
+          <div className="min-w-0 @[64rem]:col-span-6">
+            <CalendarPeriod currency={primary} showNet />
+          </div>
+        </section>
+      </div>
+
+      {showPending && (
+        <Section index={sectionIndex('pending')} label={m.overview_pending()} action={<ViewAll to="/recurring" />}>
+          {pending.isPending ? (
+            <ListSkeleton rows={2} />
+          ) : (
+            <ul className={rowsClass}>
+              {pendingItems.map((item) => (
+                <li key={item.id} className="grid gap-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="min-w-0">
+                    <p className="truncate text-ink">{item.name}</p>
+                    <p className="label-mono text-muted-foreground">{formatDay(item.nextDueOn)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label htmlFor={`pending-amount-${item.id}`} className="sr-only">
+                      {m.label_amount()} ({item.currency})
+                    </label>
+                    <Input
+                      id={`pending-amount-${item.id}`}
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      inputMode="decimal"
+                      defaultValue={item.amount}
+                      className="w-36 tabular-nums"
+                    />
+                    <Button
+                      variant="outline"
+                      disabled={confirm.isPending}
+                      onClick={() => {
+                        const input = document.getElementById(`pending-amount-${item.id}`) as HTMLInputElement | null
+                        confirm.mutate({ id: item.id, amount: input ? Number(input.value) : item.amount })
+                      }}
+                    >
+                      {m.action_confirm()}
+                    </Button>
+                    <Button variant="ghost" disabled={skip.isPending} onClick={() => skip.mutate(item.id)}>
+                      {m.action_skip()}
+                    </Button>
+                  </div>
+                  {(confirm.error || skip.error) && (
+                    <p role="alert" className="text-sm text-destructive sm:col-span-2">
+                      {confirm.error?.message ?? skip.error?.message}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+      )}
+
+      <Section index={sectionIndex('month')} label={m.overview_month()}>
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-x-12">
+          <div className="min-w-0 lg:col-span-7">
+            <p className="mb-6 max-w-prose text-sm text-muted-foreground">{m.forecast_hint()}</p>
+            <ForecastChart />
+          </div>
+          <div className="min-w-0 lg:col-span-5">
+            <SafeToSpendCard />
           </div>
         </div>
-        <div className="lg:col-span-6">
-          <SafeToSpendCard />
-        </div>
-      </section>
-
-      <Section index="02" label={m.forecast_title()}>
-        <p className="mb-6 max-w-prose text-sm text-muted-foreground">{m.forecast_hint()}</p>
-        <ForecastChart />
       </Section>
 
-      <Section index="03" label={m.overview_net_worth()}>
-        <ul className="grid gap-8">
-          {worth.map((entry) => (
-            <li key={entry.currency} className="grid gap-4">
-              <p className="type-heading font-medium text-ink tabular-nums">{formatMoney(entry.net, entry.currency)}</p>
-              <dl className="grid grid-cols-2 gap-y-4">
-                <Separator className="col-span-2" />
-                <div>
-                  <dt className="label-mono text-muted-foreground">{m.overview_assets()}</dt>
-                  <dd className="mt-1 text-soft tabular-nums">{formatMoney(entry.assets, entry.currency)}</dd>
+      <Section index={sectionIndex('worth')} label={m.overview_net_worth()}>
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-x-12">
+          <ul className="grid content-start min-w-0 gap-8 lg:col-span-5">
+            {worth.map((entry) => (
+              <li key={entry.currency} className="grid gap-4">
+                <p className="type-heading font-medium text-ink tabular-nums">{formatMoney(entry.net, entry.currency)}</p>
+                <div className="grid gap-4">
+                  <Separator />
+                  <dl className="grid grid-cols-2 gap-y-4">
+                    <div>
+                      <dt className="label-mono text-muted-foreground">{m.overview_assets()}</dt>
+                      <dd className="mt-1 text-soft tabular-nums">{formatMoney(entry.assets, entry.currency)}</dd>
+                    </div>
+                    <div>
+                      <dt className="label-mono text-muted-foreground">{m.overview_liabilities()}</dt>
+                      <dd className="mt-1 text-soft tabular-nums">{formatMoney(entry.liabilities, entry.currency)}</dd>
+                    </div>
+                  </dl>
                 </div>
-                <div>
-                  <dt className="label-mono text-muted-foreground">{m.overview_liabilities()}</dt>
-                  <dd className="mt-1 text-soft tabular-nums">{formatMoney(entry.liabilities, entry.currency)}</dd>
-                </div>
-              </dl>
-            </li>
-          ))}
-        </ul>
-        <BalanceChart className="mt-10" currency={primary} />
-      </Section>
-
-      <Section index="04" label={m.overview_accounts()} action={<ViewAll to="/accounts" />}>
-        {accounts.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>{m.accounts_empty()}</EmptyTitle>
-              <EmptyDescription>{m.overview_no_accounts()}</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <ul className={rowsClass}>
-            {accounts.map((account) => (
-              <SourceRow
-                key={`${account.ref.type}:${account.ref.id}`}
-                to={account.ref}
-                name={account.name}
-                meta={account.bankName ?? m.label_cash()}
-                amount={formatMoney(account.balance, account.currency)}
-              />
-            ))}
-          </ul>
-        )}
-      </Section>
-
-      <Section index="05" label={m.overview_cards()}>
-        {creditCards.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{m.overview_no_cards()}</p>
-        ) : (
-          <ul className={rowsClass}>
-            {creditCards.map((card) => (
-              <SourceRow
-                key={card.ref.id}
-                to={card.ref}
-                name={card.name}
-                meta={card.debts
-                  .filter((debt) => debt.currency !== card.currency)
-                  .map((debt) => formatMoney(debt.amount, debt.currency))
-                  .join(' + ')}
-                amount={formatMoney(card.total, card.currency)}
-                detail={
-                  card.available !== null &&
-                  m.accounts_card_available({ amount: formatMoney(card.available, card.currency) })
-                }
-              />
-            ))}
-          </ul>
-        )}
-      </Section>
-
-      <Section index="06" label={m.overview_pending()} action={<ViewAll to="/recurring" />}>
-        {pending.isPending ? (
-          <ListSkeleton rows={2} />
-        ) : (pending.data ?? []).length === 0 ? (
-          <p className="text-sm text-muted-foreground">{m.overview_pending_empty()}</p>
-        ) : (
-          <ul className={rowsClass}>
-            {(pending.data ?? []).map((item) => (
-              <li key={item.id} className="grid gap-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                <div className="min-w-0">
-                  <p className="truncate text-ink">{item.name}</p>
-                  <p className="label-mono text-muted-foreground">{formatDay(item.nextDueOn)}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label htmlFor={`pending-amount-${item.id}`} className="sr-only">
-                    {m.label_amount()} ({item.currency})
-                  </label>
-                  <Input
-                    id={`pending-amount-${item.id}`}
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    inputMode="decimal"
-                    defaultValue={item.amount}
-                    className="w-36 tabular-nums"
-                  />
-                  <Button
-                    variant="outline"
-                    disabled={confirm.isPending}
-                    onClick={() => {
-                      const input = document.getElementById(`pending-amount-${item.id}`) as HTMLInputElement | null
-                      confirm.mutate({ id: item.id, amount: input ? Number(input.value) : item.amount })
-                    }}
-                  >
-                    {m.action_confirm()}
-                  </Button>
-                  <Button variant="ghost" disabled={skip.isPending} onClick={() => skip.mutate(item.id)}>
-                    {m.action_skip()}
-                  </Button>
-                </div>
-                {(confirm.error || skip.error) && (
-                  <p role="alert" className="text-sm text-destructive sm:col-span-2">
-                    {confirm.error?.message ?? skip.error?.message}
-                  </p>
-                )}
               </li>
             ))}
           </ul>
-        )}
+          <BalanceChart className="lg:col-span-7" currency={primary} />
+        </div>
       </Section>
 
-      <Section index="07" label={m.overview_recent()} action={<ViewAll to="/transactions" />}>
+      <Section index={sectionIndex('accounts')} label={m.overview_accounts_cards()} action={<ViewAll to="/accounts" />}>
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-x-12">
+          <div className="grid content-start min-w-0 gap-5 lg:col-span-7">
+            <h3>
+              <Eyebrow>{m.overview_accounts()}</Eyebrow>
+            </h3>
+            {accounts.length === 0 ? (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyTitle>{m.accounts_empty()}</EmptyTitle>
+                  <EmptyDescription>{m.overview_no_accounts()}</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <ul className={rowsClass}>
+                {accounts.map((account) => (
+                  <SourceRow
+                    key={`${account.ref.type}:${account.ref.id}`}
+                    to={account.ref}
+                    name={account.name}
+                    meta={account.bankName ?? m.label_cash()}
+                    amount={formatMoney(account.balance, account.currency)}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="grid content-start min-w-0 gap-5 lg:col-span-5">
+            <h3>
+              <Eyebrow>{m.overview_cards()}</Eyebrow>
+            </h3>
+            {creditCards.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{m.overview_no_cards()}</p>
+            ) : (
+              <ul className={rowsClass}>
+                {creditCards.map((card) => (
+                  <SourceRow
+                    key={card.ref.id}
+                    to={card.ref}
+                    name={card.name}
+                    meta={card.debts
+                      .filter((debt) => debt.currency !== card.currency)
+                      .map((debt) => formatMoney(debt.amount, debt.currency))
+                      .join(' + ')}
+                    amount={formatMoney(card.total, card.currency)}
+                    detail={
+                      card.available !== null &&
+                      m.accounts_card_available({ amount: formatMoney(card.available, card.currency) })
+                    }
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </Section>
+
+      <Section index={sectionIndex('recent')} label={m.overview_recent()} action={<ViewAll to="/transactions" />}>
         {recent.isPending ? (
           <ListSkeleton rows={4} />
         ) : (recent.data ?? []).length === 0 ? (
@@ -289,19 +331,6 @@ export function OverviewPage() {
           </ul>
         )}
       </Section>
-
-      {inTransit.length > 0 && (
-        <Section index="08" label={m.overview_in_transit()}>
-          <ul className={rowsClass}>
-            {inTransit.map((transfer) => (
-              <li key={transfer.currency} className="flex items-baseline justify-between py-4">
-                <span className="label-mono text-muted-foreground">{transfer.currency}</span>
-                <span className="font-medium text-ink tabular-nums">{formatMoney(transfer.amount, transfer.currency)}</span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
     </>
   )
 }

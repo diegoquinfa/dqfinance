@@ -19,7 +19,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/em
 import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { PageHeader, rowsClass } from '#/shared/ui/page'
+import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
@@ -174,26 +174,28 @@ export function BudgetsPage() {
         }
       />
 
-      {budgets.isPending ? (
-        <ListSkeleton rows={3} />
-      ) : budgets.error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {budgets.error.message}
-        </p>
-      ) : budgets.data.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>{m.budgets_empty()}</EmptyTitle>
-            <EmptyDescription>{m.budgets_empty_description()}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <ul className={rowsClass}>
-          {budgets.data.map((budget) => (
-            <BudgetRow key={budget.id} budget={budget} category={byId.get(budget.categoryId)} />
-          ))}
-        </ul>
-      )}
+      <Section index="01" label={m.budgets_limits()}>
+        {budgets.isPending ? (
+          <ListSkeleton rows={3} />
+        ) : budgets.error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {budgets.error.message}
+          </p>
+        ) : budgets.data.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>{m.budgets_empty()}</EmptyTitle>
+              <EmptyDescription>{m.budgets_empty_description()}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <ul className={rowsClass}>
+            {budgets.data.map((budget) => (
+              <BudgetRow key={budget.id} budget={budget} category={byId.get(budget.categoryId)} />
+            ))}
+          </ul>
+        )}
+      </Section>
     </>
   )
 }
