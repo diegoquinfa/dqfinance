@@ -71,10 +71,11 @@ pnpm exec wrangler rollback <deployment-id>
 A rollback reverts the Worker, not the database. Land the revert on `main`
 afterwards so the next deploy does not re-ship the broken version.
 
-## Why there is no branch protection yet
+## Branch protection
 
-GitHub rulesets and branch protection require GitHub Pro for **private**
-repositories; this repository is private, so the API answers
-`403 Upgrade to GitHub Pro`. The flow is held by CI and convention until the
-account upgrades or the repository becomes public. Once available, protect
-`main` with a required pull request and the `check` status check.
+This repository is **public**, so GitHub branch protection is available without a
+paid plan. It is not enabled yet. When enabling it, protect `main` with:
+
+- require a pull request before merging,
+- require the `check` status check,
+- block force pushes and deletions.
