@@ -46,7 +46,10 @@ test('the migration marks the goals already reached as celebrated, and leaves th
   const rows = sqlite.prepare('SELECT id, celebrated_at AS at FROM savings_goal ORDER BY id').all() as { id: string; at: number | null }[]
   assert.deepEqual(rows.map((row) => row.id), ['empty', 'others-money', 'reached', 'unreached'])
   const reached = rows.find((row) => row.id === 'reached')?.at
-  assert.ok(reached !== null && reached !== undefined && before <= reached && reached <= after)
+  // SQLite reads its own clock for `unixepoch('subsecond')`, which can sit a millisecond or two
+  // away from Node's Date.now() and truncates to milliseconds. A 100ms margin still proves the
+  // stamp was written by this migration, not a fixed or stale date.
+  assert.ok(reached !== null && reached !== undefined && before - 100 <= reached && reached <= after + 100)
   assert.deepEqual(
     rows.filter((row) => row.id !== 'reached').map((row) => row.at),
     [null, null, null],
