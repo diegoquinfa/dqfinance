@@ -21,7 +21,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/em
 import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { PageHeader, rowsClass } from '#/shared/ui/page'
+import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
@@ -155,7 +155,7 @@ export function IncomeRow({ income }: { income: ExpectedIncome }) {
           {income.counterparty && ` / ${income.counterparty.name}`}
         </p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="ml-auto flex items-center gap-3">
         <span className="font-medium text-ink tabular-nums">{formatMoney(income.amount, income.currency)}</span>
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -198,26 +198,28 @@ export function ExpectedIncomesPage() {
         }
       />
 
-      {incomes.isPending ? (
-        <ListSkeleton rows={3} />
-      ) : incomes.error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {incomes.error.message}
-        </p>
-      ) : incomes.data.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>{m.incomes_empty()}</EmptyTitle>
-            <EmptyDescription>{m.incomes_empty_description()}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <ul className={rowsClass}>
-          {incomes.data.map((income) => (
-            <IncomeRow key={income.id} income={income} />
-          ))}
-        </ul>
-      )}
+      <Section index="01" label={m.nav_incomes()}>
+        {incomes.isPending ? (
+          <ListSkeleton rows={3} />
+        ) : incomes.error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {incomes.error.message}
+          </p>
+        ) : incomes.data.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>{m.incomes_empty()}</EmptyTitle>
+              <EmptyDescription>{m.incomes_empty_description()}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <ul className={rowsClass}>
+            {incomes.data.map((income) => (
+              <IncomeRow key={income.id} income={income} />
+            ))}
+          </ul>
+        )}
+      </Section>
     </>
   )
 }

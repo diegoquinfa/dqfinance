@@ -7,6 +7,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
+import { Section } from '#/shared/ui/page'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
 import { Spinner } from '#/shared/ui/spinner'
 import { useAccounts, useCreateCard, type CardInput } from './accounts-api'
@@ -136,94 +137,105 @@ export function NewCardPage({ productId }: { productId?: string }) {
         </div>
       </header>
 
-      <CardFace
-        className="mb-10"
-        name={name || m.label_card()}
-        last4={last4.length === 4 ? last4 : null}
-        brand={face.brand}
-        color={face.color}
-      />
-
       {/* onSubmit, not action: React clears an action form after it runs, losing a failed create's fields. */}
       <form
         id={FORM_ID}
-        className="grid max-w-2xl gap-6"
+        className="grid"
         onSubmit={(event) => {
           event.preventDefault()
           void submit(new FormData(event.currentTarget))
         }}
       >
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="new-card-kind">{m.label_kind()}</FieldLabel>
-            <Select value={kind} onValueChange={(value) => setKind(value as CardInput['kind'])}>
-              <SelectTrigger id="new-card-kind">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {cardKinds.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="new-card-product">{m.accounts_new_product_label()}</FieldLabel>
-            <Select value={productValue} onValueChange={setProduct}>
-              <SelectTrigger id="new-card-product">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FieldDescription>{m.accounts_new_card_product_hint()}</FieldDescription>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="new-card-name">{m.label_name()}</FieldLabel>
-            <Input
-              id="new-card-name"
-              name="name"
-              required
-              maxLength={80}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
+        <Section index="01" label={m.label_card()}>
+          <div className="grid max-w-xl gap-10">
+            {/* The face the card will have in the wallet, drawn while its fields are typed. */}
+            <CardFace
+              name={name || m.label_card()}
+              last4={last4.length === 4 ? last4 : null}
+              brand={face.brand}
+              color={face.color}
             />
-          </Field>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="new-card-kind">{m.label_kind()}</FieldLabel>
+                <Select value={kind} onValueChange={(value) => setKind(value as CardInput['kind'])}>
+                  <SelectTrigger id="new-card-kind">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cardKinds.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
 
-          <Field>
-            <FieldLabel htmlFor="new-card-last4">{`${m.label_last4()} (${m.label_optional()})`}</FieldLabel>
-            <Input
-              id="new-card-last4"
-              name="last4"
-              inputMode="numeric"
-              pattern="\d{4}"
-              maxLength={4}
-              value={last4}
-              onChange={(event) => setLast4(event.target.value)}
-            />
-          </Field>
+              <Field>
+                <FieldLabel htmlFor="new-card-product">{m.accounts_new_product_label()}</FieldLabel>
+                <Select value={productValue} onValueChange={setProduct}>
+                  <SelectTrigger id="new-card-product">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldDescription>{m.accounts_new_card_product_hint()}</FieldDescription>
+              </Field>
 
-          <CardDetailsFields idPrefix="new-card" kind={kind} onPreview={setFace} />
-        </FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="new-card-name">{m.label_name()}</FieldLabel>
+                <Input
+                  id="new-card-name"
+                  name="name"
+                  required
+                  maxLength={80}
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </Field>
 
-        <FieldError>{error}</FieldError>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" asChild>
-            <Link to="/accounts">{m.action_cancel()}</Link>
-          </Button>
-          <Button type="submit" disabled={pending}>
-            {pending && <Spinner data-icon="inline-start" />}
-            {m.action_create()}
-          </Button>
+              <Field>
+                <FieldLabel htmlFor="new-card-last4">{`${m.label_last4()} (${m.label_optional()})`}</FieldLabel>
+                <Input
+                  id="new-card-last4"
+                  name="last4"
+                  inputMode="numeric"
+                  pattern="\d{4}"
+                  maxLength={4}
+                  value={last4}
+                  onChange={(event) => setLast4(event.target.value)}
+                />
+              </Field>
+            </FieldGroup>
+          </div>
+        </Section>
+
+        <Section index="02" label={m.accounts_new_card_details()}>
+          <FieldGroup className="max-w-xl">
+            <CardDetailsFields idPrefix="new-card" kind={kind} onPreview={setFace} />
+          </FieldGroup>
+        </Section>
+
+        <div className="grid gap-5 pb-8 lg:grid-cols-12 lg:gap-x-12">
+          <div className="grid gap-4 lg:col-span-9 lg:col-start-4">
+            <FieldError>{error}</FieldError>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" asChild>
+                <Link to="/accounts">{m.action_cancel()}</Link>
+              </Button>
+              <Button type="submit" disabled={pending}>
+                {pending && <Spinner data-icon="inline-start" />}
+                {m.action_create()}
+              </Button>
+            </div>
+          </div>
         </div>
       </form>
     </>

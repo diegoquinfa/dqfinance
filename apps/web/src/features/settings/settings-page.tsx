@@ -36,7 +36,7 @@ import {
 } from '#/shared/ui/alert-dialog'
 import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
-import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
+import { Eyebrow, PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { DialogPanel } from '#/shared/ui/dialog-panel'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
@@ -408,83 +408,91 @@ export function SettingsPage() {
     <>
       <PageHeader title={m.settings_title()} />
 
-      <Section index="01" label={m.settings_preferences()}>
-        <div className="grid max-w-md gap-6">
-          <LocaleSwitch id="settings-language" persist={(locale) => update.mutateAsync({ locale })} />
-          <Field>
-            <FieldLabel htmlFor="settings-timezone">{m.label_timezone()}</FieldLabel>
-            <CodeCombobox
-              id="settings-timezone"
-              items={timeZoneItems(settings.data.timezone)}
-              value={settings.data.timezone}
-              // The server stores the zone, then every finance query (days, summaries) is stale.
-              onValueChange={(timezone) =>
-                saveTimezone.mutate({ timezone }, { onSuccess: () => void queryClient.invalidateQueries() })
-              }
-            />
-            <FieldDescription>{m.settings_timezone_hint()}</FieldDescription>
-            <FieldError>{saveTimezone.error?.message}</FieldError>
-          </Field>
-        </div>
-      </Section>
-
-      <Section index="02" label={m.settings_currencies()}>
-        <div className="grid max-w-2xl gap-6">
-          <ul className={rowsClass}>
-            <li className="flex items-center justify-between gap-3 py-3">
-              <span className="text-ink">{currencyLabel(primary)}</span>
-              <Badge variant="secondary">{m.label_primary_currency()}</Badge>
-            </li>
-            {others.map((code) => (
-              <li key={code} className="flex items-center justify-between gap-3 py-3 text-ink">
-                {currencyLabel(code)}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setDraft(currencies.filter((value) => value !== code))}
-                >
-                  {m.action_delete()}
-                </Button>
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex items-end gap-2">
-            <Field className="flex-1">
-              <FieldLabel htmlFor="add-currency">{m.onboarding_add_currency()}</FieldLabel>
+      <Section index="01" label={m.settings_account()}>
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-x-12">
+          <div className="grid content-start min-w-0 gap-6 lg:col-span-5">
+            <h3>
+              <Eyebrow>{m.settings_preferences()}</Eyebrow>
+            </h3>
+            <LocaleSwitch id="settings-language" persist={(locale) => update.mutateAsync({ locale })} />
+            <Field>
+              <FieldLabel htmlFor="settings-timezone">{m.label_timezone()}</FieldLabel>
               <CodeCombobox
-                id="add-currency"
-                items={currenciesByLabel()}
-                value={currencyToAdd}
-                onValueChange={setCurrencyToAdd}
+                id="settings-timezone"
+                items={timeZoneItems(settings.data.timezone)}
+                value={settings.data.timezone}
+                // The server stores the zone, then every finance query (days, summaries) is stale.
+                onValueChange={(timezone) =>
+                  saveTimezone.mutate({ timezone }, { onSuccess: () => void queryClient.invalidateQueries() })
+                }
               />
+              <FieldDescription>{m.settings_timezone_hint()}</FieldDescription>
+              <FieldError>{saveTimezone.error?.message}</FieldError>
             </Field>
-            <Button
-              variant="outline"
-              disabled={currencies.includes(currencyToAdd)}
-              onClick={() => setDraft([...currencies, currencyToAdd])}
-            >
-              {m.action_add()}
-            </Button>
           </div>
 
-          <FieldError>{update.error?.message}</FieldError>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              disabled={draft === null || update.isPending}
-              onClick={() => update.mutate({ currencies }, { onSuccess: () => setDraft(null) })}
-            >
-              {update.isPending && <Spinner data-icon="inline-start" />}
-              {m.settings_save_currencies()}
-            </Button>
-            {update.isSuccess && draft === null && <span className="label-mono text-muted-foreground">{m.settings_saved()}</span>}
+          <div className="grid content-start min-w-0 gap-6 lg:col-span-7">
+            <h3>
+              <Eyebrow>{m.settings_currencies()}</Eyebrow>
+            </h3>
+            <ul className={rowsClass}>
+              <li className="flex items-center justify-between gap-3 py-3">
+                <span className="text-ink">{currencyLabel(primary)}</span>
+                <Badge variant="secondary">{m.label_primary_currency()}</Badge>
+              </li>
+              {others.map((code) => (
+                <li key={code} className="flex items-center justify-between gap-3 py-3 text-ink">
+                  {currencyLabel(code)}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDraft(currencies.filter((value) => value !== code))}
+                  >
+                    {m.action_delete()}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex items-end gap-2">
+              <Field className="flex-1">
+                <FieldLabel htmlFor="add-currency">{m.onboarding_add_currency()}</FieldLabel>
+                <CodeCombobox
+                  id="add-currency"
+                  items={currenciesByLabel()}
+                  value={currencyToAdd}
+                  onValueChange={setCurrencyToAdd}
+                />
+              </Field>
+              <Button
+                variant="outline"
+                disabled={currencies.includes(currencyToAdd)}
+                onClick={() => setDraft([...currencies, currencyToAdd])}
+              >
+                {m.action_add()}
+              </Button>
+            </div>
+
+            <FieldError>{update.error?.message}</FieldError>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                disabled={draft === null || update.isPending}
+                onClick={() => update.mutate({ currencies }, { onSuccess: () => setDraft(null) })}
+              >
+                {update.isPending && <Spinner data-icon="inline-start" />}
+                {m.settings_save_currencies()}
+              </Button>
+              {update.isSuccess && draft === null && (
+                <span className="label-mono text-muted-foreground">{m.settings_saved()}</span>
+              )}
+            </div>
           </div>
         </div>
       </Section>
 
       <Section
-        index="03"
+        index="02"
         label={m.settings_categories()}
         action={
           <DialogPanel
@@ -530,7 +538,7 @@ export function SettingsPage() {
 
       <WebhooksBlock />
 
-      <Section index="07" label={m.settings_session()}>
+      <Section index="06" label={m.settings_session()}>
         <Button variant="outline" onClick={() => void authClient.signOut()}>
           {m.action_sign_out()}
         </Button>
