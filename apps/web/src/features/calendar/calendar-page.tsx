@@ -12,7 +12,7 @@ import { formatCompact, formatMoney, formatSignedAmount } from '#/shared/money'
 import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
+import { Eyebrow, PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { useCalendar, type Calendar } from './calendar-api'
 import { monthGrid, monthTotals, shiftDay } from './calendar-month'
 
@@ -199,14 +199,15 @@ function DayCell({
   )
 }
 
-/** One day: the recurring expenses due, then what moved. */
+/** One day: the recurring expenses due, then what moved. Paired when both exist, full width otherwise. */
 function DaySection({ day, due }: { day: string; due: Due[] }) {
   // The list filters by UTC days: a day of margin each side, then keep the local day.
   const movements = useTransactions({ from: shiftDay(day, -1), to: shiftDay(day, 2), limit: 200 })
   const onDay = (movements.data ?? []).filter((transaction) => isoToDay(transaction.occurredAt) === day)
+  const both = due.length > 0 && onDay.length > 0
 
   return (
-    <Section index="02" label={formatDay(day)} action={due.length > 0 ? <ViewAll to="/recurring" /> : undefined}>
+    <Section index="02" label={formatDay(day)}>
       {movements.isPending ? (
         <ListSkeleton rows={3} />
       ) : movements.error ? (
@@ -216,26 +217,47 @@ function DaySection({ day, due }: { day: string; due: Due[] }) {
       ) : due.length === 0 && onDay.length === 0 ? (
         <p className="text-sm text-muted-foreground">{m.calendar_day_empty()}</p>
       ) : (
-        <ul className={rowsClass}>
-          {due.map((item) => (
-            <li key={item.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1 py-4">
-              <span className="flex min-w-0 items-center gap-2 text-ink">
-                <span className="truncate">{item.name}</span>
-                <Badge variant="outline">{m.calendar_due()}</Badge>
-              </span>
-              <span className="text-right font-medium text-muted-foreground tabular-nums">
-                <span className="sr-only">{m.label_expense()}: </span>
-                {formatSignedAmount('expense', item.amount, item.currency)}
-              </span>
-              <span className="label-mono truncate text-muted-foreground">
-                {sourceLabel(item.source)} / {item.category.name}
-              </span>
-            </li>
-          ))}
-          {onDay.map((transaction) => (
-            <TransactionRow key={transaction.id} transaction={transaction} showDate={false} />
-          ))}
-        </ul>
+        <div className={cn('grid gap-8', both && 'lg:grid-cols-12 lg:gap-x-12')}>
+          {due.length > 0 && (
+            <div className={cn('grid content-start min-w-0 gap-4', both && 'lg:col-span-5')}>
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <h3>
+                  <Eyebrow>{m.calendar_due()}</Eyebrow>
+                </h3>
+                <ViewAll to="/recurring" />
+              </div>
+              <ul className={rowsClass}>
+                {due.map((item) => (
+                  <li key={item.id} className="grid gap-1 py-4">
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-ink">
+                      <span className="truncate">{item.name}</span>
+                      <Badge variant="outline">{m.calendar_due()}</Badge>
+                      <span className="ml-auto shrink-0 font-medium text-muted-foreground tabular-nums">
+                        <span className="sr-only">{m.label_expense()}: </span>
+                        {formatSignedAmount('expense', item.amount, item.currency)}
+                      </span>
+                    </div>
+                    <span className="label-mono truncate text-muted-foreground">
+                      {sourceLabel(item.source)} / {item.category.name}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {onDay.length > 0 && (
+            <div className={cn('grid content-start min-w-0 gap-4', both && 'lg:col-span-7')}>
+              <h3>
+                <Eyebrow>{m.nav_transactions()}</Eyebrow>
+              </h3>
+              <ul className={rowsClass}>
+                {onDay.map((transaction) => (
+                  <TransactionRow key={transaction.id} transaction={transaction} showDate={false} />
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </Section>
   )

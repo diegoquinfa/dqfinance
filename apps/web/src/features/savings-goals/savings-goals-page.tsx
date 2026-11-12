@@ -18,7 +18,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/em
 import { Field, FieldError, FieldGroup, FieldLabel } from '#/shared/ui/field'
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { PageHeader, rowsClass } from '#/shared/ui/page'
+import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
 import { reachesGoal } from './goal-reached'
@@ -237,26 +237,28 @@ export function SavingsGoalsPage() {
         }
       />
 
-      {goals.isPending ? (
-        <ListSkeleton rows={3} />
-      ) : goals.error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {goals.error.message}
-        </p>
-      ) : goals.data.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>{m.savings_empty()}</EmptyTitle>
-            <EmptyDescription>{m.savings_empty_description()}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <ul className={rowsClass}>
-          {goals.data.map((goal) => (
-            <GoalRow key={goal.id} goal={goal} />
-          ))}
-        </ul>
-      )}
+      <Section index="01" label={m.savings_goals_label()}>
+        {goals.isPending ? (
+          <ListSkeleton rows={3} />
+        ) : goals.error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {goals.error.message}
+          </p>
+        ) : goals.data.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>{m.savings_empty()}</EmptyTitle>
+              <EmptyDescription>{m.savings_empty_description()}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <ul className={rowsClass}>
+            {goals.data.map((goal) => (
+              <GoalRow key={goal.id} goal={goal} />
+            ))}
+          </ul>
+        )}
+      </Section>
     </>
   )
 }

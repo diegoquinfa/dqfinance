@@ -89,15 +89,8 @@ export function SourcePage({ type, id }: SourceRef) {
   const parent = product?.parentProductId ? findProduct(accounts.data, product.parentProductId) : undefined
   const payout = account?.yieldPayout ?? null
   const hasYield = rateBps !== null && Boolean(estimate)
-  // The section numbers follow the order they appear: stats, move money, yield, costs, movements, documents.
-  const sectionKeys = [
-    'stats',
-    parent ? 'move' : null,
-    hasYield ? 'yield' : null,
-    'costs',
-    'movements',
-    'documents',
-  ].filter((key): key is string => key !== null)
+  // The section numbers follow the order they appear: stats, returns and costs, movements, documents.
+  const sectionKeys = ['stats', 'costs', 'movements', 'documents']
   const sectionIndex = (key: string) => String(sectionKeys.indexOf(key) + 1).padStart(2, '0')
 
   return (
@@ -107,7 +100,7 @@ export function SourcePage({ type, id }: SourceRef) {
       </nav>
 
       <header className="grid gap-8 pt-6 pb-8 md:pb-12 lg:grid-cols-12 lg:items-end lg:gap-x-12">
-        <div className="grid gap-4 lg:col-span-8">
+        <div className={parent ? 'grid gap-4 lg:col-span-7' : 'grid gap-4 lg:col-span-8'}>
           <Eyebrow>{account ? (account.bankName ?? m.label_cash()) : `${m.label_card()} / ${m.card_credit()}`}</Eyebrow>
           <h1 className="type-title font-medium text-ink">{source.name}</h1>
           <div className="mt-4 grid gap-2">
@@ -136,7 +129,13 @@ export function SourcePage({ type, id }: SourceRef) {
             />
           )}
         </div>
-        <div className="flex flex-wrap gap-3 lg:col-span-4 lg:justify-self-end">
+        <div
+          className={
+            parent
+              ? 'grid gap-3 lg:col-span-5 lg:grid-cols-2 lg:justify-self-end'
+              : 'flex flex-wrap gap-3 lg:col-span-4 lg:justify-end lg:justify-self-end'
+          }
+        >
           <AdjustBalanceDialog
             ref={ref}
             name={source.name}
@@ -155,6 +154,20 @@ export function SourcePage({ type, id }: SourceRef) {
             />
           )}
           {cardRow && <EditCardDialog card={cardRow} />}
+          {parent && (
+            <>
+              <NewTransferDialog
+                trigger={<Button variant="outline">{m.source_pocket_more()}</Button>}
+                defaultFrom={{ type: 'product', id: parent.id }}
+                defaultTo={{ type: 'product', id: id }}
+              />
+              <NewTransferDialog
+                trigger={<Button variant="outline">{m.source_pocket_return({ product: parent.name })}</Button>}
+                defaultFrom={{ type: 'product', id: id }}
+                defaultTo={{ type: 'product', id: parent.id }}
+              />
+            </>
+          )}
         </div>
       </header>
 
@@ -174,80 +187,74 @@ export function SourcePage({ type, id }: SourceRef) {
           </ToggleGroup>
         }
       >
-        <PeriodTotals
-          currency={source.currency}
-          filters={{ ...lastMonths(Number(months), todayDate()), sourceType: type, sourceId: id }}
-          showNet
-        />
-        <BalanceChart className="mt-10" currency={source.currency} source={ref} />
-      </Section>
-
-      {parent && (
-        <Section index={sectionIndex('move')} label={m.source_move_money()}>
-          <div className="flex flex-wrap gap-3">
-            <NewTransferDialog
-              trigger={<Button variant="outline">{m.source_pocket_more()}</Button>}
-              defaultFrom={{ type: 'product', id: parent.id }}
-              defaultTo={{ type: 'product', id: id }}
-            />
-            <NewTransferDialog
-              trigger={<Button variant="outline">{m.source_pocket_return({ product: parent.name })}</Button>}
-              defaultFrom={{ type: 'product', id: id }}
-              defaultTo={{ type: 'product', id: parent.id }}
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-x-12">
+          <div className="min-w-0 lg:col-span-5">
+            <PeriodTotals
+              currency={source.currency}
+              filters={{ ...lastMonths(Number(months), todayDate()), sourceType: type, sourceId: id }}
+              showNet
+              stacked
             />
           </div>
-        </Section>
-      )}
+          <BalanceChart className="lg:col-span-7" currency={source.currency} source={ref} />
+        </div>
+      </Section>
 
-      {rateBps !== null && estimate && (
-        <Section index={sectionIndex('yield')} label={m.source_yield()}>
-          <dl
-            className={`${rowsClass} sm:grid ${payout ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} sm:divide-x sm:divide-y-0`}
-          >
-            <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6 sm:first:pl-0">
-              <dt className="label-mono text-muted-foreground">{m.source_yield_rate_label()}</dt>
-              <dd className="font-medium text-ink tabular-nums sm:mt-3 sm:type-heading-sm">
-                {m.source_yield_rate({ rate: formatNumber(bpsToPercent(rateBps)) })}
-              </dd>
+      <Section index={sectionIndex('costs')} label={hasYield ? m.source_returns_costs() : m.source_costs()}>
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-x-12">
+          {hasYield && estimate && (
+            <div className="grid content-start min-w-0 gap-5 lg:col-span-5">
+              <h3>
+                <Eyebrow>{m.source_yield()}</Eyebrow>
+              </h3>
+              <dl className={rowsClass}>
+                <div className="flex items-baseline justify-between gap-4 py-4">
+                  <dt className="label-mono text-muted-foreground">{m.source_yield_rate_label()}</dt>
+                  <dd className="font-medium text-ink tabular-nums">
+                    {m.source_yield_rate({ rate: formatNumber(bpsToPercent(rateBps)) })}
+                  </dd>
+                </div>
+                {payout === 'daily' && (
+                  <div className="flex items-baseline justify-between gap-4 py-4">
+                    <dt className="label-mono text-muted-foreground">{m.yield_payout_label()}</dt>
+                    <dd className="font-medium text-soft tabular-nums">
+                      {m.source_yield_daily_payout({ amount: formatMoney(estimate.daily, source.currency) })}
+                    </dd>
+                  </div>
+                )}
+                {payout === 'monthly' && (
+                  <div className="flex items-baseline justify-between gap-4 py-4">
+                    <dt className="label-mono text-muted-foreground">{m.yield_payout_label()}</dt>
+                    <dd className="font-medium text-soft tabular-nums">
+                      {m.source_yield_monthly_payout({ amount: formatMoney(estimate.monthly, source.currency) })}
+                    </dd>
+                  </div>
+                )}
+                {!payout && (
+                  <>
+                    <div className="flex items-baseline justify-between gap-4 py-4">
+                      <dt className="label-mono text-muted-foreground">{m.source_yield_monthly_label()}</dt>
+                      <dd className="font-medium text-soft tabular-nums">
+                        {m.source_yield_monthly({ amount: formatMoney(estimate.monthly, source.currency) })}
+                      </dd>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-4 py-4">
+                      <dt className="label-mono text-muted-foreground">{m.source_yield_daily_label()}</dt>
+                      <dd className="font-medium text-soft tabular-nums">
+                        {m.source_yield_daily({ amount: formatMoney(estimate.daily, source.currency) })}
+                      </dd>
+                    </div>
+                  </>
+                )}
+              </dl>
+              <p className="text-sm text-muted-foreground">{m.source_yield_note()}</p>
             </div>
-            {payout === 'daily' && (
-              <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
-                <dt className="label-mono text-muted-foreground">{m.yield_payout_label()}</dt>
-                <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
-                  {m.source_yield_daily_payout({ amount: formatMoney(estimate.daily, source.currency) })}
-                </dd>
-              </div>
-            )}
-            {payout === 'monthly' && (
-              <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
-                <dt className="label-mono text-muted-foreground">{m.yield_payout_label()}</dt>
-                <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
-                  {m.source_yield_monthly_payout({ amount: formatMoney(estimate.monthly, source.currency) })}
-                </dd>
-              </div>
-            )}
-            {!payout && (
-              <>
-                <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
-                  <dt className="label-mono text-muted-foreground">{m.source_yield_monthly_label()}</dt>
-                  <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
-                    {m.source_yield_monthly({ amount: formatMoney(estimate.monthly, source.currency) })}
-                  </dd>
-                </div>
-                <div className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6">
-                  <dt className="label-mono text-muted-foreground">{m.source_yield_daily_label()}</dt>
-                  <dd className="font-medium text-soft tabular-nums sm:mt-3 sm:type-heading-sm">
-                    {m.source_yield_daily({ amount: formatMoney(estimate.daily, source.currency) })}
-                  </dd>
-                </div>
-              </>
-            )}
-          </dl>
-          <p className="mt-4 text-sm text-muted-foreground">{m.source_yield_note()}</p>
-        </Section>
-      )}
-
-      <SourceCosts sourceRef={ref} index={sectionIndex('costs')} />
+          )}
+          <div className={hasYield ? 'min-w-0 lg:col-span-7' : 'min-w-0 lg:col-span-12'}>
+            <SourceCosts sourceRef={ref} heading={hasYield} />
+          </div>
+        </div>
+      </Section>
 
       <Section
         index={sectionIndex('movements')}

@@ -29,7 +29,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/s
 import { Input } from '#/shared/ui/input'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/shared/ui/select'
-import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
+import { Eyebrow, PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { Spinner } from '#/shared/ui/spinner'
 import { toast } from 'sonner'
 import {
@@ -304,100 +304,104 @@ export function RecurringPage() {
         {confirmOrSkipError(pending.error, all.error)}
       </Section>
 
-      <Section index="02" label={m.recurring_schedule()} action={<MonthlyTotalLabel totals={monthlyTotal(all.data ?? [])} />}>
-        {all.isPending ? (
-          <ListSkeleton rows={4} />
-        ) : all.error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {all.error.message}
-          </p>
-        ) : all.data.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>{m.recurring_empty()}</EmptyTitle>
-              <EmptyDescription>{m.recurring_empty_description()}</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <ul className={rowsClass}>
-            {all.data.map((item) => (
-              <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
-                <div className="grid gap-1">
-                  <p className="flex flex-wrap items-center gap-2 text-ink">
-                    {item.name}
-                    <Badge variant="secondary">
-                      {frequencies.find((frequency) => frequency.value === item.frequency)?.label() ?? item.frequency}
-                    </Badge>
-                    {!item.active && (
-                      <Badge variant="outline">{m.label_inactive()}</Badge>
-                    )}
-                  </p>
-                  <p className="label-mono text-muted-foreground">
-                    {sourceLabel(item.source)} / {item.category.name}
-                    {item.counterparty && ` / ${item.counterparty.name}`}
-                    {` / ${m.recurring_next_due({ date: formatDay(item.nextDueOn) })}`}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-medium text-ink tabular-nums">{formatMoney(item.amount, item.currency)}</span>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" disabled={remove.isPending}>
-                        {m.action_delete()}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{m.recurring_delete_title()}</AlertDialogTitle>
-                        <AlertDialogDescription>{m.recurring_delete_description()}</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{m.action_cancel()}</AlertDialogCancel>
-                        <AlertDialogAction variant="destructive" onClick={() => remove.mutate(item.id)}>
-                          {m.action_delete()}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
-
-      <Section
-        index="03"
-        label={m.recurring_incomes()}
-        action={
-          <div className="grid gap-3">
-            <DialogPanel trigger={<Button variant="outline">{m.incomes_new()}</Button>} title={m.incomes_new()}>
-              {(close) => <NewIncomeForm close={close} />}
-            </DialogPanel>
-            <MonthlyTotalLabel totals={monthlyTotal(incomes.data ?? [])} />
+      <Section index="02" label={m.recurring_plan()}>
+        <div className="grid gap-10 lg:grid-cols-12 lg:gap-x-12">
+          <div className="grid content-start min-w-0 gap-5 lg:col-span-7">
+            <h3>
+              <Eyebrow>{m.recurring_schedule()}</Eyebrow>
+            </h3>
+            <MonthlyTotalLabel totals={monthlyTotal(all.data ?? [])} />
+            {all.isPending ? (
+              <ListSkeleton rows={4} />
+            ) : all.error ? (
+              <p role="alert" className="text-sm text-destructive">
+                {all.error.message}
+              </p>
+            ) : all.data.length === 0 ? (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyTitle>{m.recurring_empty()}</EmptyTitle>
+                  <EmptyDescription>{m.recurring_empty_description()}</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <ul className={rowsClass}>
+                {all.data.map((item) => (
+                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                    <div className="grid gap-1">
+                      <p className="flex flex-wrap items-center gap-2 text-ink">
+                        {item.name}
+                        <Badge variant="secondary">
+                          {frequencies.find((frequency) => frequency.value === item.frequency)?.label() ?? item.frequency}
+                        </Badge>
+                        {!item.active && <Badge variant="outline">{m.label_inactive()}</Badge>}
+                      </p>
+                      <p className="label-mono text-muted-foreground">
+                        {sourceLabel(item.source)} / {item.category.name}
+                        {item.counterparty && ` / ${item.counterparty.name}`}
+                        {` / ${m.recurring_next_due({ date: formatDay(item.nextDueOn) })}`}
+                      </p>
+                    </div>
+                    <div className="ml-auto flex items-center gap-3">
+                      <span className="font-medium text-ink tabular-nums">{formatMoney(item.amount, item.currency)}</span>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" disabled={remove.isPending}>
+                            {m.action_delete()}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{m.recurring_delete_title()}</AlertDialogTitle>
+                            <AlertDialogDescription>{m.recurring_delete_description()}</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{m.action_cancel()}</AlertDialogCancel>
+                            <AlertDialogAction variant="destructive" onClick={() => remove.mutate(item.id)}>
+                              {m.action_delete()}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        }
-      >
-        {incomes.isPending ? (
-          <ListSkeleton rows={3} />
-        ) : incomes.error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {incomes.error.message}
-          </p>
-        ) : incomes.data.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>{m.incomes_empty()}</EmptyTitle>
-              <EmptyDescription>{m.incomes_empty_description()}</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <ul className={rowsClass}>
-            {incomes.data.map((income) => (
-              <IncomeRow key={income.id} income={income} />
-            ))}
-          </ul>
-        )}
+
+          <div className="grid content-start min-w-0 gap-5 lg:col-span-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3>
+                <Eyebrow>{m.recurring_incomes()}</Eyebrow>
+              </h3>
+              <DialogPanel trigger={<Button variant="outline" size="sm">{m.incomes_new()}</Button>} title={m.incomes_new()}>
+                {(close) => <NewIncomeForm close={close} />}
+              </DialogPanel>
+            </div>
+            <MonthlyTotalLabel totals={monthlyTotal(incomes.data ?? [])} />
+            {incomes.isPending ? (
+              <ListSkeleton rows={3} />
+            ) : incomes.error ? (
+              <p role="alert" className="text-sm text-destructive">
+                {incomes.error.message}
+              </p>
+            ) : incomes.data.length === 0 ? (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyTitle>{m.incomes_empty()}</EmptyTitle>
+                  <EmptyDescription>{m.incomes_empty_description()}</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <ul className={rowsClass}>
+                {incomes.data.map((income) => (
+                  <IncomeRow key={income.id} income={income} />
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       </Section>
     </>
   )
@@ -430,9 +434,10 @@ function confirmOrSkipError(...errors: (Error | null)[]) {
 
 /**
  * The costs of one source, for its detail page: the recurring expenses paid with it, and the same
- * new-recurring form prefilled with the source and the system bank-fees category.
+ * new-recurring form prefilled with the source and the system bank-fees category. The heading is
+ * only drawn when it shares a section with the yield figures, so it never repeats the section label.
  */
-export function SourceCosts({ sourceRef, index }: { sourceRef: SourceRef; index: string }) {
+export function SourceCosts({ sourceRef, heading = true }: { sourceRef: SourceRef; heading?: boolean }) {
   const all = useRecurringExpenses(false)
   const categories = useCategories('expense', true)
   const bankFees = (categories.data ?? []).find((category) => category.systemKey === 'bank_fees')
@@ -441,17 +446,19 @@ export function SourceCosts({ sourceRef, index }: { sourceRef: SourceRef; index:
   )
 
   return (
-    <Section
-      index={index}
-      label={m.source_costs()}
-      action={
+    <div className="grid content-start gap-5">
+      <div className={heading ? 'flex flex-wrap items-center justify-between gap-3' : 'flex justify-end'}>
+        {heading && (
+          <h3>
+            <Eyebrow>{m.source_costs()}</Eyebrow>
+          </h3>
+        )}
         <DialogPanel trigger={<Button variant="link">{m.source_cost_add()}</Button>} title={m.source_cost_add()}>
           {(close) => (
             <NewRecurringForm close={close} defaultSourceKey={sourceKey(sourceRef)} defaultCategoryId={bankFees?.id} />
           )}
         </DialogPanel>
-      }
-    >
+      </div>
       {all.isPending ? (
         <ListSkeleton rows={2} />
       ) : all.error ? (
@@ -481,6 +488,6 @@ export function SourceCosts({ sourceRef, index }: { sourceRef: SourceRef; index:
           ))}
         </ul>
       )}
-    </Section>
+    </div>
   )
 }

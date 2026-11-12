@@ -22,6 +22,8 @@ const WRITE = /^\s*(insert|update|delete|replace)\b/i
  * `arrays` gives each row as an array, which is what drizzle's `raw()` maps by position.
  */
 const execute = (sqlite: DatabaseSync, { sql, params }: Statement, arrays = false): Outcome => {
+  // D1 rejects a query that binds more than 100 parameters; node:sqlite would accept it.
+  if (params.length > 100) throw new Error('D1_ERROR: too many SQL variables')
   const statement = sqlite.prepare(sql)
   let results: unknown[] = []
   let changes = 0

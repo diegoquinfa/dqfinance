@@ -45,3 +45,8 @@ yarn-error.log*
 
 # Parallel agent worktrees (git worktree add .worktrees/<feature>)
 /.worktrees/
+
+# Local harness: renders the overview against stubbed API payloads (no Workers runtime needed).
+/apps/web/mock/
+/apps/web/mock.vite.config.ts
+
