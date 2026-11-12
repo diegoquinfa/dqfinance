@@ -66,14 +66,19 @@ export async function listTransfers(db: Db, userId: string, input: z.infer<typeo
     .limit(input.limit ?? 50)
 
   // FX differences live as linked transactions; add them back to show what was actually paid.
-  const ids = rows.map((r) => r.transfer.id)
-  const fxRows = ids.length
-    ? await db
-        .select({ transferId: transaction.transferId, type: transaction.type, amountCents: transaction.amountCents })
-        .from(transaction)
-        .innerJoin(category, eq(category.id, transaction.categoryId))
-        .where(and(inArray(transaction.transferId, ids), isNotNull(category.systemKey), inArray(category.systemKey, ['fx_loss', 'fx_gain'])))
-    : []
+  // Scoped by the user, not by the page's ids: 100 rows would bind 100 ids plus the two system
+  // keys, past D1's limit of 100 parameters per query.
+  const fxRows = await db
+    .select({ transferId: transaction.transferId, type: transaction.type, amountCents: transaction.amountCents })
+    .from(transaction)
+    .innerJoin(category, eq(category.id, transaction.categoryId))
+    .where(
+      and(
+        eq(transaction.userId, userId),
+        isNotNull(category.systemKey),
+        inArray(category.systemKey, ['fx_loss', 'fx_gain']),
+      ),
+    )
   const fxByTransfer = new Map(fxRows.map((f) => [f.transferId, f.type === 'expense' ? f.amountCents : -f.amountCents]))
 
   return rows
