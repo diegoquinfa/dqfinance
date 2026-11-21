@@ -42,7 +42,7 @@ export function PushSection() {
   }
 
   return (
-    <Section index="04" label={m.settings_notifications()}>
+    <Section index="03" label={m.settings_notifications()}>
       <div className="grid justify-items-start gap-3">
         {state === 'denied' && <p className="text-sm text-muted-foreground">{m.push_denied()}</p>}
         {state === 'unsupported' && <p className="text-sm text-muted-foreground">{m.push_unsupported()}</p>}

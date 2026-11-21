@@ -12,7 +12,7 @@ import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
-import { Section, rowsClass } from '#/shared/ui/page'
+import { Eyebrow, Section, rowsClass } from '#/shared/ui/page'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { useCounterparty } from './counterparties-api'
 import { ContactSpendingChart } from './contact-spending-chart'
@@ -69,11 +69,6 @@ export function ContactPage({ id }: { id: string }) {
     ? row.byCategory.filter((entry) => entry.currency === primaryCurrency)
     : row.byCategory
   const chartCurrency = primaryCurrency ?? categories[0]?.currency ?? ''
-  // The numbering follows the sections that are actually on the page.
-  const sectionKeys = ['categories', chartCurrency ? 'evolution' : null, 'movements'].filter(
-    (key): key is string => key !== null,
-  )
-  const sectionIndex = (key: string) => String(sectionKeys.indexOf(key) + 1).padStart(2, '0')
 
   return (
     <>
@@ -112,64 +107,75 @@ export function ContactPage({ id }: { id: string }) {
         </div>
       </header>
 
-      {/* The period shapes the two sections that follow it. */}
-      <section aria-label={m.contacts_period()} className="flex items-center gap-4 pb-8">
-        <span className="label-mono text-muted-foreground">{m.contacts_period()}</span>
-        <ToggleGroup
-          type="single"
-          size="sm"
-          className="w-28"
-          aria-label={m.contacts_period()}
-          value={months}
-          onValueChange={(value) => setMonths(value as Months)}
-        >
-          <ToggleGroupItem value="6">{m.period_months({ count: 6 })}</ToggleGroupItem>
-          <ToggleGroupItem value="12">{m.period_months({ count: 12 })}</ToggleGroupItem>
-        </ToggleGroup>
-      </section>
+      <Section
+        index="01"
+        label={m.contacts_breakdown()}
+        action={
+          <ToggleGroup
+            type="single"
+            size="sm"
+            aria-label={m.contacts_period()}
+            value={months}
+            onValueChange={(value) => setMonths(value as Months)}
+          >
+            <ToggleGroupItem value="6">{m.period_months({ count: 6 })}</ToggleGroupItem>
+            <ToggleGroupItem value="12">{m.period_months({ count: 12 })}</ToggleGroupItem>
+          </ToggleGroup>
+        }
+      >
+        <div className={chartCurrency ? 'grid gap-10 lg:grid-cols-12 lg:gap-x-12' : 'grid gap-10'}>
+          <div className={chartCurrency ? 'grid content-start min-w-0 gap-5 lg:col-span-5' : 'grid content-start min-w-0 gap-5'}>
+            <h3>
+              <Eyebrow>{m.contacts_categories()}</Eyebrow>
+            </h3>
+            {categories.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{m.contacts_no_categories()}</p>
+            ) : (
+              <ul className={rowsClass}>
+                {categories.map((entry) => {
+                  const biggest = Math.max(...categories.map((item) => Math.abs(item.amount)), 1)
+                  return (
+                    <li key={`${entry.categoryId}-${entry.currency}`} className="grid gap-2 py-4">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <span className="text-ink">{entry.name}</span>
+                        <span className="font-medium text-ink tabular-nums">
+                          <span className="sr-only">
+                            {entry.kind === 'expense' ? m.label_expense() : m.label_income()}:{' '}
+                          </span>
+                          {formatSignedAmount(
+                            entry.kind === 'expense' ? 'expense' : 'income',
+                            entry.amount,
+                            entry.currency,
+                          )}
+                        </span>
+                      </div>
+                      {/* The bar is the share of the biggest category: the shape at a glance. */}
+                      <div aria-hidden className="h-px w-full bg-line">
+                        <div
+                          className={entry.kind === 'expense' ? 'h-px bg-ink' : 'h-px bg-income'}
+                          style={{ width: `${Math.round((Math.abs(entry.amount) / biggest) * 100)}%` }}
+                        />
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
 
-      <Section index={sectionIndex('categories')} label={m.contacts_categories()}>
-        {categories.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{m.contacts_no_categories()}</p>
-        ) : (
-          <ul className={rowsClass}>
-            {categories.map((entry) => {
-              const biggest = Math.max(...categories.map((item) => Math.abs(item.amount)), 1)
-              return (
-                <li key={`${entry.categoryId}-${entry.currency}`} className="grid gap-2 py-4">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <span className="text-ink">{entry.name}</span>
-                    <span className="font-medium text-ink tabular-nums">
-                      <span className="sr-only">{entry.kind === 'expense' ? m.label_expense() : m.label_income()}: </span>
-                      {formatSignedAmount(
-                        entry.kind === 'expense' ? 'expense' : 'income',
-                        entry.amount,
-                        entry.currency,
-                      )}
-                    </span>
-                  </div>
-                  {/* The bar is the share of the biggest category: the shape at a glance. */}
-                  <div aria-hidden className="h-px w-full bg-line">
-                    <div
-                      className={entry.kind === 'expense' ? 'h-px bg-ink' : 'h-px bg-income'}
-                      style={{ width: `${Math.round((Math.abs(entry.amount) / biggest) * 100)}%` }}
-                    />
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
+          {chartCurrency && (
+            <div className="grid content-start min-w-0 gap-5 lg:col-span-7">
+              <h3>
+                <Eyebrow>{m.contacts_evolution()}</Eyebrow>
+              </h3>
+              <ContactSpendingChart name={row.name} monthly={row.monthly} currency={chartCurrency} />
+            </div>
+          )}
+        </div>
       </Section>
 
-      {chartCurrency && (
-        <Section index={sectionIndex('evolution')} label={m.contacts_evolution()}>
-          <ContactSpendingChart name={row.name} monthly={row.monthly} currency={chartCurrency} />
-        </Section>
-      )}
-
       <Section
-        index={sectionIndex('movements')}
+        index="02"
         label={m.transactions_title()}
         action={
           movements.data && movements.data.length > 0 ? (

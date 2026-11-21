@@ -64,7 +64,7 @@ export default function ContactSpendingChartGraph({
       <LineChart data={points} accessibilityLayer={false} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke="var(--line)" />
         <YAxis
-          width={56}
+          width={64}
           tickCount={4}
           tickLine={false}
           axisLine={false}

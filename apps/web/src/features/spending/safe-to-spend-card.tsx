@@ -165,7 +165,7 @@ export function SafeToSpendCard() {
     <div className="grid gap-5">
       <div className="grid gap-2">
         <Eyebrow>{m.spending_title()}</Eyebrow>
-        <p className={`type-display font-medium break-words tabular-nums ${over ? 'text-destructive' : 'text-ink'}`}>
+        <p className={`type-heading font-medium break-words tabular-nums ${over ? 'text-destructive' : 'text-ink'}`}>
           {formatMoney(data.allowed, data.currency)}
         </p>
         <p className="label-mono text-muted-foreground">

@@ -25,7 +25,7 @@ Always use the skill ponytail
 - Placing a file, importing across features, deriving a balance or a source, or changing `turbo.json`: [docs/architecture.md](./docs/architecture.md).
 - Writing an MCP tool, changing the OAuth flow, or creating the auth instance: [docs/mcp.md](./docs/mcp.md).
 - Naming a domain noun: [GLOSSARY.md](./GLOSSARY.md).
-- Building UI: [DESIGN.md](./DESIGN.md), and [docs/screens.md](./docs/screens.md) for what a route holds.
+- Building UI: [DESIGN.md](./DESIGN.md) for tokens, type, layout and the shell, [docs/components.md](./docs/components.md) for the component catalogue, and [docs/screens.md](./docs/screens.md) for what a route holds.
 - Changing the data model or a design decision (D1–D16): [the domain design](./docs/plans/2026-10-18-finance-domain-design.md).
 - Choosing what to build next: the domain design, then the [redesign follow-ups](./docs/plans/2026-10-19-web-redesign.md#follow-ups-not-built).
 
@@ -49,3 +49,5 @@ experiment to throw away, or a long feature that must leave the working tree alo
 ## Before you finish
 
 `pnpm check-types && pnpm test && pnpm build` from the root must pass.
+
+A layout change is not verified by types and tests alone: render it and read the screenshot with **agent-browser** before claiming it works. When the local Workers runtime cannot start, use the mock harness documented under `## Validation` in [odd/tasks/dashboard-distribution.md](./odd/tasks/dashboard-distribution.md) (gitignored; recreate it in a fresh checkout).

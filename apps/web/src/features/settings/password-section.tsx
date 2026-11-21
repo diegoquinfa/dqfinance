@@ -50,7 +50,7 @@ export function PasswordSection() {
   }
 
   return (
-    <Section index="05" label={m.settings_password()}>
+    <Section index="04" label={m.settings_password()}>
       <form onSubmit={onSubmit} className="max-w-sm">
         <FieldGroup>
           <Field>

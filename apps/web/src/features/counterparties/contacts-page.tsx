@@ -139,18 +139,23 @@ export function ContactsPage() {
       />
 
       <section aria-label={m.contacts_filters()} className="grid items-end gap-4 pb-8 sm:grid-cols-2 lg:grid-cols-4">
-        <ToggleGroup
-          type="single"
-          className="w-full sm:col-span-2 lg:col-span-1"
-          aria-label={m.label_kind()}
-          value={kind}
-          onValueChange={(value) => setFilters({ kind: value as KindFilter })}
-        >
-          <ToggleGroupItem value="all">{m.contacts_filter_all()}</ToggleGroupItem>
-          <ToggleGroupItem value="person">{m.contacts_people()}</ToggleGroupItem>
-          <ToggleGroupItem value="business">{m.contacts_businesses()}</ToggleGroupItem>
-        </ToggleGroup>
-        <Field className="sm:col-span-2 lg:col-span-1">
+        <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
+          <span aria-hidden className="label-mono text-muted-foreground">
+            {m.label_kind()}
+          </span>
+          <ToggleGroup
+            type="single"
+            className="w-full"
+            aria-label={m.label_kind()}
+            value={kind}
+            onValueChange={(value) => setFilters({ kind: value as KindFilter })}
+          >
+            <ToggleGroupItem value="all">{m.contacts_filter_all()}</ToggleGroupItem>
+            <ToggleGroupItem value="person">{m.contacts_people()}</ToggleGroupItem>
+            <ToggleGroupItem value="business">{m.contacts_businesses()}</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <Field className="sm:col-span-2 lg:col-span-2">
           <FieldLabel htmlFor="contacts-search">{m.contacts_search()}</FieldLabel>
           <Input
             id="contacts-search"
@@ -221,20 +226,22 @@ export function ContactsPage() {
           </Empty>
         )
       ) : (
-        <ul className={rowsClass}>
-          {contacts.data.map((contact) => (
-            <ContactRow
-              key={contact.id}
-              contact={contact}
-              primaryCurrency={settings?.primaryCurrency}
-              listSearch={{ kind, search: term || undefined }}
-              compare={{
-                selected: compare.includes(contact.id),
-                onToggle: () => setFilters({ compare: toggled(compare, contact.id).join(',') || undefined }),
-              }}
-            />
-          ))}
-        </ul>
+        <Section index="02" label={m.contacts_all()}>
+          <ul className={rowsClass}>
+            {contacts.data.map((contact) => (
+              <ContactRow
+                key={contact.id}
+                contact={contact}
+                primaryCurrency={settings?.primaryCurrency}
+                listSearch={{ kind, search: term || undefined }}
+                compare={{
+                  selected: compare.includes(contact.id),
+                  onToggle: () => setFilters({ compare: toggled(compare, contact.id).join(',') || undefined }),
+                }}
+              />
+            ))}
+          </ul>
+        </Section>
       )}
     </>
   )

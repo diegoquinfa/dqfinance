@@ -158,7 +158,7 @@ export function WebhooksBlock() {
 
   return (
     <Section
-      index="06"
+      index="05"
       label={m.webhooks_title()}
       action={
         isGuest ? undefined : (

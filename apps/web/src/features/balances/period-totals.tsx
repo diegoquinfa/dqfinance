@@ -10,15 +10,18 @@ import { rowsClass } from '#/shared/ui/page'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { totalsIn } from './totals'
 
-/** Spent and received (and net) in one currency for the given filters. Totals come from the API. */
+/** Spent and received (and net) in one currency for the given filters. Totals come from the API.
+ * `stacked` keeps one figure per row: three side by side need more width than a section's 5 columns. */
 export function PeriodTotals({
   currency,
   filters,
   showNet = false,
+  stacked = false,
 }: {
   currency: string
   filters: SummaryFilters
   showNet?: boolean
+  stacked?: boolean
 }) {
   const summary = useTransactionSummary(filters)
   const totals = totalsIn(summary.data ?? [], currency)
@@ -39,10 +42,21 @@ export function PeriodTotals({
   return (
     <dl
       aria-busy={summary.isPending || summary.isPlaceholderData}
-      className={`${rowsClass} sm:grid sm:divide-x sm:divide-y-0 ${showNet ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}
+      className={
+        stacked
+          ? rowsClass
+          : `${rowsClass} sm:grid sm:divide-x sm:divide-y-0 ${showNet ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`
+      }
     >
       {items.map((item) => (
-        <div key={item.label} className="flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6 sm:first:pl-0">
+        <div
+          key={item.label}
+          className={
+            stacked
+              ? 'flex items-baseline justify-between gap-4 py-4'
+              : 'flex items-baseline justify-between gap-4 py-4 sm:block sm:px-5 sm:py-6 sm:first:pl-0'
+          }
+        >
           <dt className="label-mono text-muted-foreground">
             <span aria-hidden className="mr-2 text-faint">
               {item.marker}
@@ -50,7 +64,7 @@ export function PeriodTotals({
             {item.label}
           </dt>
           <dd
-            className={`font-medium tabular-nums transition-opacity sm:mt-3 ${showNet ? 'sm:type-heading-sm' : 'sm:type-heading'} ${item.income && item.amount > 0 ? 'text-income' : 'text-ink'} ${summary.isPending ? 'opacity-0' : summary.isPlaceholderData ? 'opacity-50' : ''}`}
+            className={`font-medium tabular-nums ${stacked ? '' : `transition-opacity sm:mt-3 ${showNet ? 'sm:type-heading-sm' : 'sm:type-heading'}`} ${item.income && item.amount > 0 ? 'text-income' : 'text-ink'} ${summary.isPending ? 'opacity-0' : summary.isPlaceholderData ? 'opacity-50' : ''}`}
           >
             {formatMoney(item.amount, currency)}
           </dd>
@@ -88,7 +102,7 @@ function periodLabel(period: Period, offset: number, range: { from: string; to: 
 }
 
 /** Week / month / year with previous and next, then what was spent and received in it. */
-export function CalendarPeriod({ currency }: { currency: string }) {
+export function CalendarPeriod({ currency, showNet = false }: { currency: string; showNet?: boolean }) {
   const [period, setPeriod] = useState<Period>('month')
   const [offset, setOffset] = useState(0)
   const range = periodRange(period, offset, todayDate())
@@ -127,7 +141,7 @@ export function CalendarPeriod({ currency }: { currency: string }) {
           </Button>
         </div>
       </div>
-      <PeriodTotals currency={currency} filters={range} />
+      <PeriodTotals currency={currency} filters={range} showNet={showNet} />
     </div>
   )
 }

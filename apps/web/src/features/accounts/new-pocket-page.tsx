@@ -8,6 +8,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#/s
 import { Input } from '#/shared/ui/input'
 import { Label } from '#/shared/ui/label'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
+import { Section } from '#/shared/ui/page'
 import { Spinner } from '#/shared/ui/spinner'
 import { ToggleGroup, ToggleGroupItem } from '#/shared/ui/toggle-group'
 import { useCreateTransfer } from '../transfers/transfers-api'
@@ -146,76 +147,84 @@ export function NewPocketPage({ productId }: { productId?: string }) {
       {/* onSubmit, not action: React clears an action form after it runs, losing a failed create's fields. */}
       <form
         id={FORM_ID}
-        className="grid max-w-2xl gap-6"
+        className="grid"
         onSubmit={(event) => {
           event.preventDefault()
           void submit(new FormData(event.currentTarget))
         }}
       >
         {/* The amount comes first and large: the money set aside is the number that matters. */}
-        <div className="grid gap-2 border-b border-line pb-3 transition-colors has-focus-visible:border-signal">
-          <Label htmlFor="new-pocket-amount">{m.accounts_new_pocket_amount()}</Label>
-          <div className="flex items-center gap-3">
-            <input
-              id="new-pocket-amount"
-              name="amount"
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              placeholder="0"
-              className="type-title w-full min-w-0 [appearance:textfield] bg-transparent font-medium text-ink tabular-nums placeholder:text-muted-foreground focus-visible:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <span className="label-mono text-muted-foreground">{valid.currency}</span>
+        <Section index="01" label={m.label_amount()}>
+          <div className="grid max-w-xl gap-2 border-b border-line pb-3 transition-colors has-focus-visible:border-signal">
+            <Label htmlFor="new-pocket-amount">{m.accounts_new_pocket_amount()}</Label>
+            <div className="flex items-center gap-3">
+              <input
+                id="new-pocket-amount"
+                name="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                placeholder="0"
+                className="type-title w-full min-w-0 [appearance:textfield] bg-transparent font-medium text-ink tabular-nums placeholder:text-muted-foreground focus-visible:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <span className="label-mono text-muted-foreground">{valid.currency}</span>
+            </div>
+            <FieldDescription>{m.accounts_new_pocket_amount_hint()}</FieldDescription>
           </div>
-          <FieldDescription>{m.accounts_new_pocket_amount_hint()}</FieldDescription>
-        </div>
+        </Section>
 
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="new-pocket-name">{m.label_name()}</FieldLabel>
-            <Input id="new-pocket-name" name="name" required maxLength={80} autoFocus />
-          </Field>
+        <Section index="02" label={m.product_pocket()}>
+          <FieldGroup className="max-w-xl">
+            <Field>
+              <FieldLabel htmlFor="new-pocket-name">{m.label_name()}</FieldLabel>
+              <Input id="new-pocket-name" name="name" required maxLength={80} autoFocus />
+            </Field>
 
-          <Field>
-            <FieldLabel htmlFor="new-pocket-rate">{m.product_annual_rate()}</FieldLabel>
-            <Input
-              id="new-pocket-rate"
-              name="annualRate"
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={rate}
-              onChange={(event) => setRate(event.target.value)}
-            />
-            {/* The payout only matters once there is a rate. */}
-            {rate && (
-              <div className="flex items-center gap-3">
-                <span className="label-mono text-muted-foreground">{m.yield_payout_label()}</span>
-                <ToggleGroup
-                  type="single"
-                  aria-label={m.yield_payout_label()}
-                  value={payout}
-                  onValueChange={(value) => setPayout(value as 'daily' | 'monthly')}
-                >
-                  <ToggleGroupItem value="daily">{m.yield_payout_daily()}</ToggleGroupItem>
-                  <ToggleGroupItem value="monthly">{m.yield_payout_monthly()}</ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-            )}
-          </Field>
-        </FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="new-pocket-rate">{m.product_annual_rate()}</FieldLabel>
+              <Input
+                id="new-pocket-rate"
+                name="annualRate"
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={rate}
+                onChange={(event) => setRate(event.target.value)}
+              />
+              {/* The payout only matters once there is a rate. */}
+              {rate && (
+                <div className="flex items-center gap-3">
+                  <span className="label-mono text-muted-foreground">{m.yield_payout_label()}</span>
+                  <ToggleGroup
+                    type="single"
+                    aria-label={m.yield_payout_label()}
+                    value={payout}
+                    onValueChange={(value) => setPayout(value as 'daily' | 'monthly')}
+                  >
+                    <ToggleGroupItem value="daily">{m.yield_payout_daily()}</ToggleGroupItem>
+                    <ToggleGroupItem value="monthly">{m.yield_payout_monthly()}</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              )}
+            </Field>
+          </FieldGroup>
+        </Section>
 
-        <FieldError>{error}</FieldError>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" asChild>
-            <Link to="/accounts">{m.action_cancel()}</Link>
-          </Button>
-          <Button type="submit" disabled={pending}>
-            {pending && <Spinner data-icon="inline-start" />}
-            {m.action_create()}
-          </Button>
+        <div className="grid gap-5 pb-8 lg:grid-cols-12 lg:gap-x-12">
+          <div className="grid gap-4 lg:col-span-9 lg:col-start-4">
+            <FieldError>{error}</FieldError>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" asChild>
+                <Link to="/accounts">{m.action_cancel()}</Link>
+              </Button>
+              <Button type="submit" disabled={pending}>
+                {pending && <Spinner data-icon="inline-start" />}
+                {m.action_create()}
+              </Button>
+            </div>
+          </div>
         </div>
       </form>
     </>

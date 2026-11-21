@@ -15,7 +15,7 @@ import {
 import { Badge } from '#/shared/ui/badge'
 import { Button } from '#/shared/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '#/shared/ui/empty'
-import { PageHeader, rowsClass } from '#/shared/ui/page'
+import { PageHeader, Section, rowsClass } from '#/shared/ui/page'
 import { ListSkeleton } from '#/shared/ui/list-skeleton'
 import { toast } from 'sonner'
 import { NewTransferDialog } from './new-transfer-dialog'
@@ -50,7 +50,8 @@ export function TransfersPage() {
     <>
       <PageHeader title={m.transfers_title()} actions={<NewTransferDialog trigger={<Button variant="outline">{m.transfers_new()}</Button>} />} />
 
-      {transfers.isPending ? (
+      <Section index="01" label={m.transfers_all()}>
+        {transfers.isPending ? (
         <ListSkeleton rows={5} />
       ) : transfers.error ? (
         <p role="alert" className="text-sm text-destructive">
@@ -160,6 +161,7 @@ export function TransfersPage() {
           })}
         </ul>
       )}
+      </Section>
     </>
   )
 }

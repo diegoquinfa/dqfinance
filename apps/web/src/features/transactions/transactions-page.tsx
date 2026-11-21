@@ -182,8 +182,8 @@ export function TransactionsPage() {
         }
       />
 
-      <section aria-label={m.transactions_filters()} className="grid gap-3 pb-8 lg:grid-cols-4 lg:items-end lg:gap-4">
-        <div className="lg:col-span-4">
+      <section aria-label={m.transactions_filters()} className="grid gap-3 pb-8 lg:grid-cols-12 lg:items-end lg:gap-4">
+        <div className="lg:col-span-8">
           <Field>
             <FieldLabel htmlFor="transactions-search">{m.transactions_search()}</FieldLabel>
             <div className="relative">
@@ -203,17 +203,22 @@ export function TransactionsPage() {
           </Field>
         </div>
 
-        <ToggleGroup
-          type="single"
-          className="w-full"
-          aria-label={m.label_kind()}
-          value={type}
-          onValueChange={(value) => setFilters({ type: value as TypeFilter })}
-        >
-          <ToggleGroupItem value="all">{m.transactions_all_types()}</ToggleGroupItem>
-          <ToggleGroupItem value="expense">{m.label_expense()}</ToggleGroupItem>
-          <ToggleGroupItem value="income">{m.label_income()}</ToggleGroupItem>
-        </ToggleGroup>
+        <div className="grid gap-2 lg:col-span-4">
+          <span aria-hidden className="label-mono text-muted-foreground">
+            {m.label_kind()}
+          </span>
+          <ToggleGroup
+            type="single"
+            className="w-full"
+            aria-label={m.label_kind()}
+            value={type}
+            onValueChange={(value) => setFilters({ type: value as TypeFilter })}
+          >
+            <ToggleGroupItem value="all">{m.transactions_all_types()}</ToggleGroupItem>
+            <ToggleGroupItem value="expense">{m.label_expense()}</ToggleGroupItem>
+            <ToggleGroupItem value="income">{m.label_income()}</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2 lg:hidden">
           {chips.map((chip) => (
@@ -230,7 +235,7 @@ export function TransactionsPage() {
           ))}
         </div>
 
-        <div className="hidden lg:contents">
+        <div className="hidden lg:col-span-12 lg:grid lg:grid-cols-3 lg:gap-4">
           <FilterFields idPrefix="filter" sources={sources} filters={filters} onChange={setFilters} />
         </div>
       </section>
